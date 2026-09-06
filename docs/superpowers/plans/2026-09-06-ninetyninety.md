@@ -6,7 +6,7 @@
 
 **Architecture:** Two Strands agents in adversarial review — a **Preparer** classifies each messy transaction to a 990-EZ line and cites the rule; a **Reviewer** independently classifies the same transaction without seeing the Preparer's reasoning, and disagreements are surfaced rather than hidden. All arithmetic and the three Part I balance identities are deterministic Python, never model output. A validation harness runs that same deterministic engine over real IRS e-file XML to publish an accuracy rate.
 
-**Tech Stack:** Python 3.12, `strands-agents[gemini,openai]` 1.54.0, `gemini-2.5-flash` (OpenRouter `z-ai/glm-5.2:free` failover), Streamlit Community Cloud, `pypdf` for AcroForm filling, IRS 990 e-file XML corpus, pytest.
+**Tech Stack:** Python 3.12, `strands-agents[gemini,openai]` 1.54.0, `gemini-2.5-flash` (OpenRouter `nvidia/nemotron-3-super-120b-a12b:free` failover), Streamlit Community Cloud, `pypdf` for AcroForm filling, IRS 990 e-file XML corpus, pytest.
 
 ## Global Constraints
 

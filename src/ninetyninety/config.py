@@ -22,6 +22,16 @@ def select_provider(env: dict) -> str | None:
     return None
 
 
+def providers_in_order(env: dict) -> list[str]:
+    """Every configured provider, best first. prepare_ledger fails over down this list."""
+    order = []
+    if env.get("GOOGLE_API_KEY"):
+        order.append("gemini")
+    if env.get("OPENROUTER_API_KEY"):
+        order.append("openrouter")
+    return order
+
+
 def build_model(provider: str | None = None):
     provider = provider or select_provider(os.environ)
     if provider == "gemini":

@@ -1,17 +1,21 @@
-"""Turn a classified ledger into a Form 990-EZ Part I.
+"""Turn a ledger into a Form 990-EZ Part I with one Strands graph per batch.
 
 `assemble` is pure and deterministic. Totals come from formmath, never from a
-model. Where the two agents disagree the Preparer's line is used and the row
-is surfaced for a human to resolve.
+model. Disagreements are recorded with all three opinions; nothing is hidden.
 """
+import os
+import re
+import time
 from dataclasses import dataclass, field
 
 from .agents import (
-    Classification, build_preparer, build_reviewer, parse_classification,
+    TOOL_CALLS, BatchCalls, ReviewGraph, RowCall, Verdict, batch_task,
+    rule_is_grounded,
 )
+from .config import build_model, providers_in_order
 from .formmath import excess_or_deficit, total_expenses, total_revenue
 from .ledger import Transaction
-from .lines import line_by_number
+from .lines import ALL_LINE_NUMBERS, line_by_number
 
 
 @dataclass
@@ -29,95 +33,187 @@ class Form990EZ:
     low_confidence: list[dict] = field(default_factory=list)
     unclassified: list[dict] = field(default_factory=list)
     unreviewed: list[dict] = field(default_factory=list)
+    ungrounded: list[dict] = field(default_factory=list)
+    trace: list[dict] = field(default_factory=list)
 
 
-def assemble(
-    rows: list[tuple[Transaction, Classification, Classification]],
-) -> Form990EZ:
+class ProviderExhausted(RuntimeError):
+    """A provider kept answering 429 after every retry."""
+
+
+NO_ANSWER = "no answer from the Preparer"
+
+
+def _valid(call: RowCall | None) -> RowCall | None:
+    return call if call is not None and call.line in ALL_LINE_NUMBERS else None
+
+
+def assemble(rows: list[tuple[Transaction, RowCall | None, RowCall | None]],
+             verdicts: dict[int, Verdict]) -> Form990EZ:
     form = Form990EZ()
     for transaction, preparer, reviewer in rows:
-        chosen = preparer.line_number
+        preparer, reviewer = _valid(preparer), _valid(reviewer)
+        row = transaction.source_row
+        if preparer is None:
+            form.unclassified.append({
+                "source_row": row, "description": transaction.description,
+                "amount": transaction.amount, "error": NO_ANSWER})
+            continue
+        if reviewer is None:
+            form.unreviewed.append({"source_row": row, "description": transaction.description,
+                                    "line": preparer.line})
+
+        chosen, rule, why = preparer.line, preparer.rule, preparer.why
+        verdict = None
+        disputed = reviewer is not None and reviewer.line != preparer.line
+        if disputed:
+            verdict = verdicts.get(row)
+            if verdict is not None and verdict.line in ALL_LINE_NUMBERS:
+                chosen, rule, why = verdict.line, verdict.reason, "referee's verdict"
+            else:
+                verdict = None
+            form.disagreements.append({
+                "source_row": row, "description": transaction.description,
+                "preparer": preparer.line, "preparer_rule": preparer.rule,
+                "reviewer": reviewer.line, "reviewer_rule": reviewer.rule,
+                "referee": verdict.line if verdict else None,
+                "referee_reason": verdict.reason if verdict else None,
+                "used": chosen,
+            })
+        if verdict is None and not rule_is_grounded(chosen, rule):
+            form.ungrounded.append({"source_row": row, "description": transaction.description,
+                                    "line": chosen, "rule": rule})
+
         result = form.lines.setdefault(chosen, LineResult(chosen))
         # Revenue lines carry money-in as positive; expense lines carry
-        # money-out as positive. A refund therefore NETS against its line
-        # instead of being added to it, and is flagged below.
+        # money-out as positive. A refund therefore NETS against its line.
         revenue = line_by_number(chosen).kind == "revenue"
         signed = transaction.amount if revenue else -transaction.amount
         result.amount += signed
         result.transactions.append({
-            "source_row": transaction.source_row,
-            "date": transaction.date,
-            "description": transaction.description,
-            "amount": transaction.amount,
-            "rule": preparer.rule,
-            "why": preparer.rationale,
+            "source_row": row, "date": transaction.date,
+            "description": transaction.description, "amount": transaction.amount,
+            "rule": rule, "why": why,
         })
-        if reviewer.line_number != chosen:
-            form.disagreements.append({
-                "source_row": transaction.source_row,
-                "description": transaction.description,
-                "preparer": chosen,
-                "preparer_rule": preparer.rule,
-                "reviewer": reviewer.line_number,
-                "reviewer_rule": reviewer.rule,
-            })
-        elif "low" in (preparer.confidence, reviewer.confidence) or signed < 0:
+        low = "low" in (preparer.confidence.lower(),
+                        reviewer.confidence.lower() if reviewer else "")
+        if not disputed and (low or signed < 0):
             form.low_confidence.append({
-                "source_row": transaction.source_row,
-                "description": transaction.description,
-                "line": chosen,
+                "source_row": row, "description": transaction.description, "line": chosen,
                 "note": ("money flows against this line; netted as a refund"
                          if signed < 0 else "low confidence"),
             })
 
     amounts = {number: result.amount for number, result in form.lines.items()}
-    form.totals = {
-        "line9": total_revenue(amounts),
-        "line17": total_expenses(amounts),
-        "line18": excess_or_deficit(amounts),
-    }
+    form.totals = {"line9": total_revenue(amounts), "line17": total_expenses(amounts),
+                   "line18": excess_or_deficit(amounts)}
     return form
 
 
-def _ask(agent, transaction: Transaction) -> Classification | None:
-    agent.messages = []  # each transaction is judged alone, no carry-over
-    direction = "MONEY IN" if transaction.amount >= 0 else "MONEY OUT"
-    question = (f"{direction}\nDATE: {transaction.date}\n"
-                f"DESCRIPTION: {transaction.description}\n"
-                f"AMOUNT: {abs(transaction.amount)}")
-    return parse_classification(str(agent(question)), transaction.source_row)
+_DELAY = re.compile(r'retryDelay"?\s*:\s*"?(\d+(?:\.\d+)?)s|retry in (\d+(?:\.\d+)?)s', re.I)
 
 
-def prepare_ledger(transactions: list[Transaction], model,
-                   progress=None) -> Form990EZ:
-    """Classify every transaction with both agents, then assemble.
+def _is_rate_limit(error: Exception) -> bool:
+    return (getattr(error, "code", None) == 429 or getattr(error, "status_code", None) == 429
+            or "429" in str(error))
 
-    `progress(done, total)` is called after each transaction if given.
-    Rows the Preparer cannot classify are kept on `form.unclassified` so
-    nothing silently vanishes from the ledger.
+
+def _delay_seconds(error: Exception) -> float:
+    match = _DELAY.search(str(error))
+    if match:
+        return float(match.group(1) or match.group(2))
+    return 20.0
+
+
+def run_graph(review_graph, task: str, sleep=time.sleep):
+    """Run one batch, sleeping the provider's advertised delay on a 429."""
+    for attempt in range(3):
+        try:
+            return review_graph.run(task)
+        except Exception as error:  # noqa: BLE001 - classify, then re-raise or retry
+            if not _is_rate_limit(error):
+                raise
+            if attempt == 2:
+                raise ProviderExhausted(str(error)[:200]) from error
+            sleep(_delay_seconds(error))
+    raise ProviderExhausted("unreachable")
+
+
+def _calls_by_row(calls: BatchCalls | None) -> dict[int, RowCall]:
+    return {c.row: c for c in calls.calls} if calls else {}
+
+
+def prepare_ledger(transactions: list[Transaction], model=None, progress=None,
+                   batch_size: int = 12, providers: list[str] | None = None) -> Form990EZ:
+    """Classify the ledger batch by batch through the Strands graph.
+
+    `model` pins one provider; otherwise providers are tried in
+    `providers_in_order` order, failing over when one is rate-limited out.
+    `progress(done, total)` is called after each batch if given.
     """
-    preparer, reviewer = build_preparer(model), build_reviewer(model)
-    rows = []
-    skipped = []
-    unreviewed = []
-    for index, transaction in enumerate(transactions, start=1):
-        first = _ask(preparer, transaction)
-        if first is None:
-            skipped.append({"source_row": transaction.source_row,
-                            "description": transaction.description,
-                            "amount": transaction.amount})
+    if model is not None:
+        providers = ["given"]
+    else:
+        providers = list(providers if providers is not None else providers_in_order(os.environ))
+    if not providers:
+        raise RuntimeError("No model provider configured. Get a free key at "
+                           "https://aistudio.google.com/apikey and set GOOGLE_API_KEY. "
+                           "See .env.example.")
+    graphs: dict[str, ReviewGraph] = {}
+
+    def graph_for(provider: str) -> ReviewGraph:
+        if provider not in graphs:
+            graphs[provider] = ReviewGraph(model if provider == "given" else build_model(provider))
+        return graphs[provider]
+
+    rows: list[tuple[Transaction, RowCall | None, RowCall | None]] = []
+    verdicts: dict[int, Verdict] = {}
+    trace: list[dict] = []
+    failed_rows: dict[int, str] = {}
+    batches = [transactions[i:i + batch_size] for i in range(0, len(transactions), batch_size)]
+    active = 0
+    for index, batch in enumerate(batches, start=1):
+        task = batch_task(batch)
+        result, used, error = None, None, None
+        while active < len(providers):
+            provider = providers[active]
+            TOOL_CALLS["line_guidance"] = 0
+            started = time.time()
+            try:
+                result = run_graph(graph_for(provider), task)
+                used = provider
+                break
+            except ProviderExhausted as exhausted:
+                error = f"{provider} exhausted: {exhausted}"
+                active += 1
+        if result is None:
+            for tx in batch:
+                rows.append((tx, None, None))
+                failed_rows[tx.source_row] = error or "no provider"
+            trace.append({"batch": index, "rows": len(batch), "provider": None, "error": error})
         else:
-            second = _ask(reviewer, transaction)
-            if second is None:
-                # Not an agreement: the Reviewer gave no usable answer.
-                unreviewed.append({"source_row": transaction.source_row,
-                                   "description": transaction.description,
-                                   "line": first.line_number})
-                second = first
-            rows.append((transaction, first, second))
+            graph = graph_for(used)
+            prep = _calls_by_row(graph.calls(result, "preparer"))
+            rev = _calls_by_row(graph.calls(result, "reviewer"))
+            batch_verdicts = graph.verdicts(result)
+            for verdict in (batch_verdicts.verdicts if batch_verdicts else []):
+                verdicts[verdict.row] = verdict
+            for tx in batch:
+                rows.append((tx, prep.get(tx.source_row), rev.get(tx.source_row)))
+            order = [node.node_id for node in result.execution_order]
+            trace.append({
+                "batch": index, "rows": len(batch), "provider": used,
+                "nodes": order, "referee_ran": "referee" in order,
+                "tool_calls": TOOL_CALLS["line_guidance"],
+                "node_ms": {n: getattr(result.results[n], "execution_time", None) for n in order},
+                "seconds": round(time.time() - started, 1),
+            })
         if progress:
-            progress(index, len(transactions))
-    form = assemble(rows)
-    form.unclassified = skipped
-    form.unreviewed = unreviewed
+            progress(index, len(batches))
+
+    form = assemble(rows, verdicts)
+    for item in form.unclassified:
+        if item["source_row"] in failed_rows:
+            item["error"] = failed_rows[item["source_row"]]
+    form.trace = trace
     return form

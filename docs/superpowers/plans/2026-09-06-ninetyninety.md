@@ -1219,7 +1219,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GEMINI_MODEL_ID = "gemini-2.5-flash"
-OPENROUTER_MODEL_ID = "z-ai/glm-5.2:free"
+OPENROUTER_MODEL_ID = "nvidia/nemotron-3-super-120b-a12b:free"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 

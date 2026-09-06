@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-GEMINI_MODEL_ID = "gemini-2.5-flash"
+GEMINI_MODEL_ID = os.environ.get("GEMINI_MODEL_ID", "gemini-3.6-flash")  # 2.5-flash 404s for new users (checked 2026-09-06)
 OPENROUTER_MODEL_ID = "nvidia/nemotron-3-super-120b-a12b:free"  # verified live 2026-09-06; z-ai/glm-5.2:free no longer listed
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 

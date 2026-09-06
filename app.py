@@ -11,7 +11,6 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 import streamlit as st
 
-from ninetyninety.config import build_model
 from ninetyninety.ledger import load_ledger
 from ninetyninety.lines import line_by_number
 from ninetyninety.pdffill import download_form, fill_form
@@ -66,12 +65,12 @@ if st.button("Draft the 990-EZ", type="primary"):
     transactions = load_ledger(path, skipped)
     st.write(f"Loaded **{len(transactions)}** transactions"
              + (f", skipped **{len(skipped)}** with unreadable amounts." if skipped else "."))
-    bar = st.progress(0.0, text="Preparer and Reviewer agents classifying each line...")
+    bar = st.progress(0.0, text="Preparer and Reviewer running in parallel through the Strands graph...")
     try:
         form = prepare_ledger(
-            transactions, build_model(),
+            transactions,
             progress=lambda done, total: bar.progress(
-                done / total, text=f"Classified {done}/{total} transactions"))
+                done / total, text=f"Batch {done}/{total} through the Strands graph"))
     except Exception as error:  # noqa: BLE001 - surface any failure to the user
         st.error(f"Could not complete the draft: {error}")
         st.stop()
@@ -106,15 +105,24 @@ if st.button("Draft the 990-EZ", type="primary"):
     with right:
         st.markdown(f"#### Agent disagreements ({len(form.disagreements)})")
         st.caption("The Reviewer never sees the Preparer's reasoning, so these "
-                   "are two independent readings of the same transaction.")
+                   "are two independent readings of the same transaction. The "
+                   "Referee runs only when they differ and must cite the IRS text.")
         for item in form.disagreements:
+            referee = (f"Referee → line {item['referee']}: {item['referee_reason']}"
+                       if item["referee"] else "Referee did not rule; Preparer's line used")
             st.warning(f"**row {item['source_row']}** · {item['description']}\n\n"
                        f"Preparer → line {item['preparer']}: {item['preparer_rule']}\n\n"
-                       f"Reviewer → line {item['reviewer']}: {item['reviewer_rule']}")
+                       f"Reviewer → line {item['reviewer']}: {item['reviewer_rule']}\n\n"
+                       f"{referee}\n\nOn the form: line {item['used']}")
         st.markdown(f"#### Low confidence ({len(form.low_confidence)})")
         for item in form.low_confidence:
             st.info(f"row {item['source_row']} · {item['description']} "
-                    f"→ line {item['line']}")
+                    f"→ line {item['line']} · {item['note']}")
+        if form.ungrounded:
+            st.markdown(f"#### Rule not found in IRS guidance ({len(form.ungrounded)})")
+            for item in form.ungrounded:
+                st.error(f"row {item['source_row']} · line {item['line']} · "
+                         f"quoted rule: “{item['rule'][:120]}”")
         if form.unreviewed:
             st.markdown(f"#### Reviewer gave no usable answer ({len(form.unreviewed)})")
             for item in form.unreviewed:
@@ -124,9 +132,16 @@ if st.button("Draft the 990-EZ", type="primary"):
             st.markdown(f"#### Not classified ({len(form.unclassified)})")
             for item in form.unclassified:
                 st.error(f"row {item['source_row']} · {item['description']} · "
-                         f"${item['amount']:,} -- needs a human")
+                         f"${item['amount']:,} -- {item['error']}")
         if skipped:
             st.markdown(f"#### Rows with unreadable amounts ({len(skipped)})")
             for item in skipped:
                 st.error(f"row {item['source_row']} · {item['description']} · "
                          f"amount {item['amount_raw']!r}")
+
+        with st.expander(f"Strands trace · {len(form.trace)} graph runs"):
+            st.caption("Preparer and Reviewer are parallel entry nodes that never see "
+                       "each other; the Referee is reached by a conditional edge only "
+                       "when they disagree. Tool calls are real line_guidance lookups.")
+            st.table([{k: (", ".join(v) if isinstance(v, list) else v)
+                       for k, v in t.items() if k != "node_ms"} for t in form.trace])

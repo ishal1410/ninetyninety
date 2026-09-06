@@ -1,34 +1,37 @@
-from ninetyninety.agents import line_reference, parse_classification
+from ninetyninety.agents import (
+    TOOL_CALLS, BatchCalls, RowCall, batch_task, line_guidance, rule_is_grounded,
+)
+from ninetyninety.ledger import Transaction
 
 
-def test_parse_classification_reads_the_structured_reply():
-    text = ("LINE: 13\n"
-            "RULE: line 13 covers payments to non-employees\n"
-            "WHY: Venmo to an individual instructor, not payroll\n"
-            "CONFIDENCE: high")
-    result = parse_classification(text, source_row=7)
-    assert result.line_number == "13"
-    assert result.source_row == 7
-    assert result.confidence == "high"
-    assert "non-employees" in result.rule
+def _tx(row, desc, amount):
+    return Transaction(date="2025-03-04", description=desc, amount=amount, source_row=row)
 
 
-def test_parse_classification_rejects_a_line_not_on_the_form():
-    assert parse_classification("LINE: 99\nRULE: x\nWHY: y\nCONFIDENCE: high",
-                                source_row=1) is None
+def test_line_guidance_tool_returns_irs_text_and_counts_calls():
+    before = TOOL_CALLS["line_guidance"]
+    text = line_guidance("13")
+    assert "independent contractors" in text
+    assert "expense" in text
+    assert TOOL_CALLS["line_guidance"] == before + 1
 
 
-def test_parse_classification_rejects_unstructured_output():
-    assert parse_classification("I think this is probably rent?",
-                                source_row=1) is None
+def test_line_guidance_tool_rejects_a_line_not_on_the_form():
+    assert "No such line" in line_guidance("99")
 
 
-def test_parse_classification_defaults_missing_confidence_to_low():
-    assert parse_classification("LINE: 1\nRULE: r\nWHY: w",
-                                source_row=1).confidence == "low"
+def test_batch_task_lists_rows_with_direction_and_source_row():
+    task = batch_task([_tx(2, "STRIPE PAYOUT", 1250), _tx(3, "RENT", -1450)])
+    assert "row 2 | MONEY IN" in task
+    assert "row 3 | MONEY OUT" in task
+    assert "1450" in task and "-1450" not in task
 
 
-def test_line_reference_lists_every_line_with_guidance():
-    reference = line_reference()
-    assert "5c" in reference and "6d" in reference
-    assert "independent contractors" in reference
+def test_rule_is_grounded_accepts_a_quote_and_rejects_an_invention():
+    assert rule_is_grounded("13", "Payments to people and firms who are not employees")
+    assert not rule_is_grounded("13", "Rent paid to the landlord for office space")
+
+
+def test_batchcalls_schema_round_trips():
+    calls = BatchCalls(calls=[RowCall(row=2, line="1", rule="r", why="w", confidence="high")])
+    assert calls.calls[0].line == "1"

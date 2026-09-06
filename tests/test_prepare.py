@@ -50,3 +50,43 @@ def test_every_line_keeps_its_citing_transactions():
     assert citation["source_row"] == 9
     assert citation["description"] == "STRIPE PAYOUT"
     assert citation["rule"] == "rule"
+
+
+def test_refund_on_a_revenue_line_nets_and_is_flagged():
+    form = assemble([
+        (tx(2, "DONATION", 1000), cls(2, "1"), cls(2, "1")),
+        (tx(3, "SPONSOR REFUND", -250), cls(3, "1"), cls(3, "1")),
+    ])
+    assert form.lines["1"].amount == 750
+    assert form.totals["line9"] == 750
+    assert form.low_confidence[0]["source_row"] == 3
+    assert "refund" in form.low_confidence[0]["note"]
+
+
+def test_money_in_on_an_expense_line_reduces_that_expense():
+    form = assemble([
+        (tx(2, "RENT", -1450), cls(2, "14"), cls(2, "14")),
+        (tx(3, "RENT DEPOSIT REFUND", 1450), cls(3, "14"), cls(3, "14")),
+    ])
+    assert form.lines["14"].amount == 0
+    assert form.totals["line17"] == 0
+
+
+def test_prepare_ledger_records_reviewer_silence_as_unreviewed(monkeypatch):
+    import ninetyninety.prepare as prepare
+
+    class Fake:
+        def __init__(self, reply):
+            self.reply = reply
+            self.messages = []
+
+        def __call__(self, question):
+            return self.reply
+
+    monkeypatch.setattr(prepare, "build_preparer",
+                        lambda model: Fake("LINE: 1\nRULE: r\nWHY: w\nCONFIDENCE: high"))
+    monkeypatch.setattr(prepare, "build_reviewer", lambda model: Fake("no idea"))
+    form = prepare.prepare_ledger([tx(2, "DONATION", 100)], model=None)
+    assert form.lines["1"].amount == 100
+    assert form.disagreements == []
+    assert form.unreviewed[0]["source_row"] == 2

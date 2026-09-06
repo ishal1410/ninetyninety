@@ -4,6 +4,7 @@ Built with Strands Agents.
 """
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -47,20 +48,24 @@ st.divider()
 st.subheader("Draft a return")
 uploaded = st.file_uploader("Transaction ledger (CSV: date, description, amount)",
                             type="csv")
-use_demo = st.checkbox("Use the synthetic demo ledger instead", value=True)
+use_demo = st.checkbox("Use the synthetic demo ledger instead",
+                       value=uploaded is None)
 org_name = st.text_input("Organisation name (for the PDF)", "DEMO COMMUNITY ORG")
 ein = st.text_input("EIN (for the PDF)", "00-0000000")
 
 if st.button("Draft the 990-EZ", type="primary"):
     base = Path(__file__).parent
+    # Every visitor gets private scratch files: the hosted app is shared.
+    workdir = Path(tempfile.mkdtemp(prefix="ninetyninety-"))
     path = base / "fixtures" / "demo_ledger.csv"
     if uploaded is not None and not use_demo:
-        path = base / "data" / "uploaded.csv"
-        path.parent.mkdir(exist_ok=True)
+        path = workdir / "ledger.csv"
         path.write_bytes(uploaded.getvalue())
 
-    transactions = load_ledger(path)
-    st.write(f"Loaded **{len(transactions)}** transactions.")
+    skipped: list[dict] = []
+    transactions = load_ledger(path, skipped)
+    st.write(f"Loaded **{len(transactions)}** transactions"
+             + (f", skipped **{len(skipped)}** with unreadable amounts." if skipped else "."))
     bar = st.progress(0.0, text="Preparer and Reviewer agents classifying each line...")
     try:
         form = prepare_ledger(
@@ -91,7 +96,7 @@ if st.button("Draft the 990-EZ", type="primary"):
 
         try:
             pdf = fill_form(form, download_form(base / "data" / "f990ez.pdf"),
-                            base / "out" / "draft.pdf", org_name, ein)
+                            workdir / "draft.pdf", org_name, ein)
             st.download_button("Download the drafted IRS Form 990-EZ (PDF, marked DRAFT)",
                                pdf.read_bytes(), file_name="990-EZ-DRAFT.pdf",
                                mime="application/pdf")
@@ -110,8 +115,18 @@ if st.button("Draft the 990-EZ", type="primary"):
         for item in form.low_confidence:
             st.info(f"row {item['source_row']} · {item['description']} "
                     f"→ line {item['line']}")
+        if form.unreviewed:
+            st.markdown(f"#### Reviewer gave no usable answer ({len(form.unreviewed)})")
+            for item in form.unreviewed:
+                st.info(f"row {item['source_row']} · {item['description']} "
+                        f"→ Preparer's line {item['line']} stands unreviewed")
         if form.unclassified:
             st.markdown(f"#### Not classified ({len(form.unclassified)})")
             for item in form.unclassified:
                 st.error(f"row {item['source_row']} · {item['description']} · "
                          f"${item['amount']:,} -- needs a human")
+        if skipped:
+            st.markdown(f"#### Rows with unreadable amounts ({len(skipped)})")
+            for item in skipped:
+                st.error(f"row {item['source_row']} · {item['description']} · "
+                         f"amount {item['amount_raw']!r}")

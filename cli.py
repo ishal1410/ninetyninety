@@ -15,8 +15,10 @@ def main(argv: list[str]) -> int:
     if len(argv) < 2:
         print(__doc__)
         return 1
-    transactions = load_ledger(Path(argv[1]))
-    print(f"Loaded {len(transactions)} transactions. Classifying...")
+    skipped: list[dict] = []
+    transactions = load_ledger(Path(argv[1]), skipped)
+    note = f", skipped {len(skipped)} with unreadable amounts" if skipped else ""
+    print(f"Loaded {len(transactions)} transactions{note}. Classifying...")
     form = prepare_ledger(transactions, build_model())
 
     print("\nFORM 990-EZ PART I (DRAFT -- NOT A FILING)")
@@ -29,13 +31,17 @@ def main(argv: list[str]) -> int:
     print(f"  Line 18 excess/deficit  {form.totals['line18']:>10,}")
     print(f"\nDisagreements: {len(form.disagreements)}   "
           f"Low confidence: {len(form.low_confidence)}   "
-          f"Unclassified: {len(form.unclassified)}")
+          f"Unclassified: {len(form.unclassified)}   "
+          f"Unreviewed: {len(form.unreviewed)}")
     for item in form.disagreements:
         print(f"  row {item['source_row']}: {item['description'][:44]}")
         print(f"     preparer line {item['preparer']} "
               f"vs reviewer line {item['reviewer']}")
     for item in form.unclassified:
         print(f"  UNCLASSIFIED row {item['source_row']}: {item['description'][:44]}")
+    for item in skipped:
+        print(f"  SKIPPED row {item['source_row']}: {item['description'][:44]}"
+              f"  amount {item['amount_raw']!r}")
     return 0
 
 

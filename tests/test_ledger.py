@@ -35,3 +35,13 @@ def test_load_ledger_skips_blank_and_unparseable_rows(tmp_path):
                     "2025-01-01,GOOD ROW,100\n"
                     "2025-01-02,BAD AMOUNT,abc\n", encoding="utf-8")
     assert [r.description for r in load_ledger(path)] == ["GOOD ROW"]
+
+
+def test_load_ledger_reports_skipped_rows_when_asked(tmp_path):
+    path = tmp_path / "led.csv"
+    path.write_text("date,description,amount\n"
+                    "2025-01-02,BAD AMOUNT,abc\n", encoding="utf-8")
+    skipped = []
+    assert load_ledger(path, skipped) == []
+    assert skipped == [{"source_row": 2, "description": "BAD AMOUNT",
+                        "amount_raw": "abc"}]

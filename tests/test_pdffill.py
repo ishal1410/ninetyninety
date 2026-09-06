@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from ninetyninety.lines import ALL_LINE_NUMBERS
 from ninetyninety.pdffill import field_map
 
@@ -20,12 +22,15 @@ def test_field_names_are_non_empty_strings():
 
 
 def test_filled_pdf_carries_a_visible_draft_notice_on_every_page(tmp_path):
+    import pytest
     from pypdf import PdfReader
 
-    from ninetyninety.pdffill import download_form, fill_form
+    from ninetyninety.pdffill import fill_form
     from ninetyninety.prepare import Form990EZ
 
-    template = download_form(tmp_path.parent / "f990ez.pdf")
+    template = Path("data/f990ez.pdf")
+    if not template.exists():
+        pytest.skip("blank IRS form not downloaded; run scripts/dump_fields.py")
     out = fill_form(Form990EZ(totals={"line9": 0, "line17": 0, "line18": 0}),
                     template, tmp_path / "draft.pdf", "ORG", "00-0000000")
     for page in PdfReader(str(out)).pages:

@@ -29,7 +29,9 @@ def parse_amount(raw: str) -> int:
     return -rounded if parenthesised else rounded
 
 
-def load_ledger(path: Path) -> list[Transaction]:
+def load_ledger(path: Path, skipped: list[dict] | None = None) -> list[Transaction]:
+    """Read the CSV. Rows with a description but an unreadable amount are
+    appended to `skipped` (if given) so they can be shown to the user."""
     transactions: list[Transaction] = []
     with open(Path(path), newline="", encoding="utf-8-sig") as handle:
         for row_number, row in enumerate(csv.DictReader(handle), start=2):
@@ -39,6 +41,10 @@ def load_ledger(path: Path) -> list[Transaction]:
             try:
                 amount = parse_amount(row.get("amount") or "")
             except ValueError:
+                if skipped is not None:
+                    skipped.append({"source_row": row_number,
+                                    "description": description,
+                                    "amount_raw": row.get("amount") or ""})
                 continue
             transactions.append(Transaction(
                 date=(row.get("date") or "").strip(),

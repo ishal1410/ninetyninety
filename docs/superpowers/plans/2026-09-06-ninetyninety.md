@@ -35,7 +35,7 @@
 | Fillable form | `https://www.irs.gov/pub/irs-pdf/f990ez.pdf` — HTTP 200, 397,623 bytes, AcroForm, 385 fields |
 | Instructions | `https://www.irs.gov/pub/irs-pdf/i990ez.pdf` — 49 pages |
 | Filing thresholds | 990-EZ if *"gross receipts less than $200,000 and total assets at the end of the year less than $500,000"*; ≤$50,000 may file 990-N |
-| **Reconstruction accuracy** | **Line 9: 3,632/3,632 = 100.00%** · Line 17: 3,617/3,618 = 99.97% · Line 18: 3,620/3,621 = 99.97%, over 3,687 real 990-EZ returns in one batch |
+| **Reconstruction accuracy** | **Line 9: 3,632/3,632 = 100.00%** · Line 17: 3,617/3,618 = 99.97% · Line 18: 3,619/3,621 = 99.94%, over 3,687 real 990-EZ returns in one batch (re-measured via the harness 2026-09-06; the 3 mismatches are filer-side: one off-by-one total cascading into line 18, one line 18 that contradicts the filer's own lines 9 and 17) |
 
 ### Real Part I element names (verified from live XML — guessing two of these cost 12.5% accuracy)
 
@@ -997,7 +997,7 @@ Expected: approximately
 990-EZ returns: 3687
   Line 9  total revenue  3632/3632  (100.00%)
   Line 17 total expenses 3617/3618  (99.97%)
-  Line 18 excess/deficit 3620/3621  (99.97%)
+  Line 18 excess/deficit 3619/3621  (99.94%)
 ```
 If line 9 is below 99%, an element name in `lines.py` is wrong. Fix it before continuing — this number is the pitch.
 

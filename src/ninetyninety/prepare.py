@@ -38,7 +38,7 @@ class Form990EZ:
 
 
 class ProviderExhausted(RuntimeError):
-    """A provider kept answering 429 after every retry."""
+    """A provider kept answering 429 or 5xx after every retry."""
 
 
 NO_ANSWER = "no answer from the Preparer"
@@ -113,9 +113,16 @@ def assemble(rows: list[tuple[Transaction, RowCall | None, RowCall | None]],
 _DELAY = re.compile(r'retryDelay"?\s*:\s*"?(\d+(?:\.\d+)?)s|retry in (\d+(?:\.\d+)?)s', re.I)
 
 
-def _is_rate_limit(error: Exception) -> bool:
-    return (getattr(error, "code", None) == 429 or getattr(error, "status_code", None) == 429
-            or "429" in str(error))
+_TRANSIENT = (429, 500, 502, 503, 504)
+
+
+def _is_transient(error: Exception) -> bool:
+    """Rate limits and provider-side outages: retry, then fail over."""
+    code = getattr(error, "code", None) or getattr(error, "status_code", None)
+    if code in _TRANSIENT:
+        return True
+    text = str(error)
+    return any(f"{c} " in text or f"{c}:" in text for c in _TRANSIENT)
 
 
 def _delay_seconds(error: Exception) -> float:
@@ -126,12 +133,13 @@ def _delay_seconds(error: Exception) -> float:
 
 
 def run_graph(review_graph, task: str, sleep=time.sleep):
-    """Run one batch, sleeping the provider's advertised delay on a 429."""
+    """Run one batch, sleeping the provider's advertised delay on a 429 or
+    a 5xx, then handing the batch to the next provider."""
     for attempt in range(3):
         try:
             return review_graph.run(task)
         except Exception as error:  # noqa: BLE001 - classify, then re-raise or retry
-            if not _is_rate_limit(error):
+            if not _is_transient(error):
                 raise
             if attempt == 2:
                 raise ProviderExhausted(str(error)[:200]) from error

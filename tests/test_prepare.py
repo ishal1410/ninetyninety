@@ -99,6 +99,15 @@ def test_run_graph_gives_up_after_three_rate_limits():
         run_graph(graph, "t", sleep=lambda s: None)
 
 
+def test_run_graph_treats_503_as_transient():
+    class _Down(Exception):
+        code = 503
+    slept = []
+    graph = _Graph([_Down("503 Service Unavailable. high demand"), "ok"])
+    assert run_graph(graph, "t", sleep=slept.append) == "ok"
+    assert slept == [20.0]
+
+
 def test_run_graph_reraises_other_errors_immediately():
     graph = _Graph([ValueError("boom")])
     with pytest.raises(ValueError):

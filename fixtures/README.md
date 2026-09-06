@@ -4,7 +4,7 @@
 made-up community organisation. The descriptions are deliberately raw
 bank-statement text with no category column: abbreviations, vendor codes,
 ALL CAPS, refunds, and a few rows that could reasonably land on more than one
-Form 990-EZ line. Sorting that mess out is the agents' job.
+Form 990-EZ line. Sorting that mess out is the agents' job. The last six rows are deliberately borderline (a city agreement that could be a grant or a fee for service, a gala sponsorship that could be a contribution or event income, a part-time coordinator paid by Venmo who could be staff or a contractor) so the Referee has something to rule on.
 
 Nothing in this file is a real organisation, person, bank, or transaction.
 

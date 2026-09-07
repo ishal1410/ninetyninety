@@ -52,7 +52,6 @@ def assemble(rows: list[tuple[Transaction, RowCall | None, RowCall | None]],
              verdicts: dict[int, Verdict]) -> Form990EZ:
     form = Form990EZ()
     for transaction, preparer, reviewer in rows:
-        preparer, reviewer = _valid(preparer), _valid(reviewer)
         row = transaction.source_row
         single_opinion = None
         if preparer is None and reviewer is not None:
@@ -63,18 +62,28 @@ def assemble(rows: list[tuple[Transaction, RowCall | None, RowCall | None]],
                 "source_row": row, "description": transaction.description,
                 "amount": transaction.amount, "error": NO_ANSWER})
             continue
+        # An agent that names a line not on the form has answered, wrongly:
+        # report that, and let the other agent's valid line win the dispute.
+        if _valid(preparer) is None and _valid(reviewer) is None:
+            form.unclassified.append({
+                "source_row": row, "description": transaction.description,
+                "amount": transaction.amount,
+                "error": f"line {preparer.line} is not on Form 990-EZ Part I"})
+            continue
         if reviewer is None:
             form.unreviewed.append({"source_row": row, "description": transaction.description,
                                     "line": preparer.line,
                                     "note": single_opinion or "only the Preparer answered"})
 
-        chosen, rule, why = preparer.line, preparer.rule, preparer.why
+        default = preparer if _valid(preparer) else reviewer
+        chosen, rule, why = default.line, default.rule, default.why
         verdict = None
         disputed = reviewer is not None and reviewer.line != preparer.line
         if disputed:
             verdict = verdicts.get(row)
             # The Referee may only pick one of the two disputed lines.
-            if verdict is not None and verdict.line in (preparer.line, reviewer.line):
+            if (verdict is not None and verdict.line in ALL_LINE_NUMBERS
+                    and verdict.line in (preparer.line, reviewer.line)):
                 chosen, rule, why = verdict.line, verdict.reason, "referee's verdict"
             else:
                 verdict = None
@@ -122,13 +131,21 @@ _DELAY = re.compile(r'retryDelay"?\s*:\s*"?(\d+(?:\.\d+)?)s|retry in (\d+(?:\.\d
 _TRANSIENT = (429, 500, 502, 503, 504)
 
 
+_TRANSIENT_CLASS = re.compile(r"Throttl|RateLimit|ServiceUnavailable|Overloaded", re.I)
+# A status code stands alone ("429 RESOURCE_EXHAUSTED", "Error code: 503 - {"),
+# never glued to "=", "$" or digits the way an echoed amount in a
+# validation error is ("input_value=500 is not a str").
+_STATUS = re.compile(r"(?<![=$\d.])\b(429|50[0234])\b(?=\s*(?:[A-Z(\-:]|$))")
+
+
 def _is_transient(error: Exception) -> bool:
     """Rate limits and provider-side outages: retry, then fail over."""
     code = getattr(error, "code", None) or getattr(error, "status_code", None)
     if code in _TRANSIENT:
         return True
-    text = str(error)
-    return any(f"{c} " in text or f"{c}:" in text for c in _TRANSIENT)
+    if _TRANSIENT_CLASS.search(type(error).__name__):
+        return True
+    return _STATUS.search(str(error)) is not None
 
 
 def _delay_seconds(error: Exception) -> float:
@@ -170,7 +187,7 @@ def prepare_ledger(transactions: list[Transaction], model=None, progress=None,
     else:
         providers = list(providers if providers is not None else providers_in_order(os.environ))
     if not providers:
-        raise RuntimeError("No model provider configured. Get a free key at "
+        raise RuntimeError("No model provider configured. Set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY for Bedrock, or get a free key at "
                            "https://aistudio.google.com/apikey and set GOOGLE_API_KEY. "
                            "See .env.example.")
     graphs: dict[str, ReviewGraph] = {}
@@ -186,9 +203,10 @@ def prepare_ledger(transactions: list[Transaction], model=None, progress=None,
     failed_rows: dict[int, str] = {}
     batches = [transactions[i:i + batch_size] for i in range(0, len(transactions), batch_size)]
     active = 0
+    error = None  # the last provider failure; later batches inherit it
     for index, batch in enumerate(batches, start=1):
         task = batch_task(batch)
-        result, used, error = None, None, None
+        result, used = None, None
         while active < len(providers):
             provider = providers[active]
             TOOL_CALLS["line_guidance"] = 0

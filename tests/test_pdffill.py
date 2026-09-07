@@ -37,3 +37,20 @@ def test_filled_pdf_carries_a_visible_draft_notice_on_every_page(tmp_path):
         notices = [a.get_object() for a in page.get("/Annots", [])
                    if a.get_object().get("/Subtype") == "/FreeText"]
         assert any("DRAFT" in str(n.get("/Contents")) for n in notices)
+
+
+def test_download_form_leaves_nothing_behind_when_the_request_fails(tmp_path, monkeypatch):
+    import pytest
+    from ninetyninety import pdffill
+
+    class Broken:
+        content = b"half"
+
+        def raise_for_status(self):
+            raise ConnectionError("dropped")
+
+    monkeypatch.setattr(pdffill.requests, "get", lambda *a, **k: Broken())
+    dest = tmp_path / "f990ez.pdf"
+    with pytest.raises(ConnectionError):
+        pdffill.download_form(dest)
+    assert not dest.exists() and not list(tmp_path.iterdir())

@@ -35,3 +35,22 @@ def test_rule_is_grounded_accepts_a_quote_and_rejects_an_invention():
 def test_batchcalls_schema_round_trips():
     calls = BatchCalls(calls=[RowCall(row=2, line="1", rule="r", why="w", confidence="high")])
     assert calls.calls[0].line == "1"
+
+
+def test_rule_is_grounded_needs_the_instruction_text_not_just_the_label():
+    from ninetyninety.agents import rule_is_grounded
+    assert not rule_is_grounded("16", "other expenses line")
+    assert not rule_is_grounded("1", "contributions gifts grants line")
+    assert rule_is_grounded("16", "insurance, software subscriptions, bank fees, supplies")
+
+
+def test_they_disagree_is_false_not_a_crash_when_a_node_has_no_agent_results():
+    from ninetyninety.agents import _they_disagree
+
+    class Node:
+        def get_agent_results(self):
+            return []
+
+    class State:
+        results = {"preparer": Node(), "reviewer": Node()}
+    assert _they_disagree(State()) is False

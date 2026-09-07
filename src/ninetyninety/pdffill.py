@@ -6,6 +6,7 @@ printed by scripts/dump_fields.py -- never guess them.
 Output is always a DRAFT: e-filing requires an Authorized IRS e-File Provider
 EFIN, which this project does not have.
 """
+import os
 from pathlib import Path
 
 import requests
@@ -52,7 +53,11 @@ def download_form(dest: Path) -> Path:
         return dest
     response = requests.get(FORM_URL, timeout=120)
     response.raise_for_status()
-    dest.write_bytes(response.content)
+    # The hosted app is shared: write beside the target and rename, so a
+    # second visitor never opens a half-written form.
+    partial = dest.with_name(f"{dest.name}.{os.getpid()}.part")
+    partial.write_bytes(response.content)
+    os.replace(partial, dest)
     return dest
 
 

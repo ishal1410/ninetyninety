@@ -159,5 +159,7 @@ if draft:
             st.caption("Preparer and Reviewer are parallel entry nodes that never see "
                        "each other; the Referee is reached by a conditional edge only "
                        "when they disagree. Tool calls are real line_guidance lookups.")
-            st.table([{k: (", ".join(v) if isinstance(v, list) else v)
-                       for k, v in t.items() if k != "node_ms"} for t in form.trace])
+            st.table([{k: (", ".join(v) if isinstance(v, list) else
+                           ", ".join(f"{n} {round(ms)}ms" for n, ms in v.items() if ms is not None)
+                           if isinstance(v, dict) else v)
+                       for k, v in t.items()} for t in form.trace])

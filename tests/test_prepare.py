@@ -210,3 +210,44 @@ def test_referee_may_only_pick_one_of_the_two_disputed_lines():
     assert form.disagreements[0]["referee"] is None
     assert form.disagreements[0]["used"] == "1"
     assert "8" not in form.lines
+
+
+# --- code-review fixes (2026-09-07) ---
+
+def test_off_menu_line_from_both_agents_is_reported_not_called_no_answer():
+    form = assemble([(tx(2, "X", 10), call(2, "9"), call(2, "9"))], {})
+    assert form.unclassified[0]["error"] == "line 9 is not on Form 990-EZ Part I"
+
+
+def test_off_menu_line_versus_valid_line_is_a_disagreement_using_the_valid_line():
+    form = assemble([(tx(2, "X", 10), call(2, "9"), call(2, "1"))], {})
+    assert form.disagreements[0]["preparer"] == "9"
+    assert form.disagreements[0]["used"] == "1"
+    assert form.unreviewed == [] and form.unclassified == []
+    assert form.lines["1"].amount == 10
+
+
+def test_is_transient_ignores_status_like_numbers_inside_validation_errors():
+    from ninetyninety.prepare import _is_transient
+    assert not _is_transient(ValueError("1 validation error: input_value=500 is not a str"))
+    assert not _is_transient(ValueError("amount $503 rejected"))
+    assert _is_transient(RuntimeError("429 RESOURCE_EXHAUSTED. retryDelay: 20s"))
+    assert _is_transient(RuntimeError("Error code: 503 - {'error': 'overloaded'}"))
+
+
+def test_is_transient_recognises_throttling_exception_classes():
+    from ninetyninety.prepare import _is_transient
+
+    class ModelThrottledException(Exception):
+        pass
+    assert _is_transient(ModelThrottledException("An error occurred (ThrottlingException)"))
+
+
+def test_batches_after_total_exhaustion_carry_the_last_error(monkeypatch):
+    import ninetyninety.prepare as prepare
+    made = []
+    monkeypatch.setattr(prepare, "ReviewGraph", _fake_graph_factory([ProviderExhausted("quota")], made))
+    monkeypatch.setattr(prepare, "build_model", lambda provider: provider)
+    form = prepare_ledger([tx(2, "A", 1), tx(3, "B", 1)], batch_size=1, providers=["only"])
+    assert [t["error"] for t in form.trace] == ["only exhausted: quota"] * 2
+    assert form.unclassified[1]["error"] == "only exhausted: quota"

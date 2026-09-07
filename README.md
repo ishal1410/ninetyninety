@@ -30,7 +30,7 @@ All three mismatches are real filed returns whose own stated totals disagree wit
 
 1. **Ledger in.** A CSV of `date, description, amount`. Raw bank text, no categories. Rows go through the graph in batches of twelve.
 2. **One Strands Agents graph per batch.** The **Preparer** and the **Reviewer** are two entry nodes of a `GraphBuilder` graph. Strands hands each entry node only the rows, so the Reviewer never sees the Preparer's reasoning, and the two run in parallel. Both call a real Strands tool, `line_guidance`, which returns the IRS instruction text for a Part I line, and both answer with structured output (pydantic). A **Referee** node hangs off a conditional edge and runs only when the two disagree on a row; it must call `line_guidance` on both candidate lines and returns a verdict with its reason. Every disagreement is shown with all three opinions and which line went on the form. Nothing is resolved silently.
-3. **Python checks the model.** Every rule an agent quotes is compared, word for word, against the IRS guidance the tool returned; a rule that is not in the text is flagged. Money flowing against a line (a refund) is netted, not added, and flagged. Lines 9, 17 and 18 are computed in `formmath.py`, the same module the validation harness runs over real filings. The model never adds.
+3. **Python checks the model.** Every rule the Preparer or Reviewer quotes is compared, word for word, against the IRS instruction sentence the tool returned (the line's label does not count); a rule that is not in the text is flagged. A Referee verdict is accepted only for one of the two disputed lines; its reason is shown verbatim, not word-checked. Money flowing against a line (a refund) is netted, not added, and flagged. Lines 9, 17 and 18 are computed in `formmath.py`, the same module the validation harness runs over real filings. The model never adds.
 4. **The real IRS PDF.** Amounts land in the actual `f990ez.pdf` AcroForm fields, and every page carries a red **DRAFT, NOT A FILING** notice.
 5. **The trace is on screen.** Per batch: which nodes ran, in what order, how many tool calls, whether the Referee was needed, and which provider answered.
 
@@ -50,7 +50,7 @@ Tests: `PYTHONPATH=src python -m pytest`
 
 ## Model providers
 
-Amazon Bedrock (Claude, Strands' native provider) first when AWS keys are present; Gemini Flash free tier as failover, rotating model ids because the free cap is per model per day; OpenRouter last. All configured in `src/ninetyninety/config.py`, keys in `.env` (see `.env.example`). On a 429 or 5xx the run sleeps for the delay the provider advertises and retries; after three tries, or on any other provider error, the whole batch fails over to the next provider. The hosted demo runs on a Free-plan AWS account's signup credit.
+Amazon Bedrock (Claude, Strands' native provider) first when AWS keys are present; Gemini Flash free tier as failover, rotating model ids because the free cap is per model per day; OpenRouter last. All configured in `src/ninetyninety/config.py`, keys in `.env` (see `.env.example`). On a 429, a 5xx or a throttling exception the run sleeps for the delay the provider advertises and retries; after three attempts, or on any other provider error, the whole batch fails over to the next provider. The hosted demo runs on a Free-plan AWS account's signup credit.
 
 ## Live demo
 

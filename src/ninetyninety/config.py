@@ -72,7 +72,7 @@ def build_model(provider: str | None = None):
             model_id=os.environ.get("OPENROUTER_MODEL_ID", OPENROUTER_MODEL_ID),
         )
     raise RuntimeError(
-        "No model provider configured. Get a free key at "
+        "No model provider configured. Set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY for Bedrock, or get a free key at "
         "https://aistudio.google.com/apikey and set GOOGLE_API_KEY, "
         "or set OPENROUTER_API_KEY. See .env.example."
     )

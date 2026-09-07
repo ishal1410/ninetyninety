@@ -120,7 +120,9 @@ def rule_is_grounded(line_number: str, rule: str) -> bool:
     guidance. Deterministic; an invented rule cannot pass."""
     if line_number not in ALL_LINE_NUMBERS:
         return False
-    guidance = set(_WORD.findall(_guidance_text(line_number).lower()))
+    # Only the instruction sentence counts; the label and kind are what the
+    # agent already saw on the menu, so quoting them proves nothing.
+    guidance = set(_WORD.findall(line_by_number(line_number).guidance.lower()))
     words = _WORD.findall(rule.lower())
     if not words:
         return False
@@ -140,11 +142,10 @@ def _structured(result, node_id: str):
 def _they_disagree(state) -> bool:
     picks = {}
     for node_id in ("preparer", "reviewer"):
-        node = state.results.get(node_id)
-        if node is None:
+        out = _structured(state, node_id)
+        if out is None:
             return False
-        out = getattr(node.get_agent_results()[0], "structured_output", None)
-        picks[node_id] = {c.row: c.line for c in out.calls} if out else {}
+        picks[node_id] = {c.row: c.line for c in out.calls}
     return picks["preparer"] != picks["reviewer"]
 
 

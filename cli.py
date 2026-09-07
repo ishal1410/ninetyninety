@@ -54,9 +54,11 @@ def main(argv: list[str]) -> int:
         if t.get("error"):
             print(f"  batch {t['batch']}: {t['error']}")
         else:
+            node_ms = ", ".join(f"{n} {round(ms)}ms" if ms is not None else n
+                                for n, ms in t["node_ms"].items())
             print(f"  batch {t['batch']}: {t['rows']} rows via {t['provider']} in {t['seconds']}s; "
                   f"nodes {'->'.join(t['nodes'])}; tool calls {t['tool_calls']}; "
-                  f"referee {'ran' if t['referee_ran'] else 'skipped'}")
+                  f"referee {'ran' if t['referee_ran'] else 'skipped'}; {node_ms}")
     return 0
 
 

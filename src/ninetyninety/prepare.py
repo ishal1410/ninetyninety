@@ -54,6 +54,10 @@ def assemble(rows: list[tuple[Transaction, RowCall | None, RowCall | None]],
     for transaction, preparer, reviewer in rows:
         preparer, reviewer = _valid(preparer), _valid(reviewer)
         row = transaction.source_row
+        single_opinion = None
+        if preparer is None and reviewer is not None:
+            # Only the Reviewer answered: use it, but say so. Never silent.
+            preparer, reviewer, single_opinion = reviewer, None, "only the Reviewer answered"
         if preparer is None:
             form.unclassified.append({
                 "source_row": row, "description": transaction.description,
@@ -61,7 +65,8 @@ def assemble(rows: list[tuple[Transaction, RowCall | None, RowCall | None]],
             continue
         if reviewer is None:
             form.unreviewed.append({"source_row": row, "description": transaction.description,
-                                    "line": preparer.line})
+                                    "line": preparer.line,
+                                    "note": single_opinion or "only the Preparer answered"})
 
         chosen, rule, why = preparer.line, preparer.rule, preparer.why
         verdict = None

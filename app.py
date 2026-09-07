@@ -124,10 +124,10 @@ if st.button("Draft the 990-EZ", type="primary"):
                 st.error(f"row {item['source_row']} · line {item['line']} · "
                          f"quoted rule: “{item['rule'][:120]}”")
         if form.unreviewed:
-            st.markdown(f"#### Reviewer gave no usable answer ({len(form.unreviewed)})")
+            st.markdown(f"#### Single opinion only ({len(form.unreviewed)})")
             for item in form.unreviewed:
                 st.info(f"row {item['source_row']} · {item['description']} "
-                        f"→ Preparer's line {item['line']} stands unreviewed")
+                        f"→ line {item['line']} · {item['note']}")
         if form.unclassified:
             st.markdown(f"#### Not classified ({len(form.unclassified)})")
             for item in form.unclassified:

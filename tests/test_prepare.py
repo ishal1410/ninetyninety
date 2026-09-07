@@ -47,12 +47,14 @@ def test_disagreement_without_verdict_uses_preparer_and_says_so():
     assert form.disagreements[0]["referee"] is None
 
 
-def test_missing_preparer_answer_is_unclassified_and_missing_reviewer_is_unreviewed():
+def test_single_opinion_rows_are_counted_but_flagged_and_no_answer_is_unclassified():
     form = assemble([(tx(5, "A", 10), None, call(5, "1")),
-                     (tx(6, "B", 20), call(6, "1"), None)], {})
-    assert form.unclassified[0]["source_row"] == 5
-    assert form.unreviewed[0]["source_row"] == 6
-    assert form.lines["1"].amount == 20
+                     (tx(6, "B", 20), call(6, "1"), None),
+                     (tx(7, "C", 30), None, None)], {})
+    assert form.lines["1"].amount == 30
+    assert {i["source_row"]: i["note"] for i in form.unreviewed} == {
+        5: "only the Reviewer answered", 6: "only the Preparer answered"}
+    assert form.unclassified[0]["source_row"] == 7
 
 
 def test_low_confidence_and_refunds_are_flagged():

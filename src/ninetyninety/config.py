@@ -20,7 +20,14 @@ OPENROUTER_MODEL_ID = "nvidia/nemotron-3-super-120b-a12b:free"  # verified live 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 
+# Amazon Bedrock, Strands' native provider. Omit BEDROCK_MODEL_ID to take the
+# SDK default (a cross-region Claude inference profile).
+BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID") or None
+
+
 def select_provider(env: dict) -> str | None:
+    if env.get("AWS_ACCESS_KEY_ID"):
+        return "bedrock"
     if env.get("GOOGLE_API_KEY"):
         return "gemini"
     if env.get("OPENROUTER_API_KEY"):
@@ -33,6 +40,8 @@ def providers_in_order(env: dict) -> list[str]:
     this list. Gemini appears once per model id ("gemini:<model>") because the
     free tier's daily cap is per model."""
     order = []
+    if env.get("AWS_ACCESS_KEY_ID"):
+        order.append("bedrock")
     if env.get("GOOGLE_API_KEY"):
         order += [f"gemini:{model}" for model in GEMINI_MODEL_IDS]
     if env.get("OPENROUTER_API_KEY"):
@@ -42,6 +51,12 @@ def providers_in_order(env: dict) -> list[str]:
 
 def build_model(provider: str | None = None):
     provider = provider or select_provider(os.environ)
+    if provider == "bedrock":
+        from strands.models import BedrockModel
+        kwargs = {"region_name": os.environ.get("AWS_REGION", "us-east-1")}
+        if BEDROCK_MODEL_ID:
+            kwargs["model_id"] = BEDROCK_MODEL_ID
+        return BedrockModel(**kwargs)
     if provider and provider.startswith("gemini"):
         from strands.models.gemini import GeminiModel
         _, _, model_id = provider.partition(":")

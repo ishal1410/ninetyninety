@@ -50,7 +50,7 @@ Tests: `PYTHONPATH=src python -m pytest`
 
 ## Model providers
 
-Gemini 3.6 Flash (free tier, no card) first; OpenRouter free models as failover. Both configured in `src/ninetyninety/config.py`, keys in `.env` (see `.env.example`). On a 429 the run sleeps for the delay the provider advertises and retries; after three tries the whole batch fails over to the next provider. No AWS spend, no paid API.
+Amazon Bedrock (Claude, Strands' native provider) first when AWS keys are present; Gemini Flash free tier as failover, rotating model ids because the free cap is per model per day; OpenRouter last. All configured in `src/ninetyninety/config.py`, keys in `.env` (see `.env.example`). On a 429 or 5xx the run sleeps for the delay the provider advertises and retries; after three tries, or on any other provider error, the whole batch fails over to the next provider. The hosted demo runs on a Free-plan AWS account's signup credit.
 
 ## Live demo
 

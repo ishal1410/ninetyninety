@@ -1,0 +1,62 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{--ink:#14213D;--paper:#FFFFFF;--tint:#F1F4F8;--rule:#9AA5B1;--green:#1B6B45;--aws:#FF9900;--muted:#5B6776}
+*{box-sizing:border-box;margin:0}
+html,body{width:1600px;height:760px;background:var(--paper);color:var(--ink);
+  font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.35}
+.page{position:relative;width:1600px;height:760px;padding:40px 48px}
+h1{font-size:30px;font-weight:600;letter-spacing:-.01em}
+h1 span{color:var(--muted);font-weight:400}
+.sub{color:var(--muted);margin-top:4px;font-size:15px}
+.box{position:absolute;background:var(--tint);border:1.5px solid var(--rule);border-radius:6px;padding:14px 18px}
+.box h2{font-size:17px;font-weight:600;margin-bottom:8px}
+.box ul{list-style:none;padding:0}
+.box li{font-size:14px;color:var(--ink);padding-left:12px;text-indent:-12px;margin:3px 0}
+.box li::before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;
+  background:var(--rule);margin-right:7px;vertical-align:middle}
+.aws{border-color:var(--aws);background:#FFF7EA}
+.aws h2{color:#8A4B00}
+.graph{background:var(--paper);border:2px solid var(--ink);padding:0}
+.graph h2{padding:14px 18px 0}
+.graph ul{padding:0 18px 12px}
+.graph .canvas{height:190px;margin:8px 18px 4px;position:relative}
+.node{position:absolute;width:150px;height:44px;border:1.5px solid var(--ink);border-radius:22px;
+  display:flex;align-items:center;justify-content:center;font-weight:500;font-size:15px;background:var(--paper)}
+.node small{position:absolute;top:46px;left:0;right:0;text-align:center;font-size:12px;color:var(--muted);font-weight:400}
+.tool{position:absolute;padding:4px 10px;border:1px dashed var(--green);border-radius:4px;color:var(--green);
+  font-family:'IBM Plex Mono',monospace;font-size:12.5px;background:var(--paper)}
+.canvas svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.lbl{font-size:12px;fill:#5B6776;font-family:'IBM Plex Sans',sans-serif}
+</style></head><body>
+<div class="page">
+  <h1>NinetyNinety <span>ledger in, drafted Form 990-EZ out. Built with Strands Agents on Amazon Bedrock.</span></h1>
+  <p class="sub">Two agents classify every bank row without seeing each other; a third rules only on disagreement; totals are arithmetic in Python, never model output.</p>
+  <svg style="position:absolute;left:0;top:0;width:1600px;height:760px">
+    <defs><marker id="pm" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#14213D"/></marker></defs><path d="M378,222 L456,222" stroke="#14213D" stroke-width="2" fill="none" marker-end="url(#pm)"/><text x="380" y="210" class="lbl">ledger rows</text><path d="M1076,222 L1166,222" stroke="#14213D" stroke-width="2" fill="none" marker-end="url(#pm)"/><text x="1088" y="210" class="lbl">tool calls</text><path d="M1076,420 L1166,420" stroke="#14213D" stroke-width="2" fill="none" marker-end="url(#pm)"/><text x="1078" y="408" class="lbl">classified rows</text><path d="M766,540 L766,468" stroke="#8A4B00" stroke-width="2" fill="none" marker-end="url(#pm)"/><text x="778" y="510" class="lbl">model calls</text></svg>
+  <div class="box " style="left:48px;top:118px;width:330px;height:210px"><h2>User input / interface</h2><ul><li>A volunteer treasurer uploads the bank ledger as CSV</li><li>Streamlit app (app.py) or CLI (cli.py)</li><li>date, description, amount; whole dollars, money in +, money out -</li></ul></div>
+  <div class="box graph" style="left:456px;top:118px;width:620px;height:350px"><h2>Strands Agents graph, per batch of 12 rows</h2>
+<div class="canvas">
+  <svg viewBox="0 0 580 190" preserveAspectRatio="none">
+    <defs><marker id="m" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#14213D"/></marker>
+      <marker id="g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#1B6B45"/></marker></defs>
+    <path d="M44,95 L44,40 L108,40" stroke="#14213D" stroke-width="1.5" fill="none" marker-end="url(#m)"/>
+    <path d="M44,95 L44,150 L108,150" stroke="#14213D" stroke-width="1.5" fill="none" marker-end="url(#m)"/>
+    <path d="M262,40 L330,40 L330,95 L378,95" stroke="#14213D" stroke-width="1.5" fill="none" stroke-dasharray="5 4" marker-end="url(#m)"/>
+    <path d="M262,150 L330,150 L330,95" stroke="#14213D" stroke-width="1.5" fill="none" stroke-dasharray="5 4"/>
+    <path d="M186,62 L186,82" stroke="#1B6B45" stroke-width="1.2" fill="none" marker-end="url(#g)"/>
+    <path d="M186,128 L186,108" stroke="#1B6B45" stroke-width="1.2" fill="none" marker-end="url(#g)"/>
+    <text x="10" y="99" class="lbl">task</text>
+    <text x="268" y="24" class="lbl">only if they disagree</text>
+  </svg>
+  <div class="node" style="left:110px;top:18px">Preparer<small style="top:-20px">bookkeeper, blind</small></div>
+  <div class="node" style="left:110px;top:128px">Reviewer<small>auditor, blind</small></div>
+  <div class="node" style="left:380px;top:73px">Referee<small>cites the IRS text</small></div>
+  <div class="tool" style="left:130px;top:84px">line_guidance()</div>
+</div><ul><li>GraphBuilder: preparer and reviewer are blind parallel entry nodes</li><li>Loop per node: model -&gt; tools -&gt; reasoning -&gt; response</li><li>Conditional edge to the referee only when their lines differ</li><li>Python checks each quoted rule against the IRS text</li></ul></div>
+  <div class="box " style="left:1166px;top:118px;width:386px;height:210px"><h2>Tools &amp; integrations</h2><ul><li>@tool line_guidance returns the IRS 990-EZ Part I instruction text</li><li>pydantic BatchCalls / Verdicts: structured output</li><li>IRS e-file XML corpus: 3,687 real returns validate formmath.py</li></ul></div>
+  <div class="box aws" style="left:456px;top:540px;width:620px;height:150px;"><h2>AWS services</h2><ul><li>Amazon Bedrock: Claude through Strands&#x27; native BedrockModel (one provider)</li><li>Standard AWS credentials; Free-plan account, signup credit</li><li>Throttle or 5xx: advertised-delay backoff, 3 attempts, then surfaced</li></ul></div>
+  <div class="box " style="left:1166px;top:360px;width:386px;height:240px"><h2>Output</h2><ul><li>Form 990-EZ Part I, every line citing its rows and the IRS rule</li><li>Lines 9, 17, 18 computed in formmath.py, never by a model</li><li>Disagreements, low confidence and unclassified rows all shown</li><li>The real IRS f990ez.pdf filled, DRAFT notice on every page</li></ul></div>
+</div></body></html>

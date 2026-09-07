@@ -6,20 +6,19 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import diagram  # noqa: E402
 
-TEXT = {head: " ".join(lines).lower() for head, lines in diagram.BOXES}
+TEXT = [" ".join(lines).lower() for _, lines in diagram.BOXES]  # index = FAQ box - 1
 
 
 def test_five_boxes_in_the_faq_order():
-    heads = [h for h, _ in diagram.BOXES]
-    assert [h[0] for h in heads] == ["1", "2", "3", "4", "5"]
+    heads = [h.lower() for h, _ in diagram.BOXES]
+    assert len(heads) == 5
     for want, head in zip(["user input", "strands agents", "tools", "aws services", "output"], heads):
-        assert want in head.lower()
+        assert want in head
 
 
 def test_agent_box_names_the_full_agentic_loop_the_faq_asks_for():
-    body = TEXT[[h for h in TEXT if h.startswith("2")][0]]
     for word in ("model", "tool", "reasoning", "response"):
-        assert word in body, word
+        assert word in TEXT[1], word
 
 
 def test_arrows_flow_input_to_graph_to_output_and_bedrock_serves_the_graph():
@@ -32,7 +31,6 @@ def test_arrows_flow_input_to_graph_to_output_and_bedrock_serves_the_graph():
 def test_diagram_matches_the_code():
     from ninetyninety.prepare import prepare_ledger
     import inspect
-    assert "batch of 12" in [h for h in TEXT if h.startswith("2")][0].lower()
+    assert "batch of 12" in diagram.BOXES[1][0].lower()
     assert "batch_size: int = 12" in inspect.getsource(prepare_ledger)
-    assert "3 attempts" in TEXT[[h for h in TEXT if h.startswith("4")][0]]
-    assert "bedrock" in TEXT[[h for h in TEXT if h.startswith("4")][0]]
+    assert "3 attempts" in TEXT[3] and "bedrock" in TEXT[3]

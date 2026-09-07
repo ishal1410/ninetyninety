@@ -1,97 +1,157 @@
-"""Render docs/architecture.png: the five boxes the hackathon FAQ asks for.
+"""Render docs/architecture.png from an HTML/SVG layout via headless Chromium.
 
     python scripts/diagram.py
+
+BOXES and ARROWS are the content contract checked by tests/test_diagram.py;
+the HTML below is the presentation.
 """
+import html
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+W, H = 1600, 760
 
-W, H = 1600, 900
-BG, INK, BOX, LINE, ACCENT = "#ffffff", "#1f2933", "#f5f7fa", "#9aa5b1", "#ff9900"
-
+# The five things the hackathon FAQ says an architecture diagram must show.
 BOXES = [
-    ("1  User input / interface",
-     ["Volunteer treasurer uploads the bank ledger CSV",
+    ("User input / interface",
+     ["A volunteer treasurer uploads the bank ledger as CSV",
       "Streamlit app (app.py) or CLI (cli.py)",
-      "date, description, amount; whole dollars, +in / -out"]),
-    ("2  Strands Agents graph (per batch of 12 rows)",
-     ["GraphBuilder: preparer + reviewer as blind parallel entry nodes",
+      "date, description, amount; whole dollars, money in +, money out -"]),
+    ("Strands Agents graph, per batch of 12 rows",
+     ["GraphBuilder: preparer and reviewer are blind parallel entry nodes",
       "Loop per node: model -> tools -> reasoning -> response",
-      "Tool = line_guidance; response = pydantic structured output",
-      "Conditional edge to referee only when their lines differ"]),
-    ("3  Tools & integrations",
-     ["@tool line_guidance: IRS 990-EZ Part I instruction text",
-      "pydantic BatchCalls / Verdicts = structured output",
-      "IRS e-file XML corpus: 3,687 real returns check formmath"]),
-    ("4  AWS services",
-     ["Amazon Bedrock: Claude via Strands BedrockModel (one provider)",
+      "Conditional edge to the referee only when their lines differ",
+      "Python checks each quoted rule against the IRS text"]),
+    ("Tools & integrations",
+     ["@tool line_guidance returns the IRS 990-EZ Part I instruction text",
+      "pydantic BatchCalls / Verdicts: structured output",
+      "IRS e-file XML corpus: 3,687 real returns validate formmath.py"]),
+    ("AWS services",
+     ["Amazon Bedrock: Claude through Strands' native BedrockModel (one provider)",
       "Standard AWS credentials; Free-plan account, signup credit",
-      "Throttle/5xx: advertised-delay backoff, 3 attempts, then surfaced"]),
-    ("5  Output",
-     ["Form 990-EZ Part I, every line citing rows + the IRS rule",
-      "Totals (lines 9, 17, 18) computed in formmath.py, never by a model",
-      "Disagreements, low confidence, unclassified rows all shown",
-      "Filled IRS f990ez.pdf, DRAFT notice on every page"]),
+      "Throttle or 5xx: advertised-delay backoff, 3 attempts, then surfaced"]),
+    ("Output",
+     ["Form 990-EZ Part I, every line citing its rows and the IRS rule",
+      "Lines 9, 17, 18 computed in formmath.py, never by a model",
+      "Disagreements, low confidence and unclassified rows all shown",
+      "The real IRS f990ez.pdf filled, DRAFT notice on every page"]),
 ]
 
+# (from box, to box, label) with boxes numbered 1-5 in BOXES order.
+ARROWS = [(1, 2, "ledger rows"), (2, 3, "tool calls"), (4, 2, "model calls"), (2, 5, "classified rows")]
 
-# (from box, to box, label). Output comes from the graph; Bedrock serves the graph.
-ARROWS = [(1, 2, ""), (2, 3, ""), (4, 2, "Bedrock serves every node"), (2, 5, "graph output")]
+CSS = """
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{--ink:#14213D;--paper:#FFFFFF;--tint:#F1F4F8;--rule:#9AA5B1;--green:#1B6B45;--aws:#FF9900;--muted:#5B6776}
+*{box-sizing:border-box;margin:0}
+html,body{width:1600px;height:760px;background:var(--paper);color:var(--ink);
+  font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.35}
+.page{position:relative;width:1600px;height:760px;padding:40px 48px}
+h1{font-size:30px;font-weight:600;letter-spacing:-.01em}
+h1 span{color:var(--muted);font-weight:400}
+.sub{color:var(--muted);margin-top:4px;font-size:15px}
+.box{position:absolute;background:var(--tint);border:1.5px solid var(--rule);border-radius:6px;padding:14px 18px}
+.box h2{font-size:17px;font-weight:600;margin-bottom:8px}
+.box ul{list-style:none;padding:0}
+.box li{font-size:14px;color:var(--ink);padding-left:12px;text-indent:-12px;margin:3px 0}
+.box li::before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;
+  background:var(--rule);margin-right:7px;vertical-align:middle}
+.aws{border-color:var(--aws);background:#FFF7EA}
+.aws h2{color:#8A4B00}
+.graph{background:var(--paper);border:2px solid var(--ink);padding:0}
+.graph h2{padding:14px 18px 0}
+.graph ul{padding:0 18px 12px}
+.graph .canvas{height:190px;margin:8px 18px 4px;position:relative}
+.node{position:absolute;width:150px;height:44px;border:1.5px solid var(--ink);border-radius:22px;
+  display:flex;align-items:center;justify-content:center;font-weight:500;font-size:15px;background:var(--paper)}
+.node small{position:absolute;top:46px;left:0;right:0;text-align:center;font-size:12px;color:var(--muted);font-weight:400}
+.tool{position:absolute;padding:4px 10px;border:1px dashed var(--green);border-radius:4px;color:var(--green);
+  font-family:'IBM Plex Mono',monospace;font-size:12.5px;background:var(--paper)}
+.canvas svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.lbl{font-size:12px;fill:#5B6776;font-family:'IBM Plex Sans',sans-serif}
+"""
 
 
-def _font(size: int):
-    for name in ("segoeui.ttf", "arial.ttf", "DejaVuSans.ttf"):
-        try:
-            return ImageFont.truetype(name, size)
-        except OSError:
-            continue
-    return ImageFont.load_default()
+def _box(i, cls, style):
+    head, lines = BOXES[i]
+    items = "".join(f"<li>{html.escape(l)}</li>" for l in lines)
+    return f'<div class="box {cls}" style="{style}"><h2>{html.escape(head)}</h2><ul>{items}</ul></div>'
+
+
+def _graph_box():
+    head, lines = BOXES[1]
+    items = "".join(f"<li>{html.escape(l)}</li>" for l in lines)
+    canvas = """
+<div class="canvas">
+  <svg viewBox="0 0 580 190" preserveAspectRatio="none">
+    <defs><marker id="m" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#14213D"/></marker>
+      <marker id="g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#1B6B45"/></marker></defs>
+    <path d="M44,95 L44,40 L108,40" stroke="#14213D" stroke-width="1.5" fill="none" marker-end="url(#m)"/>
+    <path d="M44,95 L44,150 L108,150" stroke="#14213D" stroke-width="1.5" fill="none" marker-end="url(#m)"/>
+    <path d="M262,40 L330,40 L330,95 L378,95" stroke="#14213D" stroke-width="1.5" fill="none" stroke-dasharray="5 4" marker-end="url(#m)"/>
+    <path d="M262,150 L330,150 L330,95" stroke="#14213D" stroke-width="1.5" fill="none" stroke-dasharray="5 4"/>
+    <path d="M186,62 L186,82" stroke="#1B6B45" stroke-width="1.2" fill="none" marker-end="url(#g)"/>
+    <path d="M186,128 L186,108" stroke="#1B6B45" stroke-width="1.2" fill="none" marker-end="url(#g)"/>
+    <text x="10" y="99" class="lbl">task</text>
+    <text x="268" y="24" class="lbl">only if they disagree</text>
+  </svg>
+  <div class="node" style="left:110px;top:18px">Preparer<small style="top:-20px">bookkeeper, blind</small></div>
+  <div class="node" style="left:110px;top:128px">Reviewer<small>auditor, blind</small></div>
+  <div class="node" style="left:380px;top:73px">Referee<small>cites the IRS text</small></div>
+  <div class="tool" style="left:130px;top:84px">line_guidance()</div>
+</div>"""
+    return (f'<div class="box graph" style="left:456px;top:118px;width:620px;height:350px">'
+            f'<h2>{html.escape(head)}</h2>{canvas}<ul>{items}</ul></div>')
+
+
+def _arrow(x1, y1, x2, y2, label, color="#14213D", lx=None, ly=None):
+    lx = lx if lx is not None else (x1 + x2) / 2 + 8
+    ly = ly if ly is not None else (y1 + y2) / 2 - 8
+    return (f'<path d="M{x1},{y1} L{x2},{y2}" stroke="{color}" stroke-width="2" fill="none" marker-end="url(#pm)"/>'
+            f'<text x="{lx}" y="{ly}" class="lbl">{html.escape(label)}</text>')
+
+
+def build_html() -> str:
+    b1 = "left:48px;top:118px;width:330px;height:210px"
+    b3 = "left:1166px;top:118px;width:386px;height:210px"
+    b4 = "left:456px;top:540px;width:620px;height:150px;"
+    b5 = "left:1166px;top:360px;width:386px;height:240px"
+    labels = {(a, b): l for a, b, l in ARROWS}
+    arrows = "".join([
+        _arrow(378, 222, 456, 222, labels[(1, 2)], lx=380, ly=210),
+        _arrow(1076, 222, 1166, 222, labels[(2, 3)], lx=1088, ly=210),
+        _arrow(1076, 420, 1166, 420, labels[(2, 5)], lx=1078, ly=408),
+        _arrow(766, 540, 766, 468, labels[(4, 2)], color="#8A4B00", lx=778, ly=510),
+    ])
+    return f"""<!doctype html><html><head><meta charset="utf-8"><style>{CSS}</style></head><body>
+<div class="page">
+  <h1>NinetyNinety <span>ledger in, drafted Form 990-EZ out. Built with Strands Agents on Amazon Bedrock.</span></h1>
+  <p class="sub">Two agents classify every bank row without seeing each other; a third rules only on disagreement; totals are arithmetic in Python, never model output.</p>
+  <svg style="position:absolute;left:0;top:0;width:1600px;height:760px">
+    <defs><marker id="pm" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#14213D"/></marker></defs>{arrows}</svg>
+  {_box(0, "", b1)}
+  {_graph_box()}
+  {_box(2, "", b3)}
+  {_box(3, "aws", b4)}
+  {_box(4, "", b5)}
+</div></body></html>"""
 
 
 def render(dest: Path) -> Path:
-    im = Image.new("RGB", (W, H), BG)
-    d = ImageDraw.Draw(im)
-    title, body, small = _font(34), _font(21), _font(16)
-    d.text((40, 28), "NinetyNinety: ledger -> Form 990-EZ draft, built with Strands Agents on Amazon Bedrock",
-           fill=INK, font=title)
-    d.text((40, 74), "Preparer and Reviewer never see each other; the Referee runs only on disagreement; "
-                     "totals are arithmetic, not model output.", fill="#52606d", font=small)
-
-    cols = [(40, 120, 480, 480), (560, 120, 1040, 480), (1120, 120, 1560, 480),
-            (40, 560, 760, 860), (840, 560, 1560, 860)]
-    for (x0, y0, x1, y1), (head, lines) in zip(cols, BOXES):
-        d.rounded_rectangle((x0, y0, x1, y1), radius=14, fill=BOX, outline=LINE, width=2)
-        d.rectangle((x0, y0, x0 + 8, y1), fill=ACCENT)
-        d.text((x0 + 24, y0 + 16), head, fill=INK, font=body)
-        y = y0 + 64
-        for line in lines:
-            d.text((x0 + 24, y), "- " + line, fill=INK, font=small)
-            y += 30
-
-    def head(x, y, dx, dy):
-        d.polygon([(x, y), (x - 14 * dx - 8 * dy, y - 14 * dy - 8 * dx),
-                   (x - 14 * dx + 8 * dy, y - 14 * dy + 8 * dx)], fill=LINE)
-
-    centres = {i + 1: ((x0 + x1) // 2, (y0 + y1) // 2, x0, y0, x1, y1)
-               for i, (x0, y0, x1, y1) in enumerate(cols)}
-    for a, b, label in ARROWS:
-        ax, ay, ax0, ay0, ax1, ay1 = centres[a]
-        bx, by, bx0, by0, bx1, by1 = centres[b]
-        if ay == by:  # side by side: right edge of a -> left edge of b
-            start, end, dx, dy = (ax1, ay - 60), (bx0, by - 60), 1, 0
-        elif ay < by:  # a above b: bottom of a -> top of b
-            x = ax1 - 120 if a == 2 and b == 5 else ax
-            start, end, dx, dy = (x, ay1), (x, by0), 0, 1
-        else:  # a below b: top of a -> bottom of b
-            x = bx0 + 120 if b == 2 else ax
-            start, end, dx, dy = (x, ay0), (x, by1), 0, -1
-        d.line([start, end], fill=LINE, width=4)
-        head(end[0], end[1], dx, dy)
-        if label:
-            d.text((start[0] + 12, (start[1] + end[1]) // 2 - 10), label, fill="#52606d", font=small)
-
+    from playwright.sync_api import sync_playwright
+    dest = Path(dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    im.save(dest)
+    html_path = dest.with_suffix(".html")
+    html_path.write_text(build_html(), encoding="utf-8")
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": W, "height": H}, device_scale_factor=2)
+        page.goto(html_path.resolve().as_uri())
+        page.wait_for_timeout(1200)  # web fonts
+        page.screenshot(path=str(dest), clip={"x": 0, "y": 0, "width": W, "height": H})
+        browser.close()
     return dest
 
 

@@ -16,12 +16,12 @@ BOXES = [
       "date, description, amount; whole dollars, +in / -out"]),
     ("2  Strands Agents graph (per batch of 12 rows)",
      ["GraphBuilder: preparer + reviewer as blind parallel entry nodes",
-      "Each node: model -> line_guidance tool -> structured output",
-      "Conditional edge to referee, only when their lines differ",
-      "Python check: the quoted rule must be in the IRS text"]),
+      "Loop per node: model -> tools -> reasoning -> response",
+      "Tool = line_guidance; response = pydantic structured output",
+      "Conditional edge to referee only when their lines differ"]),
     ("3  Tools & integrations",
      ["@tool line_guidance: IRS 990-EZ Part I instruction text",
-      "pydantic schemas BatchCalls / Verdicts for structured output",
+      "pydantic BatchCalls / Verdicts = structured output",
       "IRS e-file XML corpus: 3,687 real returns check formmath"]),
     ("4  AWS services",
      ["Amazon Bedrock: Claude via Strands BedrockModel (one provider)",
@@ -33,6 +33,10 @@ BOXES = [
       "Disagreements, low confidence, unclassified rows all shown",
       "Filled IRS f990ez.pdf, DRAFT notice on every page"]),
 ]
+
+
+# (from box, to box, label). Output comes from the graph; Bedrock serves the graph.
+ARROWS = [(1, 2, ""), (2, 3, ""), (4, 2, "Bedrock serves every node"), (2, 5, "graph output")]
 
 
 def _font(size: int):
@@ -64,19 +68,27 @@ def render(dest: Path) -> Path:
             d.text((x0 + 24, y), "- " + line, fill=INK, font=small)
             y += 30
 
-    def arrow(a, b):
-        d.line([a, b], fill=LINE, width=4)
-        x, y = b
-        d.polygon([(x, y), (x - 14, y - 8), (x - 14, y + 8)], fill=LINE)
+    def head(x, y, dx, dy):
+        d.polygon([(x, y), (x - 14 * dx - 8 * dy, y - 14 * dy - 8 * dx),
+                   (x - 14 * dx + 8 * dy, y - 14 * dy + 8 * dx)], fill=LINE)
 
-    arrow((480, 300), (560, 300))
-    arrow((1040, 300), (1120, 300))
-    d.line([(800, 480), (800, 560)], fill=LINE, width=4)
-    d.polygon([(800, 560), (792, 546), (808, 546)], fill=LINE)
-    d.line([(1340, 480), (1340, 560)], fill=LINE, width=4)
-    d.polygon([(1340, 560), (1332, 546), (1348, 546)], fill=LINE)
-    d.text((820, 505), "Bedrock hosts the model behind every node", fill="#52606d", font=small)
-    d.text((1180, 505), "Output of the graph", fill="#52606d", font=small)
+    centres = {i + 1: ((x0 + x1) // 2, (y0 + y1) // 2, x0, y0, x1, y1)
+               for i, (x0, y0, x1, y1) in enumerate(cols)}
+    for a, b, label in ARROWS:
+        ax, ay, ax0, ay0, ax1, ay1 = centres[a]
+        bx, by, bx0, by0, bx1, by1 = centres[b]
+        if ay == by:  # side by side: right edge of a -> left edge of b
+            start, end, dx, dy = (ax1, ay - 60), (bx0, by - 60), 1, 0
+        elif ay < by:  # a above b: bottom of a -> top of b
+            x = ax1 - 120 if a == 2 and b == 5 else ax
+            start, end, dx, dy = (x, ay1), (x, by0), 0, 1
+        else:  # a below b: top of a -> bottom of b
+            x = bx0 + 120 if b == 2 else ax
+            start, end, dx, dy = (x, ay0), (x, by1), 0, -1
+        d.line([start, end], fill=LINE, width=4)
+        head(end[0], end[1], dx, dy)
+        if label:
+            d.text((start[0] + 12, (start[1] + end[1]) // 2 - 10), label, fill="#52606d", font=small)
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     im.save(dest)

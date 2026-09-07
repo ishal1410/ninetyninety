@@ -45,3 +45,25 @@ def test_load_ledger_reports_skipped_rows_when_asked(tmp_path):
     assert load_ledger(path, skipped) == []
     assert skipped == [{"source_row": 2, "description": "BAD AMOUNT",
                         "amount_raw": "abc"}]
+
+
+def test_parse_amount_rejects_infinity_as_unreadable():
+    import pytest
+    for raw in ("inf", "-Infinity", "nan"):
+        with pytest.raises(ValueError):
+            parse_amount(raw)
+
+
+def test_load_ledger_accepts_capitalised_and_padded_headers(tmp_path):
+    path = tmp_path / "led.csv"
+    path.write_text("Date, Description ,AMOUNT\n2025-01-01,DONATION,100\n", encoding="utf-8")
+    rows = load_ledger(path)
+    assert [(r.description, r.amount) for r in rows] == [("DONATION", 100)]
+
+
+def test_load_ledger_refuses_a_file_without_the_required_columns(tmp_path):
+    import pytest
+    path = tmp_path / "led.csv"
+    path.write_text("posted,memo,value\n2025-01-01,DONATION,100\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="description, amount"):
+        load_ledger(path)

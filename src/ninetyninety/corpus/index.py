@@ -5,6 +5,7 @@ Measured 2026-09-06: the 2026 index holds 385,890 returns of which 121,299 are
 exact filename, and a batch's filename is its XML_BATCH_ID plus '.zip'.
 """
 import csv
+import os
 from pathlib import Path
 
 import requests
@@ -25,9 +26,13 @@ def _download(url: str, dest: Path) -> Path:
         return dest
     response = requests.get(url, timeout=TIMEOUT, stream=True)
     response.raise_for_status()
-    with open(dest, "wb") as handle:
+    # Stream to a sidecar and rename only once complete, so an interrupted
+    # 70MB download is never mistaken for a finished one by the size check.
+    partial = dest.with_name(dest.name + ".part")
+    with open(partial, "wb") as handle:
         for chunk in response.iter_content(chunk_size=1 << 20):
             handle.write(chunk)
+    os.replace(partial, dest)
     return dest
 
 

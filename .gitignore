@@ -8,3 +8,4 @@ venv/
 .venv/
 .venv_diag/
 .superpowers/
+.bug-hunter/

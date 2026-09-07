@@ -41,3 +41,22 @@ def test_batch_url_appends_zip_to_the_batch_id():
     url = batch_url("2026_TEOS_XML_01A")
     assert url == ("https://apps.irs.gov/pub/epostcard/990/xml/2026/"
                    "2026_TEOS_XML_01A.zip")
+
+
+def test_download_leaves_no_file_behind_when_the_stream_breaks(tmp_path, monkeypatch):
+    import pytest
+    from ninetyninety.corpus import index
+
+    class Broken:
+        def raise_for_status(self):
+            pass
+
+        def iter_content(self, chunk_size):
+            yield b"half"
+            raise ConnectionError("dropped")
+
+    monkeypatch.setattr(index.requests, "get", lambda *a, **k: Broken())
+    dest = tmp_path / "batch.zip"
+    with pytest.raises(ConnectionError):
+        index._download("http://x", dest)
+    assert not dest.exists()  # a later run must re-download, not reuse a stub

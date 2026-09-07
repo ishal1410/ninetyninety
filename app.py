@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 import streamlit as st
 
 from ninetyninety.ledger import load_ledger
-from ninetyninety.lines import line_by_number
+from ninetyninety.lines import form_order, line_by_number
 from ninetyninety.pdffill import download_form, fill_form
 from ninetyninety.prepare import prepare_ledger
 
@@ -62,9 +62,11 @@ if st.button("Draft the 990-EZ", type="primary"):
         path.write_bytes(uploaded.getvalue())
 
     skipped: list[dict] = []
-    transactions = load_ledger(path, skipped)
-    st.write(f"Loaded **{len(transactions)}** transactions"
-             + (f", skipped **{len(skipped)}** with unreadable amounts." if skipped else "."))
+    try:
+        transactions = load_ledger(path, skipped)
+    except ValueError as error:
+        st.error(f"Could not read the ledger: {error}")
+        st.stop()
     bar = st.progress(0.0, text="Preparer and Reviewer running in parallel through the Strands graph...")
     try:
         form = prepare_ledger(
@@ -75,11 +77,27 @@ if st.button("Draft the 990-EZ", type="primary"):
         st.error(f"Could not complete the draft: {error}")
         st.stop()
     bar.empty()
+    pdf_bytes, pdf_error = None, None
+    try:
+        pdf = fill_form(form, download_form(base / "data" / "f990ez.pdf"),
+                        workdir / "draft.pdf", org_name, ein)
+        pdf_bytes = pdf.read_bytes()
+    except Exception as error:  # noqa: BLE001
+        pdf_error = str(error)
+    # Kept across reruns: the download button reruns the script and st.button
+    # is False on that rerun, so without this the whole draft would vanish.
+    st.session_state["draft"] = {"form": form, "skipped": skipped, "loaded": len(transactions),
+                                 "pdf": pdf_bytes, "pdf_error": pdf_error}
 
+draft = st.session_state.get("draft")
+if draft:
+    form, skipped = draft["form"], draft["skipped"]
+    st.write(f"Loaded **{draft['loaded']}** transactions"
+             + (f", skipped **{len(skipped)}** with unreadable amounts." if skipped else "."))
     left, right = st.columns([3, 2])
     with left:
         st.markdown("#### Form 990-EZ Part I")
-        for number in sorted(form.lines, key=lambda n: (len(n), n)):
+        for number in sorted(form.lines, key=form_order):
             result = form.lines[number]
             with st.expander(f"Line {number} · {line_by_number(number).label} · "
                              f"${result.amount:,}"):
@@ -93,14 +111,12 @@ if st.button("Draft the 990-EZ", type="primary"):
         st.caption("Totals are computed in Python from the classified lines. "
                    "The model never does arithmetic.")
 
-        try:
-            pdf = fill_form(form, download_form(base / "data" / "f990ez.pdf"),
-                            workdir / "draft.pdf", org_name, ein)
+        if draft["pdf"] is not None:
             st.download_button("Download the drafted IRS Form 990-EZ (PDF, marked DRAFT)",
-                               pdf.read_bytes(), file_name="990-EZ-DRAFT.pdf",
+                               draft["pdf"], file_name="990-EZ-DRAFT.pdf",
                                mime="application/pdf")
-        except Exception as error:  # noqa: BLE001
-            st.info(f"PDF not produced: {error}")
+        else:
+            st.info(f"PDF not produced: {draft['pdf_error']}")
 
     with right:
         st.markdown(f"#### Agent disagreements ({len(form.disagreements)})")

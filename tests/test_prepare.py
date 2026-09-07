@@ -185,3 +185,28 @@ def test_prepare_ledger_marks_a_batch_unclassified_when_every_provider_fails(mon
     form = prepare_ledger([tx(2, "X", 5)], providers=["a", "b"])
     assert form.unclassified[0]["source_row"] == 2
     assert "exhausted" in form.unclassified[0]["error"]
+
+
+def test_prepare_ledger_fails_over_on_a_non_transient_provider_error(monkeypatch):
+    """A 404 model id or a malformed answer must not discard finished batches."""
+    import ninetyninety.prepare as prepare
+    rows = [tx(2, "A", 10), tx(3, "B", 10)]
+    good = _Result(BatchCalls(calls=[call(2, "1"), call(3, "1")]),
+                   BatchCalls(calls=[call(2, "1"), call(3, "1")]))
+    made = []
+    monkeypatch.setattr(prepare, "ReviewGraph",
+                        _fake_graph_factory([ValueError("404 model not found"), good], made))
+    monkeypatch.setattr(prepare, "build_model", lambda provider: provider)
+    form = prepare_ledger(rows, providers=["dead", "alive"])
+    assert made == ["dead", "alive"]
+    assert form.totals["line9"] == 20
+    assert form.unclassified == []
+    assert form.trace[0]["provider"] == "alive"
+
+
+def test_referee_may_only_pick_one_of_the_two_disputed_lines():
+    verdict = Verdict(row=2, line="8", reason="neither")
+    form = assemble([(tx(2, "GALA SPONSOR", 500), call(2, "1"), call(2, "6d"))], {2: verdict})
+    assert form.disagreements[0]["referee"] is None
+    assert form.disagreements[0]["used"] == "1"
+    assert "8" not in form.lines

@@ -73,7 +73,8 @@ def assemble(rows: list[tuple[Transaction, RowCall | None, RowCall | None]],
         disputed = reviewer is not None and reviewer.line != preparer.line
         if disputed:
             verdict = verdicts.get(row)
-            if verdict is not None and verdict.line in ALL_LINE_NUMBERS:
+            # The Referee may only pick one of the two disputed lines.
+            if verdict is not None and verdict.line in (preparer.line, reviewer.line):
                 chosen, rule, why = verdict.line, verdict.reason, "referee's verdict"
             else:
                 verdict = None
@@ -198,6 +199,10 @@ def prepare_ledger(transactions: list[Transaction], model=None, progress=None,
                 break
             except ProviderExhausted as exhausted:
                 error = f"{provider} exhausted: {exhausted}"
+                active += 1
+            except Exception as failure:  # noqa: BLE001 - a 404 model id or a
+                # malformed structured answer must not discard finished batches
+                error = f"{provider} failed: {type(failure).__name__}: {str(failure)[:200]}"
                 active += 1
         if result is None:
             for tx in batch:

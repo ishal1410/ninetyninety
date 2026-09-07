@@ -93,6 +93,14 @@ ALL_LINE_NUMBERS: set[str] = {
 
 _BY_NUMBER = {line.number: line for line in REVENUE_LINES + EXPENSE_LINES}
 
+# Part I order as printed on the form; "5c" sorts before "10" here, unlike str.
+LINE_ORDER: list[str] = [line.number for line in REVENUE_LINES + EXPENSE_LINES]
+
+
+def form_order(number: str) -> int:
+    """Sort key placing line numbers in Form 990-EZ Part I order."""
+    return LINE_ORDER.index(number)
+
 
 def line_by_number(number: str) -> Line:
     return _BY_NUMBER[number]

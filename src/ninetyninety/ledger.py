@@ -25,6 +25,8 @@ def parse_amount(raw: str) -> int:
     if parenthesised:
         text = text[1:-1]
     value = float(text)
+    if value != value or value in (float("inf"), float("-inf")):
+        raise ValueError(f"not a finite amount: {raw!r}")
     rounded = int(value + 0.5) if value >= 0 else -int(-value + 0.5)
     return -rounded if parenthesised else rounded
 
@@ -34,7 +36,17 @@ def load_ledger(path: Path, skipped: list[dict] | None = None) -> list[Transacti
     appended to `skipped` (if given) so they can be shown to the user."""
     transactions: list[Transaction] = []
     with open(Path(path), newline="", encoding="utf-8-sig") as handle:
-        for row_number, row in enumerate(csv.DictReader(handle), start=2):
+        reader = csv.DictReader(handle)
+        # Bank exports capitalise headers ("Date,Description,Amount"): match
+        # case- and space-insensitively, and refuse a file with no such columns
+        # rather than silently drafting an empty form.
+        columns = {(name or "").strip().lower(): name for name in reader.fieldnames or []}
+        missing = [c for c in ("description", "amount") if c not in columns]
+        if missing:
+            raise ValueError(f"CSV is missing column(s) {', '.join(missing)}; "
+                             f"expected headers: date, description, amount")
+        for row_number, raw in enumerate(reader, start=2):
+            row = {key: raw.get(name) for key, name in columns.items()}
             description = (row.get("description") or "").strip()
             if not description:
                 continue

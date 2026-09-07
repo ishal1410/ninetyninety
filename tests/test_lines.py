@@ -27,3 +27,9 @@ def test_every_line_carries_guidance_for_the_agents():
 
 def test_all_line_numbers_is_the_union():
     assert ALL_LINE_NUMBERS == {line.number for line in REVENUE_LINES + EXPENSE_LINES}
+
+
+def test_form_order_keeps_5c_6d_7c_before_the_expense_lines():
+    from ninetyninety.lines import form_order
+    numbers = ["16", "5c", "1", "10", "6d", "8", "7c"]
+    assert sorted(numbers, key=form_order) == ["1", "5c", "6d", "7c", "8", "10", "16"]

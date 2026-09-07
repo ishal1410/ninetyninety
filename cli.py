@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from ninetyninety.ledger import load_ledger
-from ninetyninety.lines import line_by_number
+from ninetyninety.lines import form_order, line_by_number
 from ninetyninety.prepare import prepare_ledger
 
 
@@ -15,14 +15,18 @@ def main(argv: list[str]) -> int:
         print(__doc__)
         return 1
     skipped: list[dict] = []
-    transactions = load_ledger(Path(argv[1]), skipped)
+    try:
+        transactions = load_ledger(Path(argv[1]), skipped)
+    except ValueError as error:
+        print(f"Could not read the ledger: {error}")
+        return 1
     note = f", skipped {len(skipped)} with unreadable amounts" if skipped else ""
     print(f"Loaded {len(transactions)} transactions{note}. Classifying through the Strands graph...")
     form = prepare_ledger(
         transactions, progress=lambda done, total: print(f"  batch {done}/{total} done"))
 
     print("\nFORM 990-EZ PART I (DRAFT -- NOT A FILING)")
-    for number in sorted(form.lines, key=lambda n: (len(n), n)):
+    for number in sorted(form.lines, key=form_order):
         result = form.lines[number]
         print(f"  Line {number:<4} {line_by_number(number).label[:44]:<46}"
               f"{result.amount:>10,}  ({len(result.transactions)} txns)")

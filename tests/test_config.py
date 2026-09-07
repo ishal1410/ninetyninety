@@ -17,6 +17,7 @@ def test_select_provider_none_when_unconfigured():
 
 
 def test_build_model_raises_with_setup_instructions(monkeypatch):
+    monkeypatch.delenv("AWS_ACCESS_KEY_ID", raising=False)
     monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     with pytest.raises(RuntimeError, match="aistudio.google.com"):

@@ -1,4 +1,4 @@
-"""Opt-in live smoke test: NN_LIVE=1 and a configured provider key.
+"""Opt-in live smoke test: NN_LIVE=1 and AWS credentials.
 
 Sends one 4-row batch through the real Strands graph (two blind entry
 agents, the line_guidance tool, structured output, conditional referee).
@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 load_dotenv()
 pytestmark = pytest.mark.skipif(
     os.environ.get("NN_LIVE") != "1"
-    or not (os.environ.get("GOOGLE_API_KEY") or os.environ.get("OPENROUTER_API_KEY")),
-    reason="set NN_LIVE=1 and a provider key")
+    or not os.environ.get("AWS_ACCESS_KEY_ID"),
+    reason="set NN_LIVE=1 and AWS credentials for Bedrock")
 
 
 def test_one_batch_through_the_real_graph():

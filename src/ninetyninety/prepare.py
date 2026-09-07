@@ -3,7 +3,6 @@
 `assemble` is pure and deterministic. Totals come from formmath, never from a
 model. Disagreements are recorded with all three opinions; nothing is hidden.
 """
-import os
 import re
 import time
 from dataclasses import dataclass, field
@@ -12,7 +11,7 @@ from .agents import (
     TOOL_CALLS, BatchCalls, ReviewGraph, RowCall, Verdict, batch_task,
     rule_is_grounded,
 )
-from .config import build_model, providers_in_order
+from .config import build_model, provider_label
 from .formmath import excess_or_deficit, total_expenses, total_revenue
 from .ledger import Transaction
 from .lines import ALL_LINE_NUMBERS, line_by_number
@@ -175,60 +174,43 @@ def _calls_by_row(calls: BatchCalls | None) -> dict[int, RowCall]:
 
 
 def prepare_ledger(transactions: list[Transaction], model=None, progress=None,
-                   batch_size: int = 12, providers: list[str] | None = None) -> Form990EZ:
-    """Classify the ledger batch by batch through the Strands graph.
-
-    `model` pins one provider; otherwise providers are tried in
-    `providers_in_order` order, failing over when one is rate-limited out.
+                   batch_size: int = 12) -> Form990EZ:
+    """Classify the ledger batch by batch through the Strands graph on
+    Amazon Bedrock. `model` overrides the configured BedrockModel (tests).
     `progress(done, total)` is called after each batch if given.
-    """
-    if model is not None:
-        providers = ["given"]
-    else:
-        providers = list(providers if providers is not None else providers_in_order(os.environ))
-    if not providers:
-        raise RuntimeError("No model provider configured. Set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY for Bedrock, or get a free key at "
-                           "https://aistudio.google.com/apikey and set GOOGLE_API_KEY. "
-                           "See .env.example.")
-    graphs: dict[str, ReviewGraph] = {}
 
-    def graph_for(provider: str) -> ReviewGraph:
-        if provider not in graphs:
-            graphs[provider] = ReviewGraph(model if provider == "given" else build_model(provider))
-        return graphs[provider]
+    A batch that Bedrock cannot answer even after backoff is recorded as
+    unclassified with the error text; the run continues and nothing
+    already classified is lost.
+    """
+    model = model if model is not None else build_model()
+    provider = provider_label(model)
+    graph = ReviewGraph(model)
 
     rows: list[tuple[Transaction, RowCall | None, RowCall | None]] = []
     verdicts: dict[int, Verdict] = {}
     trace: list[dict] = []
     failed_rows: dict[int, str] = {}
     batches = [transactions[i:i + batch_size] for i in range(0, len(transactions), batch_size)]
-    active = 0
-    error = None  # the last provider failure; later batches inherit it
     for index, batch in enumerate(batches, start=1):
         task = batch_task(batch)
-        result, used = None, None
-        while active < len(providers):
-            provider = providers[active]
-            TOOL_CALLS["line_guidance"] = 0
-            started = time.time()
-            try:
-                result = run_graph(graph_for(provider), task)
-                used = provider
-                break
-            except ProviderExhausted as exhausted:
-                error = f"{provider} exhausted: {exhausted}"
-                active += 1
-            except Exception as failure:  # noqa: BLE001 - a 404 model id or a
-                # malformed structured answer must not discard finished batches
-                error = f"{provider} failed: {type(failure).__name__}: {str(failure)[:200]}"
-                active += 1
+        TOOL_CALLS["line_guidance"] = 0
+        started = time.time()
+        result, error = None, None
+        try:
+            result = run_graph(graph, task)
+        except ProviderExhausted as exhausted:
+            error = f"{provider} exhausted: {exhausted}"
+        except Exception as failure:  # noqa: BLE001 - a malformed structured
+            # answer must not discard the batches already classified
+            error = f"{provider} failed: {type(failure).__name__}: {str(failure)[:200]}"
         if result is None:
             for tx in batch:
                 rows.append((tx, None, None))
-                failed_rows[tx.source_row] = error or "no provider"
-            trace.append({"batch": index, "rows": len(batch), "provider": None, "error": error})
+                failed_rows[tx.source_row] = error
+            trace.append({"batch": index, "rows": len(batch), "provider": provider,
+                          "error": error, "seconds": round(time.time() - started, 1)})
         else:
-            graph = graph_for(used)
             prep = _calls_by_row(graph.calls(result, "preparer"))
             rev = _calls_by_row(graph.calls(result, "reviewer"))
             batch_verdicts = graph.verdicts(result)
@@ -238,7 +220,7 @@ def prepare_ledger(transactions: list[Transaction], model=None, progress=None,
                 rows.append((tx, prep.get(tx.source_row), rev.get(tx.source_row)))
             order = [node.node_id for node in result.execution_order]
             trace.append({
-                "batch": index, "rows": len(batch), "provider": used,
+                "batch": index, "rows": len(batch), "provider": provider,
                 "nodes": order, "referee_ran": "referee" in order,
                 "tool_calls": TOOL_CALLS["line_guidance"],
                 "node_ms": {n: getattr(result.results[n], "execution_time", None) for n in order},

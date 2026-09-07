@@ -134,10 +134,17 @@ class _Result:
         self.results = {n: _NodeResult() for n in ids}
 
 
+class _FakeModel:
+    config = {"model_id": "fake-model"}
+
+    def __str__(self):
+        return "fake"
+
+
 def _fake_graph_factory(outcomes, made):
     class FakeReviewGraph:
         def __init__(self, model):
-            made.append(model)
+            made.append(str(model))
 
         def run(self, task):
             out = outcomes.pop(0)
@@ -155,7 +162,7 @@ def _fake_graph_factory(outcomes, made):
     return FakeReviewGraph
 
 
-def test_prepare_ledger_batches_and_fails_over_to_next_provider(monkeypatch):
+def test_prepare_ledger_batches_through_one_bedrock_graph(monkeypatch):
     import ninetyninety.prepare as prepare
     rows = [tx(i, f"ROW {i}", 10) for i in range(2, 8)]  # 6 rows, batch 4 -> 2 batches
     first = _Result(BatchCalls(calls=[call(i, "1") for i in range(2, 6)]),
@@ -164,44 +171,35 @@ def test_prepare_ledger_batches_and_fails_over_to_next_provider(monkeypatch):
                      BatchCalls(calls=[call(6, "1"), call(7, "1")]),
                      Verdicts(verdicts=[Verdict(row=7, line="2", reason="fees")]))
     made = []
-    # provider gemini: batch 1 ok, batch 2 exhausted; provider openrouter: batch 2 ok
-    monkeypatch.setattr(prepare, "ReviewGraph",
-                        _fake_graph_factory([first, ProviderExhausted("gemini"), second], made))
-    monkeypatch.setattr(prepare, "build_model", lambda provider: provider)
-    form = prepare_ledger(rows, batch_size=4, providers=["gemini", "openrouter"])
-    assert made == ["gemini", "openrouter"]
+    monkeypatch.setattr(prepare, "ReviewGraph", _fake_graph_factory([first, second], made))
+    form = prepare_ledger(rows, model=_FakeModel(), batch_size=4)
+    assert made == ["fake"]  # one graph, reused for every batch
     assert form.totals["line9"] == 60
     assert form.disagreements[0]["referee"] == "2"
-    assert [t["provider"] for t in form.trace] == ["gemini", "openrouter"]
+    assert [t["provider"] for t in form.trace] == ["bedrock:fake-model"] * 2
     assert form.trace[1]["referee_ran"] is True
 
 
-def test_prepare_ledger_marks_a_batch_unclassified_when_every_provider_fails(monkeypatch):
+def test_an_exhausted_batch_is_unclassified_with_the_error_and_the_run_continues(monkeypatch):
     import ninetyninety.prepare as prepare
-    made = []
-    monkeypatch.setattr(prepare, "ReviewGraph", _fake_graph_factory(
-        [ProviderExhausted("a"), ProviderExhausted("b")], made))
-    monkeypatch.setattr(prepare, "build_model", lambda provider: provider)
-    form = prepare_ledger([tx(2, "X", 5)], providers=["a", "b"])
-    assert form.unclassified[0]["source_row"] == 2
-    assert "exhausted" in form.unclassified[0]["error"]
-
-
-def test_prepare_ledger_fails_over_on_a_non_transient_provider_error(monkeypatch):
-    """A 404 model id or a malformed answer must not discard finished batches."""
-    import ninetyninety.prepare as prepare
-    rows = [tx(2, "A", 10), tx(3, "B", 10)]
-    good = _Result(BatchCalls(calls=[call(2, "1"), call(3, "1")]),
-                   BatchCalls(calls=[call(2, "1"), call(3, "1")]))
-    made = []
+    good = _Result(BatchCalls(calls=[call(3, "1")]), BatchCalls(calls=[call(3, "1")]))
     monkeypatch.setattr(prepare, "ReviewGraph",
-                        _fake_graph_factory([ValueError("404 model not found"), good], made))
-    monkeypatch.setattr(prepare, "build_model", lambda provider: provider)
-    form = prepare_ledger(rows, providers=["dead", "alive"])
-    assert made == ["dead", "alive"]
-    assert form.totals["line9"] == 20
-    assert form.unclassified == []
-    assert form.trace[0]["provider"] == "alive"
+                        _fake_graph_factory([ProviderExhausted("throttled"), good], []))
+    form = prepare_ledger([tx(2, "X", 5), tx(3, "Y", 7)], model=_FakeModel(), batch_size=1)
+    assert form.unclassified[0]["source_row"] == 2
+    assert form.unclassified[0]["error"] == "bedrock:fake-model exhausted: throttled"
+    assert form.trace[0]["error"] and "seconds" in form.trace[0]
+    assert form.totals["line9"] == 7  # batch 2 still classified
+
+
+def test_a_non_transient_error_does_not_discard_finished_batches(monkeypatch):
+    import ninetyninety.prepare as prepare
+    good = _Result(BatchCalls(calls=[call(2, "1")]), BatchCalls(calls=[call(2, "1")]))
+    monkeypatch.setattr(prepare, "ReviewGraph",
+                        _fake_graph_factory([good, ValueError("malformed answer")], []))
+    form = prepare_ledger([tx(2, "A", 10), tx(3, "B", 10)], model=_FakeModel(), batch_size=1)
+    assert form.totals["line9"] == 10
+    assert form.unclassified[0]["error"].startswith("bedrock:fake-model failed: ValueError")
 
 
 def test_referee_may_only_pick_one_of_the_two_disputed_lines():
@@ -243,11 +241,12 @@ def test_is_transient_recognises_throttling_exception_classes():
     assert _is_transient(ModelThrottledException("An error occurred (ThrottlingException)"))
 
 
-def test_batches_after_total_exhaustion_carry_the_last_error(monkeypatch):
+def test_every_batch_failing_reports_each_error(monkeypatch):
     import ninetyninety.prepare as prepare
-    made = []
-    monkeypatch.setattr(prepare, "ReviewGraph", _fake_graph_factory([ProviderExhausted("quota")], made))
-    monkeypatch.setattr(prepare, "build_model", lambda provider: provider)
-    form = prepare_ledger([tx(2, "A", 1), tx(3, "B", 1)], batch_size=1, providers=["only"])
-    assert [t["error"] for t in form.trace] == ["only exhausted: quota"] * 2
-    assert form.unclassified[1]["error"] == "only exhausted: quota"
+    monkeypatch.setattr(prepare, "ReviewGraph", _fake_graph_factory(
+        [ProviderExhausted("quota"), ProviderExhausted("quota")], []))
+    form = prepare_ledger([tx(2, "A", 1), tx(3, "B", 1)], model=_FakeModel(), batch_size=1)
+    assert [t["error"] for t in form.trace] == ["bedrock:fake-model exhausted: quota"] * 2
+    assert form.unclassified[1]["error"] == "bedrock:fake-model exhausted: quota"
+
+

@@ -48,9 +48,9 @@ Web UI: `streamlit run app.py`
 
 Tests: `PYTHONPATH=src python -m pytest`
 
-## Model providers
+## Model: Amazon Bedrock
 
-Amazon Bedrock (Claude, Strands' native provider) first when AWS keys are present; Gemini Flash free tier as failover, rotating model ids because the free cap is per model per day; OpenRouter last. All configured in `src/ninetyninety/config.py`, keys in `.env` (see `.env.example`). On a 429, a 5xx or a throttling exception the run sleeps for the delay the provider advertises and retries; after three attempts, or on any other provider error, the whole batch fails over to the next provider. The hosted demo runs on a Free-plan AWS account's signup credit.
+One provider: Amazon Bedrock through Strands' native `BedrockModel` (`src/ninetyninety/config.py`), Claude via the SDK's default cross-region inference profile, overridable with `BEDROCK_MODEL_ID`. Credentials are the standard AWS environment variables in `.env` (see `.env.example`). On a throttle or a 5xx the batch sleeps for the delay Bedrock advertises and retries; after three attempts, or on any other error, that batch is recorded as unclassified with the error text and the run continues, so nothing already classified is lost. The hosted demo runs on a Free-plan AWS account's signup credit.
 
 ## Live demo
 

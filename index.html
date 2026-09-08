@@ -3,20 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NinetyNinety drafts Form 990-EZ from a bank export</title>
-<meta name="description" content="Two Strands agents post each bank transaction to a Form 990-EZ Part I line and quote the IRS instruction. A Referee settles disputes. Python foots the totals.">
+<title>NinetyNinety: a Form 990-EZ draft from your bank export</title>
+<meta name="description" content="Upload the year's bank transactions and get a Form 990-EZ draft your board can review. Every Part I line is filled, explained, and tied to the IRS instruction behind it.">
 <meta name="color-scheme" content="dark">
 <link rel="canonical" href="https://ishal1410.github.io/ninetyninety/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ishal1410.github.io/ninetyninety/">
-<meta property="og:title" content="NinetyNinety: a bank export in, a drafted Form 990-EZ out">
-<meta property="og:description" content="Two Strands agents post each transaction to a Part I line and cite the IRS rule. A Referee settles disputes. Python foots the totals.">
+<meta property="og:title" content="NinetyNinety: a Form 990-EZ draft from your bank export">
+<meta property="og:description" content="Upload the year's bank transactions and get a Form 990-EZ draft your board can review. Every line explained and tied to the IRS instruction behind it.">
 <meta property="og:image" content="https://ishal1410.github.io/ninetyninety/assets/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="NinetyNinety: a bank export in, a drafted Form 990-EZ out">
-<meta name="twitter:description" content="Two Strands agents post each transaction to a Part I line and cite the IRS rule. A Referee settles disputes. Python foots the totals.">
+<meta name="twitter:title" content="NinetyNinety: a Form 990-EZ draft from your bank export">
+<meta name="twitter:description" content="Upload the year's bank transactions and get a Form 990-EZ draft your board can review. Every line explained and tied to the IRS instruction behind it.">
 <meta name="twitter:image" content="https://ishal1410.github.io/ninetyninety/assets/og.jpg">
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -179,6 +179,16 @@
   .verdict .q { color: var(--ink-2); font-size: .92rem; border-left: 2px solid var(--accent); padding-left: 14px; }
   .verdict .q .k { display: block; color: var(--ink-3); font-size: .74rem; margin-bottom: 4px; }
 
+  .steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+  .step { border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--panel); padding: 24px; display: flex; flex-direction: column; gap: 8px; }
+  .step .n { font-family: var(--mono); color: var(--accent); font-size: .8rem; }
+  .step p { color: var(--ink-2); font-size: .95rem; }
+  .nots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 1000px; }
+  .not { border-radius: var(--r-md); border: 1px solid var(--line); background: var(--panel); padding: 20px 22px; color: var(--ink-2); font-size: .95rem; }
+  .not b { color: var(--ink); font-weight: 600; display: block; margin-bottom: 4px; }
+  .not:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  @media (max-width: 960px) { .steps, .nots { grid-template-columns: minmax(0, 1fr); } }
+
   /* trace */
   .trace { border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--panel); overflow-x: auto; overflow-y: hidden; }
   .trace table { width: 100%; border-collapse: collapse; font-size: .92rem; min-width: 760px; }
@@ -239,27 +249,25 @@
 <div class="navwrap">
   <nav class="nav" aria-label="Primary">
     <a class="brand" href="#">NinetyNinety</a>
-    <a class="l" href="#proof">Proof</a>
     <a class="l" href="#how">How it works</a>
-    <a class="l" href="#part1">Part I</a>
-    <a class="l" href="https://github.com/ishal1410/ninetyninety">GitHub</a>
-    <a class="btn btn-primary btn-sm" id="cta-top" href="#run-it">Run it<span class="i"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13 13 3M5 3h8v8"/></svg></span></a>
+    <a class="l" href="#accuracy">Accuracy</a>
+    <a class="l" href="#start">Get started</a>
+    <a class="btn btn-primary btn-sm" id="cta-top" href="#start">Run it on your computer<span class="i"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13 13 3M5 3h8v8"/></svg></span></a>
   </nav>
 </div>
 
 <header class="wrap">
   <div class="hero">
     <div class="copy">
-      <span class="pill rv"><b>Strands Agents</b> built for the Agents for Humans hackathon</span>
-      <h1 class="rv d1">A bank export in. A drafted Form <span style="white-space:nowrap">990-EZ</span> out.</h1>
-      <p class="sub rv d2">Two agents that never see each other post every transaction to a line and cite the IRS rule. A Referee settles disputes.</p>
-      <div class="actions rv d3">
-        <a class="btn btn-primary" id="cta" href="#run-it">Run it locally<span class="i"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13 13 3M5 3h8v8"/></svg></span></a>
-        <a class="btn btn-ghost" href="https://github.com/ishal1410/ninetyninety">Read the code<span class="i"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13 13 3M5 3h8v8"/></svg></span></a>
+      <h1 class="rv">Your bank export becomes a Form <span style="white-space:nowrap">990-EZ</span> draft your board can review.</h1>
+      <p class="sub rv d1">Upload the year's transactions. Every Part I line is filled, explained, and tied to the IRS instruction that put it there. Rows a person should check are flagged.</p>
+      <div class="actions rv d2">
+        <a class="btn btn-primary" id="cta" href="#start">Run it on your computer<span class="i"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13 13 3M5 3h8v8"/></svg></span></a>
+        <a class="btn btn-ghost" href="#what">See what you get<span class="i"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13 13 3M5 3h8v8"/></svg></span></a>
       </div>
     </div>
     <div class="stage rv d2">
-      <div class="bezel"><div class="core"><img src="assets/draft-page1.jpg" width="1100" height="1290" alt="Page one of the drafted Form 990-EZ that NinetyNinety produced from the demo bank export, stamped DRAFT" fetchpriority="high"></div></div>
+      <div class="bezel"><div class="core"><img src="assets/draft-page1.jpg" width="1100" height="1290" alt="Page one of the drafted Form 990-EZ, filled from a bank export and stamped DRAFT, NOT A FILING" fetchpriority="high"></div></div>
       <div class="chip c1 rv d3"><span class="k">Line 1, contributions</span><span class="v" id="chip-1"></span></div>
       <div class="chip c2 rv d4"><span class="k">Line 6d, fundraising events</span><span class="v" id="chip-6d"></span></div>
       <div class="chip c3 rv d5"><span class="k">Line 9, total revenue</span><span class="v" id="chip-9"></span></div>
@@ -268,79 +276,65 @@
 </header>
 
 <main>
-<section id="proof">
+<section id="what">
   <div class="wrap">
-    <div class="head rv"><h2>Checked against real filed returns.</h2><p class="sub">The footing code ran over a batch of IRS e-file returns and compared its totals with what each filer reported.</p></div>
-    <div class="bento">
-      <div class="tile big rv">
-        <div><div class="n" id="p-rate"></div><p class="l" id="p-rate-l"></p></div>
-        <table><thead><tr><th>Line</th><th class="r">Checked</th><th class="r">Matched</th><th class="r">Rate</th></tr></thead><tbody id="p-rows"></tbody></table>
-        <p class="note" id="p-mis"></p>
-      </div>
-      <div class="tile img rv d1">
-        <div class="n" id="p-rows-n"></div><p class="l" id="p-rows-l"></p>
-        <figure><img src="assets/draft-partI.jpg" width="1000" height="710" alt="Part I of the drafted form with amounts filled" loading="lazy"></figure>
-      </div>
-      <div class="tile rv d2">
-        <div><div class="n" id="p-batch"></div><p class="l" id="p-batch-l"></p></div>
-        <div class="bars" id="bars" aria-hidden="true"></div>
-      </div>
-    </div>
+    <div class="head rv"><h2>What you get.</h2><p class="sub">The real IRS form, filled in and marked DRAFT on every page, and under it every Part I line with the transactions behind it. Open a line to see them and the IRS instruction each one follows.</p></div>
+    <div class="bezel rv"><div class="core part">
+      <div class="hd"><div>Line</div><div>Revenue, expenses, and changes in net assets</div><div class="r">Amount</div><div>How it was decided</div></div>
+      <div id="rows"></div>
+    </div></div>
+    <p class="sub rv" id="synthetic-note" hidden style="margin-top:14px;font-size:.9rem">Illustrative run: these figures come from a hand-assigned ledger, not a live run.</p>
   </div>
 </section>
 
 <section id="how">
   <div class="wrap">
-    <div class="head rv"><h2>One Strands graph per batch of twelve rows.</h2><p class="sub">Three agents, one tool, and a rule about arithmetic: the model never adds.</p></div>
-    <div class="pipe rv">
-      <svg class="wire" aria-hidden="true"><path id="wire-path" d=""/></svg>
-      <div class="nodes">
-        <div class="node" data-n="in"><span class="t">input</span><h3>Bank export, 54 rows</h3><p>Date, description, amount. Batches of twelve go into the graph.</p></div>
-        <div class="node pair">
-          <div class="node" data-n="prep"><span class="t">entry node, parallel</span><h3>Preparer</h3><p>Posts each row to a Part I line and quotes the IRS instruction through the line_guidance tool.</p></div>
-          <div class="node" data-n="rev"><span class="t">entry node, parallel, blind</span><h3>Reviewer</h3><p>Same job, never sees the Preparer. Agreement posts the row. Disagreement escalates.</p></div>
-        </div>
-        <div class="node ref" data-n="ref"><span class="t">conditional node</span><h3>Referee</h3><p>Runs only on a split. Reads both quoted rules, decides, and its reason is kept with the row.</p></div>
-        <div class="node py" data-n="py"><span class="t">python, no model</span><h3>Foot and fill</h3><p>Sums lines 9, 17, 18, checks every quoted rule against the IRS text, fills the PDF, stamps DRAFT.</p></div>
-      </div>
+    <div class="head rv"><h2>How it works.</h2><p class="sub">Three readers and a calculator. The readers sort. The calculator adds. The readers never add.</p></div>
+    <div class="steps">
+      <div class="step rv"><span class="n">1</span><h3>Upload the year's transactions</h3><p>A CSV from your bank with a date, a description, and an amount on each row. No categories needed.</p></div>
+      <div class="step rv d1"><span class="n">2</span><h3>Two readers sort every row</h3><p>The Preparer and the Reviewer each put every transaction on a Part I line, working separately, and each quotes the IRS instruction that supports the choice.</p></div>
+      <div class="step rv d2"><span class="n">3</span><h3>A Referee settles disagreements</h3><p>When the two readers differ, the Referee reads both instructions and decides. You see all three opinions. Nothing is settled silently.</p></div>
+      <div class="step rv d3"><span class="n">4</span><h3>You review and download</h3><p>Python adds the totals and checks every quoted instruction against the IRS text. Flagged rows wait for you. Then download the PDF, marked DRAFT.</p></div>
     </div>
   </div>
 </section>
 
-<section id="part1">
+<section id="disagree">
   <div class="wrap">
-    <div class="head rv"><h2>Every line, and who decided it.</h2><p class="sub">The same figures as the drafted page, with one column the form lacks. Open a line to read its transactions and the instruction each one quotes.</p></div>
-    <div class="bezel rv"><div class="core part">
-      <div class="hd"><div>Line</div><div>Revenue, expenses, and changes in net assets</div><div class="r">Amount</div><div>Decided by</div></div>
-      <div id="rows"></div>
-    </div></div>
-    <p class="sub rv" id="synthetic-note" hidden style="margin-top:14px;font-size:.9rem">Illustrative run: these figures come from a hand-assigned ledger, not a live model run.</p>
-  </div>
-</section>
-
-<section id="disputes">
-  <div class="wrap">
-    <div class="head rv"><h2 id="dis-h">Where the agents disagreed.</h2><p class="sub" id="dis-sub"></p></div>
+    <div class="head rv"><h2>When the readers disagree.</h2><p class="sub" id="dis-sub"></p></div>
     <div class="duo" id="duo"></div>
   </div>
 </section>
 
-<section id="trace">
+<section id="accuracy">
   <div class="wrap">
-    <div class="head rv"><h2>The trace, batch by batch.</h2><p class="sub">Which model answered, how long each node took, and whether the Referee was needed.</p></div>
-    <div class="trace rv scroll"><table><thead><tr><th>Batch</th><th>Rows</th><th>Model</th><th>Preparer</th><th>Reviewer</th><th>Referee</th><th>Tool calls</th><th>Wall</th></tr></thead><tbody id="trace-rows"></tbody></table></div>
+    <div class="head rv"><h2>Is the math right?</h2><p class="sub" id="acc-sub"></p></div>
+    <div class="tile rv" style="max-width:640px"><table><thead><tr><th>Line</th><th class="r">Returns checked</th><th class="r">Matched the filer</th><th class="r">Rate</th></tr></thead><tbody id="p-rows"></tbody></table><p class="note" id="p-mis"></p></div>
   </div>
 </section>
 
-<section id="run-it">
+<section id="not">
+  <div class="wrap">
+    <div class="head rv"><h2>What this is not.</h2></div>
+    <div class="nots">
+      <div class="not rv"><b>Not a filing.</b> The output is a draft. For tax year 2025 the IRS requires Form 990-EZ to be filed electronically, which needs an Authorized IRS e-File Provider. This project is not one.</div>
+      <div class="not rv d1"><b>Not signed.</b> An officer of the organisation must review and sign. The Paid Preparer block is left blank on purpose.</div>
+      <div class="not rv d2"><b>Not the whole form.</b> Only Part I is drafted. Parts II through VI and all Schedules are out of scope. The app does not pretend to fill them.</div>
+      <div class="not rv d3"><b>Not a verdict.</b> Classification is a model judgement. The two-reader design surfaces uncertainty; it does not eliminate it. Low-confidence and disputed rows are flagged for a human.</div>
+      <div class="not rv d4"><b>Not tested on your books.</b> The demo ledger is made up. The accuracy numbers above come from real IRS filings, never from that file.</div>
+    </div>
+  </div>
+</section>
+
+<section id="start">
   <div class="wrap">
     <div class="run">
-      <div class="head rv" style="margin:0"><h2>Run it in ten minutes.</h2><p class="sub" id="run-sub">Nothing is hosted. A free Gemini key and five commands print the same trace and write the same PDF.</p></div>
+      <div class="head rv" style="margin:0"><h2>Get started.</h2><p class="sub" id="run-sub">Runs on your own computer today with a free Google Gemini key. A hosted version is coming.</p><p class="sub rv d1" style="margin-top:14px;font-size:.95rem">Your transactions are sent to Google's Gemini API to be sorted. The blank IRS form is fetched once from irs.gov. Nothing else leaves your computer.</p></div>
       <div class="bezel rv d1"><div class="core"><pre><b>git clone</b> https://github.com/ishal1410/ninetyninety
 <b>cd</b> ninetyninety
 <b>pip install</b> -r requirements.txt
 <b>cp</b> .env.example .env    # free key: aistudio.google.com/apikey
-<b>PYTHONPATH=src python</b> cli.py fixtures/demo_ledger.csv</pre></div></div>
+<b>streamlit run</b> app.py</pre></div></div>
     </div>
   </div>
 </section>
@@ -350,8 +344,9 @@
   <div class="wrap">
     <span>NinetyNinety, MIT licensed.</span>
     <a href="https://github.com/ishal1410/ninetyninety">GitHub</a>
+    <a href="technical.html">How it is built</a>
     <a id="foot-app" href="#" hidden>Open the app</a>
-    <span>The form is an IRS PDF filled for officer review, never a filing.</span>
+    <span>Built with Strands Agents for the AWS Agents for Humans hackathon.</span>
   </div>
 </footer>
 
@@ -364,7 +359,7 @@
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const money = n => n == null ? '' : (n < 0 ? '(' + Math.abs(n).toLocaleString('en-US') + ')' : n.toLocaleString('en-US'));
-  const dis = run.disagreements || [], lines = run.lines || {}, totals = run.totals || {}, trace = run.trace || [], v = run.validation || {};
+  const dis = run.disagreements || [], lines = run.lines || {}, totals = run.totals || {}, v = run.validation || {};
   const disputed = new Set(dis.map(d => d.source_row));
   const lowConf = Object.fromEntries((run.low_confidence || []).map(l => [l.source_row, l.note || 'low confidence']));
   const txOn = n => (lines[n] && lines[n].transactions) || [];
@@ -373,29 +368,14 @@
 
   if (STREAMLIT_URL) {
     for (const id of ['cta', 'cta-top']) { const a = $(id); a.href = STREAMLIT_URL; a.firstChild.textContent = 'Draft a return'; }
-    $('run-sub').textContent = 'Or run the commands below on a free Gemini key.';
+    $('run-sub').textContent = 'Runs in the browser. Or on your own computer with the commands below.';
     const f = $('foot-app'); f.href = STREAMLIT_URL; f.hidden = false;
   }
 
-  // hero chips
-  $('chip-1').innerHTML = `${money(lines['1']?.amount)} <em>agreed on ${txOn('1').length}</em>`;
-  $('chip-6d').innerHTML = `${money(lines['6d']?.amount)} <em>Referee on ${refOn('6d')}</em>`;
-  $('chip-9').innerHTML = `${money(totals.line9)} <em>footed in Python</em>`;
+  $('chip-1').innerHTML = `${money(lines['1']?.amount)} <em>both readers agreed</em>`;
+  $('chip-6d').innerHTML = `${money(lines['6d']?.amount)} <em>${refOn('6d')} settled by the Referee</em>`;
+  $('chip-9').innerHTML = `${money(totals.line9)} <em>added by the calculator</em>`;
 
-  // proof bento
-  $('p-rate').innerHTML = v.rates?.line18 != null ? `${v.rates.line18.toFixed(2)}<small>%</small>` : '';
-  $('p-rate-l').textContent = v.returns ? `Line 18 agreement with what filers reported, across ${v.returns.toLocaleString()} IRS returns.` : 'Validation not run.';
-  $('p-rows').innerHTML = ['line9', 'line17', 'line18'].map(k => `<tr><td>Line ${k.slice(4)}</td><td class="r num">${(v.checked?.[k] ?? '').toLocaleString()}</td><td class="r num">${(v.matched?.[k] ?? '').toLocaleString()}</td><td class="r num">${v.rates?.[k] != null ? v.rates[k].toFixed(2) + '%' : ''}</td></tr>`).join('');
-  $('p-mis').textContent = v.mismatch_count != null ? `${v.mismatch_count} of ${(v.returns || 0).toLocaleString()} returns did not match. In each, the filer's reported total does not equal the sum of the filer's own line items, so the footing is right and the filing is off.` : '';
-  const tools = trace.reduce((s, b) => s + (b.tool_calls || 0), 0);
-  $('p-rows-n').innerHTML = `${rows} <small>rows</small>`;
-  $('p-rows-l').textContent = `${dis.length} dispute${dis.length === 1 ? '' : 's'} sent to the Referee, ${tools} tool calls, ${(run.unclassified || []).length} rows left unposted.`;
-  $('p-batch').innerHTML = `${trace.length} <small>batches</small>`;
-  $('p-batch-l').textContent = run.meta?.seconds ? `${Math.round(run.meta.seconds / 60)} minutes on the free Gemini tier. Bars are wall time per batch.` : 'Twelve rows per batch.';
-  const maxS = Math.max(1, ...trace.map(b => b.seconds || 0));
-  $('bars').innerHTML = trace.map(b => `<i style="height:${Math.max(12, Math.round((b.seconds || 0) / maxS * 100))}%"></i>`).join('');
-
-  // Part I
   const seq = [];
   for (const l of taxonomy) {
     seq.push({ n: l.number, label: l.label, amount: lines[l.number]?.amount ?? null });
@@ -405,11 +385,11 @@
   seq.push({ n: '18', label: 'Excess or (deficit) for the year', amount: totals.line18, total: true });
   $('rows').innerHTML = seq.map(r => {
     const txs = txOn(r.n), refs = refOn(r.n);
-    const who = r.total ? 'Python' : txs.length === 0 ? 'no rows' : refs ? `<span>Referee ${refs}</span>, agreed ${txs.length - refs}` : `Agreed ${txs.length}`;
+    const who = r.total ? 'Added by the calculator' : txs.length === 0 ? 'no transactions' : refs ? `<span>${refs} settled by the Referee</span>, ${txs.length - refs} agreed` : `Both readers agreed on ${txs.length}`;
     const cls = ['row', r.total ? 'total' : '', txs.length === 0 && !r.total ? 'empty' : ''].join(' ');
     const tag = r.total ? 'div' : 'button';
     const attrs = r.total ? '' : ` type="button" aria-expanded="false" aria-controls="tx-${r.n}"`;
-    const body = r.total ? '' : `<div class="tx" id="tx-${r.n}" hidden>${txs.length ? `<table>${txs.map(t => `<tr><td class="d">${esc(t.date)}</td><td>${esc(t.description)}</td><td class="a">${money(t.amount)}</td></tr><tr><td></td><td class="r" colspan="2">${disputed.has(t.source_row) ? '<b>Referee decided.</b> ' : ''}${lowConf[t.source_row] ? '<b>Flagged for review:</b> ' + esc(lowConf[t.source_row]) + '. ' : ''}${esc(t.rule || '')}</td></tr>`).join('')}</table>` : '<div class="none">No transactions were posted to this line in this run.</div>'}</div>`;
+    const body = r.total ? '' : `<div class="tx" id="tx-${r.n}" hidden>${txs.length ? `<table>${txs.map(t => `<tr><td class="d">${esc(t.date)}</td><td>${esc(t.description)}</td><td class="a">${money(t.amount)}</td></tr><tr><td></td><td class="r" colspan="2">${disputed.has(t.source_row) ? '<b>Settled by the Referee.</b> ' : ''}${lowConf[t.source_row] ? '<b>Flagged for you to check:</b> ' + esc(lowConf[t.source_row]) + '. ' : ''}${esc(t.rule || '')}</td></tr>`).join('')}</table>` : '<div class="none">No transactions went to this line this year.</div>'}</div>`;
     return `<${tag} class="${cls}"${attrs}><div class="ln">${esc(r.n)}</div><div class="desc"><span>${esc(r.label)}</span><span class="lead"></span></div><div class="amt">${money(r.amount)}</div><div class="who${refs ? ' ref' : ''}">${who}</div></${tag}>${body}`;
   }).join('');
   $('rows').addEventListener('click', e => {
@@ -420,36 +400,22 @@
   });
   $('synthetic-note').hidden = !run.meta?.synthetic;
 
-  // disputes
-  $('dis-sub').textContent = dis.length ? `${dis.length} of ${rows} rows split the Preparer and Reviewer. The Referee read both quoted rules and decided each one.` : 'The Preparer and Reviewer agreed on every row of this run.';
+  $('dis-sub').textContent = dis.length ? `${dis.length} of ${rows} transactions this year. The Preparer and the Reviewer put them on different lines, the Referee read both IRS instructions and chose. You see all three.` : 'The Preparer and the Reviewer agreed on every transaction this year.';
   $('duo').innerHTML = dis.map(d => `<article class="verdict rv">
     <div class="tx-name">${esc(d.description)}</div>
     <div class="grid3">
-      <div class="cell"><span class="k">Preparer</span><span class="v">Line ${esc(d.preparer)}</span></div>
-      <div class="cell"><span class="k">Reviewer</span><span class="v">Line ${esc(d.reviewer)}</span></div>
-      <div class="cell win"><span class="k">Referee</span><span class="v">Line ${esc(d.used || d.referee)}</span></div>
+      <div class="cell"><span class="k">Preparer said</span><span class="v">Line ${esc(d.preparer)}</span></div>
+      <div class="cell"><span class="k">Reviewer said</span><span class="v">Line ${esc(d.reviewer)}</span></div>
+      <div class="cell win"><span class="k">Referee chose</span><span class="v">Line ${esc(d.used || d.referee)}</span></div>
     </div>
     <p class="q"><span class="k">What the Referee cited</span>${esc(d.referee_reason || '')}</p>
-  </article>`).join('') || '<p class="sub">No disputes.</p>';
+  </article>`).join('') || '<p class="sub">No disagreements.</p>';
   if (dis.length === 1) $('duo').style.gridTemplateColumns = '1fr';
 
-  // trace
-  const s = x => x == null ? 'not run' : (x / 1000).toFixed(1) + 's';
-  $('trace-rows').innerHTML = trace.map(b => `<tr><td class="mono">${b.batch}</td><td class="mono">${b.rows}</td><td class="mono">${esc((b.provider || '').replace(/^gemini:/, ''))}</td><td class="mono">${s(b.node_ms?.preparer)}</td><td class="mono">${s(b.node_ms?.reviewer)}</td><td class="mono">${b.referee_ran ? `<span class="on">ran, ${s(b.node_ms?.referee)}</span>` : 'not needed'}</td><td class="mono">${b.tool_calls ?? ''}</td><td class="mono">${b.seconds != null ? Math.round(b.seconds) + 's' : ''}</td></tr>`).join('');
+  $('acc-sub').textContent = v.returns ? `The same code that adds up your form was run over ${v.returns.toLocaleString()} real Form 990-EZ returns filed with the IRS, rebuilding each return's totals from its own line items. It agreed with the filer ${v.rates?.line18?.toFixed(2)}% of the time on the bottom line.` : 'Validation not run.';
+  $('p-rows').innerHTML = ['line9', 'line17', 'line18'].map(k => `<tr><td>Line ${k.slice(4)}</td><td class="r num">${(v.checked?.[k] ?? '').toLocaleString()}</td><td class="r num">${(v.matched?.[k] ?? '').toLocaleString()}</td><td class="r num">${v.rates?.[k] != null ? v.rates[k].toFixed(2) + '%' : ''}</td></tr>`).join('');
+  $('p-mis').textContent = v.mismatch_count != null ? `The ${v.mismatch_count} that did not match are returns where the filer's own total does not add up from the filer's own line items.` : '';
 
-
-  // pipeline wires, measured from the real node boxes
-  function wires() {
-    const pipe = document.querySelector('.pipe'), path = $('wire-path');
-    if (!pipe || !path || window.matchMedia('(max-width: 960px)').matches) { if (path) path.setAttribute('d', ''); return; }
-    const box = pipe.getBoundingClientRect();
-    const r = n => { const b = pipe.querySelector(`[data-n="${n}"]`).getBoundingClientRect(); return { l: b.left - box.left, r: b.right - box.left, y: b.top - box.top + b.height / 2 }; };
-    const link = (a, b) => { const A = r(a), B = r(b), m = (A.r + B.l) / 2; return `M ${A.r} ${A.y} C ${m} ${A.y}, ${m} ${B.y}, ${B.l} ${B.y} `; };
-    path.setAttribute('d', link('in', 'prep') + link('in', 'rev') + link('prep', 'ref') + link('rev', 'ref') + link('ref', 'py'));
-  }
-  wires(); addEventListener('resize', wires); document.fonts?.ready.then(wires);
-
-  // reveal on scroll, one observer
   const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
   document.querySelectorAll('.rv').forEach(el => io.observe(el));
 </script>

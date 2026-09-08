@@ -11,7 +11,7 @@ PAGES = ["index.html", "technical.html"]
 
 
 def _put(html: str, tag_id: str, payload) -> str:
-    blob = json.dumps(payload, separators=(",", ":")).replace("</", "<\/")
+    blob = json.dumps(payload, separators=(",", ":")).replace("</", "<" + chr(92) + "/")
     new, n = re.subn(rf'(<script id="{tag_id}" type="application/json">).*?(</script>)',
                      lambda m: m.group(1) + blob + m.group(2), html, count=1, flags=re.S)
     assert n == 1, f"{tag_id} tag missing"

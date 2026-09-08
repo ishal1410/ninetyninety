@@ -28,3 +28,17 @@ def test_technical_page_holds_the_engineering_material():
     assert "tool calls" in text.lower()
     assert 'href="index.html"' in html
     assert not any(d in text for d in DASHES)
+
+
+def test_index_is_written_for_the_treasurer():
+    text, html, errors = render("index.html")
+    assert errors == []
+    assert "Your bank export becomes a Form 990-EZ draft" in text
+    assert "Run it on your computer" in text
+    assert "What this is not" in text
+    assert "sent to Google's Gemini API" in text
+    assert text.count("Agents for Humans") == 1
+    for banned in ("gemini-3.5", "tool calls", "twelve rows", "conditional node", "free Gemini tier"):
+        assert banned not in text, banned
+    assert 'href="technical.html"' in html
+    assert not any(d in text for d in DASHES)

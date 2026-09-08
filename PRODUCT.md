@@ -10,8 +10,7 @@ web
 Existing: Python + Streamlit (`app.py`) for the tool. Landing surface: static `index.html` (any CSS/JS), hosted on GitHub Pages, linking to the Streamlit app. Decided by the user 2026-09-08.
 
 ## Users
-Primary for this surface: the 12 named judges of the AWS "Agents for Humans" hackathon (deadline 2026-09-14). They score five criteria; criterion 1 is Strands Agents usage, strengthened by a live demo. They spend a few minutes per entry.
-Product users: volunteer treasurers of small US nonprofits (gross receipts under $200k) with a bank CSV export and no bookkeeper.
+Primary for the landing surface: volunteer treasurers of small US nonprofits (gross receipts under $200k) with a bank CSV export and no bookkeeper, and the officer who signs the return. Judges of the AWS "Agents for Humans" hackathon read the same page and score it on criteria 2, 3 and 5; the engineering material they need for criteria 1 and 4 lives on `technical.html`, the README and the architecture diagram.
 
 ## Product Purpose
 Turn a raw bank-transaction CSV into a drafted IRS Form 990-EZ where every Part I line cites the transactions behind it and the IRS rule that put them there. Success for judges: the Strands graph and the real filled IRS PDF are both visible and believable within one viewport, then runnable live.

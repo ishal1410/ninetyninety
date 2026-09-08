@@ -58,7 +58,9 @@ Amazon Bedrock was the first choice and is a one-line swap (`BedrockModel` in pl
 
 ## Live demo
 
-Landing page with the recorded run, the drafted form, every Part I line and who decided it, the disputes and the trace: **https://ishal1410.github.io/ninetyninety/**
+Product page for treasurers: **https://ishal1410.github.io/ninetyninety/**
+
+How it is built, with the recorded run's trace: **https://ishal1410.github.io/ninetyninety/technical.html**
 
 The Streamlit app is not hosted yet; run it locally with `streamlit run app.py`.
 

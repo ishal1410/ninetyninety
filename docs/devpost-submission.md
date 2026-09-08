@@ -71,7 +71,7 @@ PYTHONPATH=src python cli.py fixtures/demo_ledger.csv
 
 Paste a free Google AI Studio key into `.env` as `GOOGLE_API_KEY` before the second command; no card is needed. `streamlit run app.py` opens the web UI. `python -m pytest` runs the test suite.
 
-Hosted app: <STREAMLIT_URL>. Use "Replay the recorded run" if the day's free quota is already spent.
+Hosted app: https://ninetyninety.streamlit.app. Use "Replay the recorded run" if the day's free quota is already spent.
 
 Product page: https://ishal1410.github.io/ninetyninety/
 Technical page with the recorded trace: https://ishal1410.github.io/ninetyninety/technical.html

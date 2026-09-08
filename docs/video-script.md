@@ -10,7 +10,7 @@ Depends on: Task 1 (per node model calls in the trace) and Task 2 (the "Replay t
 2. Hide the bookmarks bar (Ctrl+Shift+B) and close the sidebar; use a clean profile with no extensions.
 3. Streamlit: three dot menu, Settings, theme Light; the "Deploy" button and menu stay out of frame.
 4. Run the replay path once before recording so the page and the IRS PDF download are warm; do not start a live run unless at least 20 requests per Gemini model id remain that day (the free cap is per model id, see README).
-5. Open these tabs in order: [HOSTED URL], https://ishal1410.github.io/ninetyninety/, https://ishal1410.github.io/ninetyninety/technical.html, https://github.com/ishal1410/ninetyninety, and `docs/architecture.png` in an image viewer at 100%.
+5. Open these tabs in order: https://ninetyninety.streamlit.app, https://ishal1410.github.io/ninetyninety/, https://ishal1410.github.io/ninetyninety/technical.html, https://github.com/ishal1410/ninetyninety, and `docs/architecture.png` in an image viewer at 100%.
 6. Have `fixtures/demo_ledger.csv` visible in a File Explorer window at the right of the screen for the drag in shot 3.
 7. Open `990-EZ-DRAFT.pdf` (downloaded during the warm up) in a PDF viewer, page 1, zoomed so Part I fills the height.
 8. Microphone test: 10 seconds, play back, no fan or keyboard noise; system sounds off, notifications off (Focus assist on).
@@ -33,7 +33,7 @@ On screen: scroll to "How it works." Step 1, "Upload the year's transactions", i
 
 ### Shot 3, 0:50 to 1:20, upload the CSV in the hosted app
 
-On screen: switch to [HOSTED URL]. The uploader "Transaction ledger as CSV with date, description, amount". Drag `fixtures/demo_ledger.csv` from File Explorer onto it. Untick "Use the synthetic demo ledger instead". Leave "Organisation name for the PDF" and "EIN for the PDF" as they are. Click the primary button "Draft a return".
+On screen: switch to https://ninetyninety.streamlit.app. The uploader "Transaction ledger as CSV with date, description, amount". Drag `fixtures/demo_ledger.csv` from File Explorer onto it. Untick "Use the synthetic demo ledger instead". Leave "Organisation name for the PDF" and "EIN for the PDF" as they are. Click the primary button "Draft a return".
 
 > This is the hosted app. I upload a year of bank transactions: date, description, amount. Fifty four rows, no categories. The organisation name and EIN go onto the PDF. Draft a return.
 

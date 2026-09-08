@@ -7,13 +7,13 @@
 web
 
 ## Stack
-Existing: Python + Streamlit (`app.py`) for the tool. Landing surface: static `index.html` (any CSS/JS), hosted on GitHub Pages; it will link to the Streamlit app once that is hosted (not yet). Decided by the user 2026-09-08.
+Existing: Python + Streamlit (`app.py`) for the tool. Landing surface: static `index.html` (any CSS/JS), hosted on GitHub Pages, linking to the hosted Streamlit app at https://ninetyninety.streamlit.app. Decided by the user 2026-09-08.
 
 ## Users
 Primary for the landing surface: volunteer treasurers of small US nonprofits (gross receipts under $200k) with a bank CSV export and no bookkeeper, and the officer who signs the return. Judges of the AWS "Agents for Humans" hackathon read the same page and score it on criteria 2, 3 and 5; the engineering material they need for criteria 1 and 4 lives on `technical.html`, the README and the architecture diagram.
 
 ## Product Purpose
-Turn a raw bank-transaction CSV into a drafted IRS Form 990-EZ where every Part I line cites the transactions behind it and the IRS rule that put them there. Success for judges: the Strands graph and the real filled IRS PDF are both visible and believable within one viewport, then runnable from the repo (hosted app pending).
+Turn a raw bank-transaction CSV into a drafted IRS Form 990-EZ where every Part I line cites the transactions behind it and the IRS rule that put them there. Success for judges: the Strands graph and the real filled IRS PDF are both visible and believable within one viewport, then runnable live at the hosted app.
 
 ## Positioning
 Two blind Strands agents (Preparer, Reviewer) classify each row in parallel; a Referee node runs only on disagreement; Python, never the model, does the arithmetic and checks every quoted rule, the Referee's included, against the IRS instruction text (60% word overlap). Nothing is resolved silently. Existing filing tools start after the books are categorised; this does the categorising.
@@ -45,7 +45,7 @@ Name: NinetyNinety. No logo. No fixed palette or type (v1-v6 all rejected; none 
 2. Disagreement is the feature: surface Preparer vs Reviewer vs Referee, never hide it.
 3. Python does the maths; the model only classifies.
 4. Nothing on the page the repo cannot back with a file.
-5. The visitor must be able to run it themselves from the repo in two commands (one click once the app is hosted).
+5. The visitor must be able to run it themselves in one click.
 
 ## Accessibility & Inclusion
 Judges may review on laptops at 1280-1600 wide and on phones. Keyboard-reachable CTA, real text (no text in images) for the proof numbers.

@@ -62,7 +62,7 @@ Product page for treasurers: **https://ishal1410.github.io/ninetyninety/**
 
 How it is built, with the recorded run's trace: **https://ishal1410.github.io/ninetyninety/technical.html**
 
-The Streamlit app is not hosted yet; run it locally with `streamlit run app.py`.
+Hosted app: https://ninetyninety.streamlit.app (Streamlit Community Cloud, free tier; it sleeps after inactivity, so the first load can take a minute). Use "Replay the recorded run" if the day's free Gemini quota is spent. Or run it locally with `streamlit run app.py`.
 
 ## Troubleshooting
 

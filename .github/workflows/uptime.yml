@@ -1,0 +1,13 @@
+name: uptime
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: landing page answers with the hero sentence
+        run: curl -fsS --max-time 20 https://ishal1410.github.io/ninetyninety/ | grep -q "Your bank export becomes"
+      - name: technical page answers
+        run: curl -fsS --max-time 20 -o /dev/null https://ishal1410.github.io/ninetyninety/technical.html

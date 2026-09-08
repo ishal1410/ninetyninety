@@ -64,6 +64,15 @@ How it is built, with the recorded run's trace: **https://ishal1410.github.io/ni
 
 The Streamlit app is not hosted yet; run it locally with `streamlit run app.py`.
 
+## Troubleshooting
+
+- **`ModuleNotFoundError: ninetyninety`**: run from the repo root with `PYTHONPATH=src` in front of every `python` command, including `python -m pytest`.
+- **`GOOGLE_API_KEY` missing**: copy `.env.example` to `.env` and paste a free key from https://aistudio.google.com/apikey. No card is needed.
+- **`429` or `RESOURCE_EXHAUSTED` in the trace**: the free tier allows a small number of requests per day per model id. The run rotates through `GEMINI_MODEL_IDS` on its own; if every id is spent, wait until midnight Pacific or add another id to `.env`.
+- **A batch shows as unclassified**: no model answered it after three attempts. The rest of the run is kept. Re-run the ledger later and the batch will be filled.
+- **CSV rejected**: the file needs `date`, `description`, `amount` columns in any case. Amounts may be negative or in parentheses. Files saved by Excel on Windows (cp1252) are accepted.
+- **Garbled characters in the Windows console**: the CLI already switches the console to a replacement encoding; if you still see them, run `chcp 65001` first.
+
 ## Limitations, stated plainly
 
 - **The output is a draft, not a filing.** For tax year 2025 the IRS requires Form 990-EZ to be filed electronically, which needs an Authorized IRS e-File Provider. This project is not one.

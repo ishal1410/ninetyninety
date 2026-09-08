@@ -94,7 +94,8 @@ def assemble(rows: list[tuple[Transaction, RowCall | None, RowCall | None]],
                 "referee_reason": verdict.reason if verdict else None,
                 "used": chosen,
             })
-        if verdict is None and not rule_is_grounded(chosen, rule):
+        # The Referee's reason is a quoted rule too; it gets the same check.
+        if not rule_is_grounded(chosen, rule):
             form.ungrounded.append({"source_row": row, "description": transaction.description,
                                     "line": chosen, "rule": rule})
 

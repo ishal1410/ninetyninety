@@ -14,7 +14,7 @@ Volunteer treasurers of small US nonprofits: the little league, the food pantry,
 
 ## Does the engine actually work?
 
-Before drafting anything for a user, the same arithmetic that fills the form was run against **3,687 real Form 990-EZ returns** filed with the IRS (e-file XML batch `2026_TEOS_XML_01A`), rebuilding each return's stated totals from its own line items:
+Before drafting anything for a user, the same arithmetic that fills the form was run against **3,632 real Form 990-EZ returns** filed with the IRS (e-file XML batch `2026_TEOS_XML_01A`, 3,687 files, of which 3,632 carried a checkable Part I), rebuilding each return's stated totals from its own line items:
 
 | Part I identity | Reconstructed | Rate |
 |---|---|---|
@@ -22,15 +22,15 @@ Before drafting anything for a user, the same arithmetic that fills the form was
 | Line 17, total expenses = lines 10 through 16 | 3,617 / 3,618 | 99.97% |
 | Line 18, excess = line 9 minus line 17 | 3,619 / 3,621 | 99.94% |
 
-All three mismatches are real filed returns whose own stated totals disagree with their own components (one is off by one dollar). They are listed in `results/validation.json`. Reproduce with `PYTHONPATH=src python scripts/validate.py`.
+The three line mismatches sit in two real filed returns whose own stated totals disagree with their own components (one is off by one dollar). They are listed in `results/validation.json`. Reproduce with `PYTHONPATH=src python scripts/validate.py`.
 
 ## How it works
 
 ![Architecture](docs/architecture.png)
 
 1. **Ledger in.** A CSV of `date, description, amount`. Raw bank text, no categories. Rows go through the graph in batches of twelve.
-2. **One Strands Agents graph per batch.** The **Preparer** and the **Reviewer** are two entry nodes of a `GraphBuilder` graph. Strands hands each entry node only the rows, so the Reviewer never sees the Preparer's reasoning, and the two run in parallel. Both call a real Strands tool, `line_guidance`, which returns the IRS instruction text for a Part I line, and both answer with structured output (pydantic). A **Referee** node hangs off a conditional edge and runs only when the two disagree on a row; it must call `line_guidance` on both candidate lines and returns a verdict with its reason. Every disagreement is shown with all three opinions and which line went on the form. Nothing is resolved silently.
-3. **Python checks the model.** Every rule the Preparer or Reviewer quotes is compared, word for word, against the IRS instruction sentence the tool returned (the line's label does not count); a rule that is not in the text is flagged. A Referee verdict is accepted only for one of the two disputed lines; its reason is shown verbatim, not word-checked. Money flowing against a line (a refund) is netted, not added, and flagged. Lines 9, 17 and 18 are computed in `formmath.py`, the same module the validation harness runs over real filings. The model never adds.
+2. **One Strands Agents graph per batch.** The **Preparer** and the **Reviewer** are two entry nodes of a `GraphBuilder` graph. Strands hands each entry node only the rows, so the Reviewer never sees the Preparer's reasoning, and the two run in parallel. Both are instructed to call a real Strands tool, `line_guidance`, which returns the IRS instruction text for a Part I line, and both answer with structured output (pydantic). A **Referee** node hangs off a conditional edge and runs only when the two disagree on a row; it must call `line_guidance` on both candidate lines and returns a verdict with its reason. Every disagreement is shown with all three opinions and which line went on the form. Nothing is resolved silently.
+3. **Python checks the model.** Every rule the Preparer, Reviewer or Referee quotes is checked against the IRS instruction sentence the tool returned: at least 60% of its words must appear in that sentence (the line's label does not count); a rule that fails is flagged as ungrounded. A Referee verdict is accepted only for one of the two disputed lines. Money flowing against a line (a refund) is netted, not added, and flagged. Lines 9, 17 and 18 are computed in `formmath.py`, the same module the validation harness runs over real filings. The model never adds.
 4. **The real IRS PDF.** Amounts land in the actual `f990ez.pdf` AcroForm fields, and every page carries a red **DRAFT, NOT A FILING** notice.
 5. **The trace is on screen.** Per batch: which nodes ran, in what order, how many tool calls, whether the Referee was needed, and which provider answered.
 
@@ -39,16 +39,16 @@ All three mismatches are real filed returns whose own stated totals disagree wit
 ```bash
 git clone https://github.com/ishal1410/ninetyninety
 cd ninetyninety
-pip install -r requirements.txt
+pip install -r requirements.txt   # Python 3.10 or newer
 cp .env.example .env    # then paste a free key from https://aistudio.google.com/apikey
 PYTHONPATH=src python cli.py fixtures/demo_ledger.csv
 ```
 
 Web UI: `streamlit run app.py`
 
-Landing page: `index.html` (GitHub Pages, repo root). It shows the recorded demo run; refresh it after a run with `PYTHONPATH=src python scripts/dump_run.py && PYTHONPATH=src python scripts/build_landing.py`.
+Landing page: `index.html` (GitHub Pages, repo root). It shows the recorded demo run; refresh it after a run with `PYTHONPATH=src python scripts/dump_run.py && python scripts/build_landing.py`.
 
-Tests: `PYTHONPATH=src python -m pytest`
+Tests: `python -m pytest` (87 tests; the one live end-to-end test runs only with `NN_LIVE=1` and a key)
 
 ## Model: Google Gemini
 
@@ -70,7 +70,7 @@ The Streamlit app is not hosted yet; run it locally with `streamlit run app.py`.
 - **`GOOGLE_API_KEY` missing**: copy `.env.example` to `.env` and paste a free key from https://aistudio.google.com/apikey. No card is needed.
 - **`429` or `RESOURCE_EXHAUSTED` in the trace**: the free tier allows a small number of requests per day per model id. The run rotates through `GEMINI_MODEL_IDS` on its own; if every id is spent, wait until midnight Pacific or add another id to `.env`.
 - **A batch shows as unclassified**: no model answered it after three attempts. The rest of the run is kept. Re-run the ledger later and the batch will be filled.
-- **CSV rejected**: the file needs `date`, `description`, `amount` columns in any case. Amounts may be negative or in parentheses. Files saved by Excel on Windows (cp1252) are accepted.
+- **CSV rejected**: the file needs `description` and `amount` columns (`date` is optional), header case does not matter. Amounts may be negative or in parentheses. Files saved by Excel on Windows (cp1252) are accepted.
 - **Garbled characters in the Windows console**: the CLI already switches the console to a replacement encoding; if you still see them, run `chcp 65001` first.
 
 ## Limitations, stated plainly
@@ -98,7 +98,7 @@ src/ninetyninety/
   corpus/         IRS 990 e-file XML index, parser, validation harness
 cli.py            terminal entry point
 app.py            Streamlit UI
-scripts/          validate.py (the headline number), dump_fields.py
+scripts/          validate.py (the headline number; downloads the IRS batch into data/ on first run and rewrites results/validation.json), dump_run.py, build_landing.py, diagram.py, dump_fields.py
 ```
 
 ## License

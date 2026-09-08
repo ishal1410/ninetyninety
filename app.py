@@ -236,12 +236,12 @@ def front() -> str:
 <section class="sec" id="how"><div class="wrap chap">
   <div class="pin">
     <h2>Three agents. One graph. No hidden opinions.</h2>
-    <p class="story">{story_words("Preparer and Reviewer are parallel entry nodes of one Strands graph. They read the same batch and never see each other. Each must quote the IRS instruction it relied on. When their lines differ, a conditional edge sends the row to the Referee, who decides from the IRS text and shows its reasoning on the form.")}</p>
+    <p class="story">{story_words("Preparer and Reviewer are parallel entry nodes of one Strands graph. They read the same batch and never see each other. Each is asked to quote the IRS instruction it relied on, and Python checks the quote. When their lines differ, a conditional edge sends the row to the Referee, who decides from the IRS text and shows its reasoning on the form.")}</p>
   </div>
   <div class="stack">
     <div class="card"><span class="who">preparer</span><h3>Reads the ledger like a bookkeeper</h3><p>Every row gets a line, a confidence, and the deciding sentence copied from the IRS instructions through a real tool call.</p><div class="q">"Voluntary transfers where the donor receives nothing of comparable value in return: donations, grants from foundations or government."</div></div>
     <div class="card"><span class="who">reviewer</span><h3>Audits blind</h3><p>Same batch, same tool, zero visibility into the Preparer. Two independent readings of every transaction.</p><img src="{asset('draft-totals.jpg')}" alt="Lines 17 and 18 of the drafted form, total expenses and excess or deficit"></div>
-    <div class="card"><span class="who">referee</span><h3>Runs only when they disagree</h3><p>A conditional edge in the graph. The Referee may pick only one of the two disputed lines and must quote the IRS text for it.</p><div class="q">"Line 3 includes membership dues and assessments paid to belong to the organization."</div></div>
+    <div class="card"><span class="who">referee</span><h3>Runs only when they disagree</h3><p>A conditional edge in the graph. The Referee may pick only one of the two disputed lines; its quoted reason is word-checked against the IRS text like every other rule.</p><div class="q">"Line 3 includes membership dues and assessments paid to belong to the organization."</div></div>
     <div class="spacer"></div>
   </div>
 </div></section>
@@ -415,8 +415,8 @@ with body:
 
             st.markdown(f'<h3 class="nn-h">Agent disagreements, {len(form.disagreements)}</h3>'
                         '<p class="lede">The Reviewer never sees the Preparer, so these are two '
-                        'independent readings. The Referee runs only when they differ and must quote '
-                        'the IRS text.</p>', unsafe_allow_html=True)
+                        'independent readings. The Referee runs only when they differ; its reason is '
+                        'checked against the IRS text.</p>', unsafe_allow_html=True)
             for item in form.disagreements:
                 referee = (f'<span class="who">Referee</span> <span class="pick">line {item["referee"]}</span>: '
                            f'{esc(item["referee_reason"])}' if item["referee"]

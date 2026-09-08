@@ -11,3 +11,6 @@ venv/
 .bug-hunter/
 .impeccable/review/
 .impeccable/build/
+
+# Strix pentest artifacts
+strix_runs/

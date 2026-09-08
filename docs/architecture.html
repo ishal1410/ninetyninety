@@ -16,6 +16,8 @@ h1 span{color:var(--muted);font-weight:400}
   background:var(--rule);margin-right:7px;vertical-align:middle}
 .aws{border-color:var(--aws);background:#FFF7EA}
 .aws h2{color:#8A4B00}
+.model{border-color:#1A73E8;background:#EEF4FF}
+.model h2{color:#174EA6}
 .graph{background:var(--paper);border:2px solid var(--ink);padding:0}
 .graph h2{padding:14px 18px 0}
 .graph ul{padding:0 18px 12px}
@@ -55,8 +57,8 @@ h1 span{color:var(--muted);font-weight:400}
   <div class="node" style="left:110px;top:128px">Reviewer<small>auditor, blind</small></div>
   <div class="node" style="left:380px;top:73px">Referee<small>cites the IRS text</small></div>
   <div class="tool" style="left:130px;top:84px">line_guidance()</div>
-</div><ul><li>GraphBuilder: preparer and reviewer are blind parallel entry nodes</li><li>Loop per node: model -&gt; tools -&gt; reasoning -&gt; response</li><li>Conditional edge to the referee only when their lines differ</li><li>Python checks each quoted rule against the IRS text</li></ul></div>
-  <div class="box " style="left:1166px;top:118px;width:386px;height:210px"><h2>Tools &amp; integrations</h2><ul><li>@tool line_guidance returns the IRS 990-EZ Part I instruction text</li><li>pydantic BatchCalls / Verdicts: structured output</li><li>IRS e-file XML corpus: 3,687 real returns validate formmath.py</li></ul></div>
-  <div class="box aws" style="left:456px;top:540px;width:620px;height:150px;"><h2>Model provider</h2><ul><li>Google Gemini through Strands&#x27; native GeminiModel (one provider, free tier)</li><li>Per-model daily cap: rotates gemini-3.8-flash -&gt; 3.5 -&gt; 3.6 -&gt; 3.7 -&gt; 3.5-lite</li><li>429 or 5xx: advertised-delay backoff, 3 attempts, next model, then surfaced</li><li>Amazon Bedrock is the one-line swap once the account&#x27;s quota is seeded</li></ul></div>
+</div><ul><li>GraphBuilder: preparer and reviewer are blind parallel entry nodes</li><li>Loop per node: model -&gt; tools -&gt; reasoning -&gt; response</li><li>Conditional edge to the referee only when their lines differ</li><li>Python word-checks each quoted rule, Referee included, against the IRS text</li></ul></div>
+  <div class="box " style="left:1166px;top:118px;width:386px;height:210px"><h2>Tools &amp; integrations</h2><ul><li>@tool line_guidance returns the IRS 990-EZ Part I instruction text</li><li>pydantic BatchCalls / Verdicts: structured output</li><li>IRS e-file XML corpus: 3,632 real returns validate formmath.py</li></ul></div>
+  <div class="box model" style="left:456px;top:540px;width:620px;height:150px;"><h2>Model provider</h2><ul><li>Google Gemini through Strands&#x27; native GeminiModel (one provider, free tier)</li><li>Per-model daily cap: rotates gemini-3.8-flash -&gt; 3.5 -&gt; 3.6 -&gt; 3.7 -&gt; 3.5-lite</li><li>429 or 5xx: advertised-delay backoff, 3 attempts, next model, then surfaced</li><li>Amazon Bedrock is the one-line swap once the account&#x27;s quota is seeded</li></ul></div>
   <div class="box " style="left:1166px;top:360px;width:386px;height:240px"><h2>Output</h2><ul><li>Form 990-EZ Part I, every line citing its rows and the IRS rule</li><li>Lines 9, 17, 18 computed in formmath.py, never by a model</li><li>Disagreements, low confidence and unclassified rows all shown</li><li>The real IRS f990ez.pdf filled, DRAFT notice on every page</li></ul></div>
 </div></body></html>

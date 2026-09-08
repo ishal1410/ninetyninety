@@ -20,11 +20,11 @@ BOXES = [
      ["GraphBuilder: preparer and reviewer are blind parallel entry nodes",
       "Loop per node: model -> tools -> reasoning -> response",
       "Conditional edge to the referee only when their lines differ",
-      "Python checks each quoted rule against the IRS text"]),
+      "Python word-checks each quoted rule, Referee included, against the IRS text"]),
     ("Tools & integrations",
      ["@tool line_guidance returns the IRS 990-EZ Part I instruction text",
       "pydantic BatchCalls / Verdicts: structured output",
-      "IRS e-file XML corpus: 3,687 real returns validate formmath.py"]),
+      "IRS e-file XML corpus: 3,632 real returns validate formmath.py"]),
     ("Model provider",
      ["Google Gemini through Strands' native GeminiModel (one provider, free tier)",
       "Per-model daily cap: rotates gemini-3.8-flash -> 3.5 -> 3.6 -> 3.7 -> 3.5-lite",
@@ -58,6 +58,8 @@ h1 span{color:var(--muted);font-weight:400}
   background:var(--rule);margin-right:7px;vertical-align:middle}
 .aws{border-color:var(--aws);background:#FFF7EA}
 .aws h2{color:#8A4B00}
+.model{border-color:#1A73E8;background:#EEF4FF}
+.model h2{color:#174EA6}
 .graph{background:var(--paper);border:2px solid var(--ink);padding:0}
 .graph h2{padding:14px 18px 0}
 .graph ul{padding:0 18px 12px}
@@ -135,7 +137,7 @@ def build_html() -> str:
   {_box(0, "", b1)}
   {_graph_box()}
   {_box(2, "", b3)}
-  {_box(3, "aws", b4)}
+  {_box(3, "model", b4)}
   {_box(4, "", b5)}
 </div></body></html>"""
 

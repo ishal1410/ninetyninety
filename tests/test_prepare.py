@@ -297,3 +297,11 @@ def test_a_non_transient_failure_costs_one_batch_not_the_model(monkeypatch):
     assert made == ["m1", "m2"]
     assert [t["provider"] for t in form.trace] == ["gemini:m2", "gemini:m1"]
     assert form.unclassified == [] and form.totals["line9"] == 20
+
+
+def test_referee_reason_is_grounding_checked_too():
+    form = assemble([(tx(4, "VENMO INSTRUCTOR", -600), call(4, "12"), call(4, "13"))],
+                    {4: Verdict(row=4, line="13", reason="Because I said so")})
+    assert form.lines["13"].amount == 600
+    assert [u["source_row"] for u in form.ungrounded] == [4]
+    assert form.ungrounded[0]["rule"] == "Because I said so"

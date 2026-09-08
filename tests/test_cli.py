@@ -17,3 +17,9 @@ def test_cli_survives_a_cp1252_console(tmp_path, monkeypatch):
     assert cli.main(["cli.py", str(ledger)]) == 0
     out.flush()
     assert b"UNCLASSIFIED row 2" in out.buffer.getvalue()
+
+
+def test_cli_help_prints_usage_and_exits_zero(capsys):
+    assert cli.main(["cli.py", "--help"]) == 0
+    out = capsys.readouterr().out
+    assert "usage" in out.lower() and "ledger" in out.lower()

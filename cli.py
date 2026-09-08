@@ -1,19 +1,23 @@
 """NinetyNinety CLI -- draft a Form 990-EZ from a transaction ledger.
 
-Usage: PYTHONPATH=src python cli.py fixtures/demo_ledger.csv
+Usage: python cli.py <ledger.csv>
+
+Example: python cli.py fixtures/demo_ledger.csv
 """
 import sys
 from pathlib import Path
 
-from ninetyninety.ledger import load_ledger
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))  # run without PYTHONPATH
+
+from ninetyninety.ledger import load_ledger  # noqa: E402
 from ninetyninety.lines import form_order, line_by_number
 from ninetyninety.prepare import prepare_ledger
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) < 2:
+    if len(argv) < 2 or argv[1] in ("-h", "--help"):
         print(__doc__)
-        return 1
+        return 0 if len(argv) >= 2 else 1
     for stream in (sys.stdout, sys.stderr):  # a cp1252 console must not crash on "CAFÉ"
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(errors="replace")

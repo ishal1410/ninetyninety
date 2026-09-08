@@ -295,7 +295,7 @@
       <div class="step rv"><span class="n">1</span><h3>Upload the year's transactions</h3><p>A CSV from your bank with a date, a description, and an amount on each row. No categories needed.</p></div>
       <div class="step rv d1"><span class="n">2</span><h3>Two readers sort every row</h3><p>The Preparer and the Reviewer each put every transaction on a Part I line, working separately, and each quotes the IRS instruction that supports the choice.</p></div>
       <div class="step rv d2"><span class="n">3</span><h3>A Referee settles disagreements</h3><p>When the two readers differ, the Referee reads both instructions and decides. You see all three opinions. Nothing is settled silently.</p></div>
-      <div class="step rv d3"><span class="n">4</span><h3>You review and download</h3><p>Python adds the totals and checks every quoted instruction against the IRS text. Flagged rows wait for you. Then download the PDF, marked DRAFT.</p></div>
+      <div class="step rv d3"><span class="n">4</span><h3>You review and download</h3><p>Python adds the totals and checks every quoted instruction, the Referee's included, against the IRS text. Flagged rows wait for you. Then download the PDF, marked DRAFT.</p></div>
     </div>
   </div>
 </section>
@@ -361,7 +361,7 @@
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const money = n => n == null ? '' : (n < 0 ? '(' + Math.abs(n).toLocaleString('en-US') + ')' : n.toLocaleString('en-US'));
   const dis = run.disagreements || [], lines = run.lines || {}, totals = run.totals || {}, v = run.validation || {};
-  const disputed = new Set(dis.map(d => d.source_row));
+  const disputed = new Set(dis.filter(d => d.referee).map(d => d.source_row));
   const lowConf = Object.fromEntries((run.low_confidence || []).map(l => [l.source_row, l.note || 'low confidence']));
   const txOn = n => (lines[n] && lines[n].transactions) || [];
   const refOn = n => txOn(n).filter(t => disputed.has(t.source_row)).length;
@@ -415,7 +415,7 @@
 
   $('acc-sub').textContent = v.returns ? `The same code that adds up your form was run over ${v.returns.toLocaleString()} real Form 990-EZ returns filed with the IRS, rebuilding each return's totals from its own line items. It agreed with the filer ${v.rates?.line18?.toFixed(2)}% of the time on the bottom line.` : 'Validation not run.';
   $('p-rows').innerHTML = ['line9', 'line17', 'line18'].map(k => `<tr><td>Line ${k.slice(4)}</td><td class="r num">${(v.checked?.[k] ?? '').toLocaleString()}</td><td class="r num">${(v.matched?.[k] ?? '').toLocaleString()}</td><td class="r num">${v.rates?.[k] != null ? v.rates[k].toFixed(2) + '%' : ''}</td></tr>`).join('');
-  $('p-mis').textContent = v.mismatch_count != null ? `The ${v.mismatch_count} that did not match are returns where the filer's own total does not add up from the filer's own line items.` : '';
+  $('p-mis').textContent = v.mismatch_count != null ? `The ${v.mismatch_count} line mismatches sit in ${new Set((v.mismatches || []).map(m => m.ein)).size || 'a few'} returns where the filer's own total does not add up from the filer's own line items.` : '';
 
   const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
   document.querySelectorAll('.rv').forEach(el => io.observe(el));

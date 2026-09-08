@@ -1,0 +1,7 @@
+# NinetyNinety
+
+> A bank export becomes a Form 990-EZ draft your board can review. Every Part I line is filled, explained, and tied to the IRS instruction behind it. A draft for officer review, never a filing.
+
+- [Product page](https://ishal1410.github.io/ninetyninety/): what you get, how it works, accuracy, limitations, how to run it
+- [How it is built](https://ishal1410.github.io/ninetyninety/technical.html): the Strands Agents graph, the recorded run, the validation against 3,687 filed returns
+- [Source, MIT](https://github.com/ishal1410/ninetyninety)

@@ -39,7 +39,7 @@
   a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
   .wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
   h1, h2, h3 { margin: 0; letter-spacing: -0.03em; line-height: 1.05; font-weight: 600; }
-  h1 { font-size: clamp(2.4rem, 4.6vw, 4rem); }
+  h1 { font-size: clamp(2.4rem, 4.6vw, 4rem); text-wrap: balance; }
   h2 { font-size: clamp(1.9rem, 3vw, 2.6rem); }
   h3 { font-size: 1.15rem; letter-spacing: -0.01em; }
   p { margin: 0; }
@@ -97,12 +97,12 @@
   .chip.c3 { left: 8%; bottom: -26px; }
 
   /* sections */
-  section { padding: 120px 0 0; }
+  section { padding: 120px 0 0; scroll-margin-top: 24px; }
   .head { display: flex; flex-direction: column; gap: 14px; margin-bottom: 44px; }
 
   /* bento proof: 3 items, 1 big + 2 stacked */
   .bento { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); grid-template-rows: auto auto; gap: 14px; }
-  .tile { border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--panel); padding: 28px; display: flex; flex-direction: column; justify-content: space-between; gap: 22px; position: relative; overflow: hidden; box-shadow: 0 1px 0 rgba(255,255,255,.05) inset; }
+  .tile { border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--panel); padding: 28px; display: flex; flex-direction: column; justify-content: flex-start; gap: 22px; position: relative; overflow: hidden; box-shadow: 0 1px 0 rgba(255,255,255,.05) inset; }
   .tile.big { grid-row: 1 / span 2; background: linear-gradient(160deg, #101a15, var(--panel) 55%); }
   .tile .n { font-size: clamp(3rem, 6vw, 5rem); font-weight: 600; letter-spacing: -0.04em; line-height: 1; }
   .tile .n small { font-size: .5em; color: var(--ink-2); letter-spacing: -0.02em; }
@@ -111,7 +111,9 @@
   .tile td, .tile th { padding: 9px 0; border-top: 1px solid var(--line); text-align: left; font-weight: 500; }
   .tile th { color: var(--ink-3); font-weight: 400; border-top: 0; }
   .tile td.r, .tile th.r { text-align: right; }
-  .tile.img { padding: 0; }
+  .tile.img { padding: 0; justify-content: space-between; }
+  .tile .note { color: var(--ink-3); font-size: .9rem; max-width: 34em; }
+  .tile.big .note { margin-top: auto; }
   .tile.img .n, .tile.img .l { padding: 0 28px; }
   .tile.img .n { padding-top: 28px; }
   .tile.img .l { padding-bottom: 20px; }
@@ -138,7 +140,8 @@
   /* Part I */
   .part { border-radius: calc(var(--r-lg) - 8px); overflow: hidden; }
   .part .hd, .row { display: grid; grid-template-columns: 60px minmax(0, 1fr) 150px 190px; align-items: center; }
-  .part .hd { padding: 14px 18px; background: var(--panel-2); font-size: .78rem; color: var(--ink-3); border-bottom: 1px solid var(--line); }
+  .part .hd { padding: 14px 0; background: var(--panel-2); font-size: .78rem; color: var(--ink-3); border-bottom: 1px solid var(--line); }
+  .part .hd > div { padding: 0 18px; }
   .part .hd .r, .row .amt { text-align: right; }
   .row { width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); color: inherit; font: inherit; padding: 0; cursor: pointer; transition: background .3s var(--ease); }
   .row:hover { background: rgba(255,255,255,.03); }
@@ -187,7 +190,7 @@
 
   /* run */
   .run { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 40px; align-items: center; }
-  pre { margin: 0; border-radius: calc(var(--r-lg) - 8px); background: #0a0d12; padding: 22px 24px; overflow-x: auto; font-family: var(--mono); font-size: .9rem; line-height: 1.7; color: var(--ink-2); }
+  pre { margin: 0; border-radius: calc(var(--r-lg) - 8px); background: #0a0d12; padding: 22px 24px; overflow-x: auto; font-family: var(--mono); font-size: .86rem; line-height: 1.7; color: var(--ink-2); }
   pre b { color: var(--ink); font-weight: 500; }
 
   footer { margin-top: 120px; padding: 36px 0 48px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: .9rem; }
@@ -248,7 +251,7 @@
   <div class="hero">
     <div class="copy">
       <span class="pill rv"><b>Strands Agents</b> built for the Agents for Humans hackathon</span>
-      <h1 class="rv d1">A bank export in. A drafted Form&nbsp;<span style="white-space:nowrap">990-EZ</span> out.</h1>
+      <h1 class="rv d1">A bank export in. A drafted Form <span style="white-space:nowrap">990-EZ</span> out.</h1>
       <p class="sub rv d2">Two agents that never see each other post every transaction to a line and cite the IRS rule. A Referee settles disputes.</p>
       <div class="actions rv d3">
         <a class="btn btn-primary" id="cta" href="#run-it">Run it locally<span class="i"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13 13 3M5 3h8v8"/></svg></span></a>
@@ -272,6 +275,7 @@
       <div class="tile big rv">
         <div><div class="n" id="p-rate"></div><p class="l" id="p-rate-l"></p></div>
         <table><thead><tr><th>Line</th><th class="r">Checked</th><th class="r">Matched</th><th class="r">Rate</th></tr></thead><tbody id="p-rows"></tbody></table>
+        <p class="note" id="p-mis"></p>
       </div>
       <div class="tile img rv d1">
         <div class="n" id="p-rows-n"></div><p class="l" id="p-rows-l"></p>
@@ -335,7 +339,7 @@
       <div class="bezel rv d1"><div class="core"><pre><b>git clone</b> https://github.com/ishal1410/ninetyninety
 <b>cd</b> ninetyninety
 <b>pip install</b> -r requirements.txt
-<b>cp</b> .env.example .env    # paste a free key from aistudio.google.com/apikey
+<b>cp</b> .env.example .env    # free key: aistudio.google.com/apikey
 <b>PYTHONPATH=src python</b> cli.py fixtures/demo_ledger.csv</pre></div></div>
     </div>
   </div>
@@ -382,6 +386,7 @@
   $('p-rate').innerHTML = v.rates?.line18 != null ? `${v.rates.line18.toFixed(2)}<small>%</small>` : '';
   $('p-rate-l').textContent = v.returns ? `Line 18 agreement with what filers reported, across ${v.returns.toLocaleString()} IRS returns.` : 'Validation not run.';
   $('p-rows').innerHTML = ['line9', 'line17', 'line18'].map(k => `<tr><td>Line ${k.slice(4)}</td><td class="r num">${(v.checked?.[k] ?? '').toLocaleString()}</td><td class="r num">${(v.matched?.[k] ?? '').toLocaleString()}</td><td class="r num">${v.rates?.[k] != null ? v.rates[k].toFixed(2) + '%' : ''}</td></tr>`).join('');
+  $('p-mis').textContent = v.mismatch_count != null ? `${v.mismatch_count} of ${(v.returns || 0).toLocaleString()} returns did not match. In each, the filer's reported total does not equal the sum of the filer's own line items, so the footing is right and the filing is off.` : '';
   const tools = trace.reduce((s, b) => s + (b.tool_calls || 0), 0);
   $('p-rows-n').innerHTML = `${rows} <small>rows</small>`;
   $('p-rows-l').textContent = `${dis.length} dispute${dis.length === 1 ? '' : 's'} sent to the Referee, ${tools} tool calls, ${(run.unclassified || []).length} rows left unposted.`;

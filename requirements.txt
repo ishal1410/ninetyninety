@@ -1,5 +1,5 @@
 strands-agents[gemini]==1.54.0
-requests==2.32.3
+requests==2.33.0
 pypdf==6.16.1
 streamlit==1.63.0
 python-dotenv==1.2.2

@@ -279,7 +279,7 @@
 <section id="trace">
   <div class="wrap">
     <div class="head rv"><h2>The recorded run, batch by batch.</h2><p class="sub" id="trace-sub"></p></div>
-    <div class="trace rv scroll"><table><thead><tr><th>Batch</th><th>Rows</th><th>Model</th><th>Preparer</th><th>Reviewer</th><th>Referee</th><th>Tool calls</th><th>Wall</th></tr></thead><tbody id="trace-rows"></tbody></table></div>
+    <div class="trace rv scroll"><table><thead><tr><th>Batch</th><th>Rows</th><th>Model</th><th>Preparer</th><th>Reviewer</th><th>Referee</th><th>Tool calls</th><th>Model calls (hooks)</th><th>Wall</th></tr></thead><tbody id="trace-rows"></tbody></table></div>
   </div>
 </section>
 
@@ -311,7 +311,7 @@
   $('g-in').textContent = `Bank export, ${run.meta?.rows ?? 0} rows`;
   $('trace-sub').textContent = `${run.meta?.rows ?? 0} rows, ${trace.length} batches, ${tools} tool calls, ${dis.length} disagreement${dis.length === 1 ? '' : 's'}${run.meta?.seconds ? ', ' + Math.round(run.meta.seconds / 60) + ' minutes' : ''} on the free Gemini tier. Recorded ${esc(run.meta?.ran_at || '')}.`;
   const s = x => x == null ? 'not run' : (x / 1000).toFixed(1) + 's';
-  $('trace-rows').innerHTML = trace.map(b => `<tr><td class="mono">${b.batch}</td><td class="mono">${b.rows}</td><td class="mono">${esc((b.provider || '').replace(/^gemini:/, ''))}</td><td class="mono">${s(b.node_ms?.preparer)}</td><td class="mono">${s(b.node_ms?.reviewer)}</td><td class="mono">${b.referee_ran ? `<span class="on">ran, ${s(b.node_ms?.referee)}</span>` : 'not needed'}</td><td class="mono">${b.tool_calls ?? ''}</td><td class="mono">${b.seconds != null ? Math.round(b.seconds) + 's' : ''}</td></tr>`).join('');
+  $('trace-rows').innerHTML = trace.map(b => `<tr><td class="mono">${b.batch}</td><td class="mono">${b.rows}</td><td class="mono">${esc((b.provider || '').replace(/^gemini:/, ''))}</td><td class="mono">${s(b.node_ms?.preparer)}</td><td class="mono">${s(b.node_ms?.reviewer)}</td><td class="mono">${b.referee_ran ? `<span class="on">ran, ${s(b.node_ms?.referee)}</span>` : 'not needed'}</td><td class="mono">${b.tool_calls ?? ''}</td><td class="mono">${b.model_calls ? Object.entries(b.model_calls).map(([n, c]) => n[0] + c).join(' ') : ''}</td><td class="mono">${b.seconds != null ? Math.round(b.seconds) + 's' : ''}</td></tr>`).join('');
   $('p-rows').innerHTML = ['line9', 'line17', 'line18'].map(k => `<tr><td>Line ${k.slice(4)}</td><td class="r num">${(v.checked?.[k] ?? '').toLocaleString()}</td><td class="r num">${(v.matched?.[k] ?? '').toLocaleString()}</td><td class="r num">${v.rates?.[k] != null ? v.rates[k].toFixed(2) + '%' : ''}</td></tr>`).join('');
   $('p-mis').textContent = v.mismatch_count != null ? `${v.mismatch_count} line mismatches across ${new Set((v.mismatches || []).map(m => m.ein)).size || 'a few'} of ${(v.returns || 0).toLocaleString()} returns. In each, the filer's reported total does not equal the sum of the filer's own line items.` : '';
   function wires() {

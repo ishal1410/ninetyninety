@@ -1,6 +1,6 @@
 import pytest
 
-from ninetyninety.agents import BatchCalls, RowCall, Verdict, Verdicts
+from ninetyninety.agents import BatchCalls, RowCall, TraceHooks, Verdict, Verdicts
 from ninetyninety.ledger import Transaction
 from ninetyninety.prepare import ProviderExhausted, assemble, prepare_ledger, run_graph
 
@@ -145,6 +145,7 @@ def _fake_graph_factory(outcomes, made):
     class FakeReviewGraph:
         def __init__(self, model):
             made.append(str(model))
+            self.hooks = TraceHooks()
 
         def run(self, task):
             out = outcomes.pop(0)
@@ -178,6 +179,7 @@ def test_prepare_ledger_batches_through_one_graph(monkeypatch):
     assert form.disagreements[0]["referee"] == "2"
     assert [t["provider"] for t in form.trace] == ["gemini:fake-model"] * 2
     assert form.trace[1]["referee_ran"] is True
+    assert form.trace[0]["model_calls"] == {} and form.trace[0]["tool_calls_by_node"] == {}
 
 
 def test_an_exhausted_model_marks_that_batch_and_later_ones_unclassified(monkeypatch):

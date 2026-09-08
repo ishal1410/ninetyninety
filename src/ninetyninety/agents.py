@@ -15,12 +15,12 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel, Field
 from strands import Agent, tool
+from strands.hooks import AfterModelCallEvent, BeforeToolCallEvent, HookProvider, HookRegistry
 from strands.multiagent import GraphBuilder
 
 from .ledger import Transaction
 from .lines import ALL_LINE_NUMBERS, EXPENSE_LINES, REVENUE_LINES, line_by_number
 
-TOOL_CALLS = {"line_guidance": 0}  # reset by prepare.py per batch, read for the trace
 
 
 def _guidance_text(line_number: str) -> str:
@@ -33,7 +33,6 @@ def line_guidance(line_number: str) -> str:
     """Return the IRS Form 990-EZ instruction text for one Part I line number
     such as "1", "5c" or "13". Call it for every line you intend to use and
     copy the deciding sentence into your `rule`."""
-    TOOL_CALLS["line_guidance"] += 1
     if line_number not in ALL_LINE_NUMBERS:
         return f"No such line: {line_number}. Valid lines: {sorted(ALL_LINE_NUMBERS)}"
     return _guidance_text(line_number)
@@ -88,19 +87,50 @@ return a verdict naming the line that fits the IRS text best and a two-sentence
 reason quoting it. Only return verdicts for disputed rows. Never compute totals."""
 
 
-def build_preparer(model) -> Agent:
+class TraceHooks(HookProvider):
+    """Strands hook provider shared by the three agents: counts model calls
+    and tool calls per agent, and records which lines each one looked up.
+    That is the judge-visible trace; nothing else observes the agents."""
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.tool_calls: dict[str, int] = {}
+        self.model_calls: dict[str, int] = {}
+        self.lines_looked_up: dict[str, list[str]] = {}
+
+    def register_hooks(self, registry: HookRegistry, **kwargs):
+        registry.add_callback(BeforeToolCallEvent, self.on_tool)
+        registry.add_callback(AfterModelCallEvent, self.on_model)
+
+    def on_tool(self, event: BeforeToolCallEvent):
+        name = event.agent.name
+        self.tool_calls[name] = self.tool_calls.get(name, 0) + 1
+        line = str((event.tool_use.get("input") or {}).get("line_number", ""))
+        self.lines_looked_up.setdefault(name, []).append(line)
+
+    def on_model(self, event: AfterModelCallEvent):
+        name = event.agent.name
+        self.model_calls[name] = self.model_calls.get(name, 0) + 1
+
+
+def build_preparer(model, hooks: TraceHooks | None = None) -> Agent:
     return Agent(model=model, system_prompt=PREPARER_PROMPT, tools=[line_guidance],
-                 structured_output_model=BatchCalls, callback_handler=None, name="preparer")
+                 structured_output_model=BatchCalls, callback_handler=None, name="preparer",
+                 hooks=[hooks] if hooks else None)
 
 
-def build_reviewer(model) -> Agent:
+def build_reviewer(model, hooks: TraceHooks | None = None) -> Agent:
     return Agent(model=model, system_prompt=REVIEWER_PROMPT, tools=[line_guidance],
-                 structured_output_model=BatchCalls, callback_handler=None, name="reviewer")
+                 structured_output_model=BatchCalls, callback_handler=None, name="reviewer",
+                 hooks=[hooks] if hooks else None)
 
 
-def build_referee(model) -> Agent:
+def build_referee(model, hooks: TraceHooks | None = None) -> Agent:
     return Agent(model=model, system_prompt=REFEREE_PROMPT, tools=[line_guidance],
-                 structured_output_model=Verdicts, callback_handler=None, name="referee")
+                 structured_output_model=Verdicts, callback_handler=None, name="referee",
+                 hooks=[hooks] if hooks else None)
 
 
 def batch_task(rows: list[Transaction]) -> str:
@@ -156,11 +186,13 @@ class ReviewGraph:
     model: object
 
     def __post_init__(self):
-        self.preparer = build_preparer(self.model)
-        self.reviewer = build_reviewer(self.model)
-        self.referee = build_referee(self.model)
+        self.hooks = TraceHooks()
+        self.preparer = build_preparer(self.model, self.hooks)
+        self.reviewer = build_reviewer(self.model, self.hooks)
+        self.referee = build_referee(self.model, self.hooks)
 
     def run(self, task: str):
+        self.hooks.reset()
         for agent in (self.preparer, self.reviewer, self.referee):
             agent.messages = []
         builder = GraphBuilder()

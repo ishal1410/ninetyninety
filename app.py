@@ -267,6 +267,7 @@ def graph_svg(trace: list[dict] | None) -> str:
 
     referee_runs = sum(1 for t in runs if t.get("referee_ran"))
     tools = sum(t.get("tool_calls", 0) for t in runs)
+    model_calls = sum(sum(t.get("model_calls", {}).values()) for t in runs)
     hot = bool(runs) and referee_runs > 0
 
     def box(name, x, y, sub, is_hot=True):
@@ -276,6 +277,8 @@ def graph_svg(trace: list[dict] | None) -> str:
 
     if runs:
         task = [f'{len(runs)} batches', f'{tools} tool calls']
+        if model_calls:
+            task.append(f'{model_calls} model calls, counted by Strands hooks')
         prep = f"{mean_ms('preparer'):,} ms mean" if mean_ms("preparer") else "did not run"
         rev = f"{mean_ms('reviewer'):,} ms mean" if mean_ms("reviewer") else "did not run"
         ref = f"ran {referee_runs} of {len(runs)} batches"

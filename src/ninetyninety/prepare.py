@@ -8,7 +8,7 @@ import time
 from dataclasses import dataclass, field
 
 from .agents import (
-    TOOL_CALLS, BatchCalls, ReviewGraph, RowCall, Verdict, batch_task,
+    BatchCalls, ReviewGraph, RowCall, Verdict, batch_task,
     rule_is_grounded,
 )
 from .config import build_model, model_ids, provider_label
@@ -221,7 +221,6 @@ def prepare_ledger(transactions: list[Transaction], model=None, progress=None,
                 continue
             graph = graph_at(i)
             provider = provider_label(models[i])
-            TOOL_CALLS["line_guidance"] = 0
             try:
                 result = run_graph(graph, task)
                 break
@@ -250,7 +249,9 @@ def prepare_ledger(transactions: list[Transaction], model=None, progress=None,
             trace.append({
                 "batch": index, "rows": len(batch), "provider": provider,
                 "nodes": order, "referee_ran": "referee" in order,
-                "tool_calls": TOOL_CALLS["line_guidance"],
+                "tool_calls": sum(graph.hooks.tool_calls.values()),
+                "tool_calls_by_node": dict(graph.hooks.tool_calls),
+                "model_calls": dict(graph.hooks.model_calls),
                 "node_ms": {n: getattr(result.results[n], "execution_time", None) for n in order},
                 "seconds": round(time.time() - started, 1),
             })

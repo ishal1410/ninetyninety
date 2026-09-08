@@ -63,9 +63,12 @@ def main(argv: list[str]) -> int:
         else:
             node_ms = ", ".join(f"{n} {round(ms)}ms" if ms is not None else n
                                 for n, ms in t["node_ms"].items())
+            per_node = ", ".join(f"{n} {t.get('model_calls', {}).get(n, 0)}m/{t.get('tool_calls_by_node', {}).get(n, 0)}t"
+                                 for n in t["nodes"])
             print(f"  batch {t['batch']}: {t['rows']} rows via {t['provider']} in {t['seconds']}s; "
                   f"nodes {'->'.join(t['nodes'])}; tool calls {t['tool_calls']}; "
-                  f"referee {'ran' if t['referee_ran'] else 'skipped'}; {node_ms}")
+                  f"referee {'ran' if t['referee_ran'] else 'skipped'}; {node_ms}; "
+                  f"model/tool calls per node (from Strands hooks): {per_node}")
     return 0
 
 

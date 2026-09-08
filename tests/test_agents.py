@@ -1,6 +1,8 @@
 from ninetyninety.agents import (
-    TOOL_CALLS, BatchCalls, RowCall, batch_task, line_guidance, rule_is_grounded,
+    BatchCalls, RowCall, batch_task, line_guidance, rule_is_grounded,
 )
+from strands.hooks import AfterModelCallEvent, BeforeToolCallEvent
+
 from ninetyninety.ledger import Transaction
 
 
@@ -8,12 +10,42 @@ def _tx(row, desc, amount):
     return Transaction(date="2025-03-04", description=desc, amount=amount, source_row=row)
 
 
-def test_line_guidance_tool_returns_irs_text_and_counts_calls():
-    before = TOOL_CALLS["line_guidance"]
+def test_line_guidance_tool_returns_irs_text():
     text = line_guidance("13")
     assert "independent contractors" in text
     assert "expense" in text
-    assert TOOL_CALLS["line_guidance"] == before + 1
+
+
+def test_trace_hooks_count_tool_and_model_calls_per_agent():
+    from ninetyninety.agents import TraceHooks
+
+    hooks = TraceHooks()
+    agent = type("A", (), {"name": "preparer"})()
+    hooks.on_tool(BeforeToolCallEvent(
+        agent=agent, selected_tool=None, invocation_state={},
+        tool_use={"name": "line_guidance", "input": {"line_number": "13"}, "toolUseId": "t1"}))
+    hooks.on_model(AfterModelCallEvent(agent=agent))
+    hooks.on_model(AfterModelCallEvent(agent=agent))
+    assert hooks.tool_calls == {"preparer": 1}
+    assert hooks.model_calls == {"preparer": 2}
+    assert hooks.lines_looked_up == {"preparer": ["13"]}
+    hooks.reset()
+    assert hooks.tool_calls == {} and hooks.model_calls == {}
+
+
+def test_review_graph_registers_the_same_hooks_on_all_three_agents():
+    from ninetyninety.agents import ReviewGraph, TraceHooks
+
+    class Model:
+        config = {"model_id": "fake"}
+        stateful = False
+    graph = ReviewGraph(Model())
+    assert isinstance(graph.hooks, TraceHooks)
+    for agent in (graph.preparer, graph.reviewer, graph.referee):
+        assert any(cb.__self__ is graph.hooks
+                   for cb in agent.hooks.get_callbacks_for(BeforeToolCallEvent(
+                       agent=agent, selected_tool=None, invocation_state={},
+                       tool_use={"name": "x", "input": {}, "toolUseId": "t"})))
 
 
 def test_line_guidance_tool_rejects_a_line_not_on_the_form():

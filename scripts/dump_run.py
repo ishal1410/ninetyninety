@@ -17,7 +17,7 @@ started = time.time()
 form = prepare_ledger(rows, progress=lambda d, t: print(f"batch {d}/{t}", flush=True))
 data = dataclasses.asdict(form)
 data["lines"] = {k: dataclasses.asdict(v) for k, v in form.lines.items()}
-data["meta"] = {"ledger": str(ledger), "rows": len(rows), "skipped": skipped,
+data["meta"] = {"ledger": ledger.as_posix(), "rows": len(rows), "skipped": skipped,
                 "seconds": round(time.time() - started, 1),
                 "ran_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "synthetic": False}
 out.write_text(json.dumps(data, indent=1))

@@ -648,7 +648,7 @@
   }
  ],
  "meta": {
-  "ledger": "fixtures\\demo_ledger.csv",
+  "ledger": "fixtures/demo_ledger.csv",
   "rows": 54,
   "skipped": [],
   "seconds": 576.6,

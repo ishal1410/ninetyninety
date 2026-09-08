@@ -34,7 +34,9 @@ def test_index_is_written_for_the_treasurer():
     text, html, errors = render("index.html")
     assert errors == []
     assert "Your bank export becomes a Form 990-EZ draft" in text
-    assert "Run it on your computer" in text
+    # hosted: the JS swaps the CTA to the live app; "Run it on your computer" stays for the repo path
+    assert "Draft a return" in text and "Open the app" in text
+    assert 'https://ninetyninety.streamlit.app' in html
     assert "What this is not" in text
     assert "sent to Google's Gemini API" in text
     assert text.count("Agents for Humans") == 1

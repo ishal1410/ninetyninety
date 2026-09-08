@@ -1,4 +1,4 @@
-# Agents for Humans: I checked my agent's arithmetic against 3,687 real IRS returns before letting it near a user
+# Agents for Humans: I checked my agent's arithmetic against 3,632 real IRS returns before letting it near a user
 
 ```
 990-EZ returns: 3687
@@ -24,7 +24,7 @@ Thirty lines of Python. Boring on purpose. But "the model never does arithmetic"
 
 ## The corpus
 
-The IRS publishes every e-filed 990 as XML at `apps.irs.gov/pub/epostcard/990/xml/2026/`. The directory listing 404s; files are reachable only by exact name from an index CSV. The 2026 index holds 385,890 returns, of which 121,299 are 990-EZ. One zip batch, `2026_TEOS_XML_01A`, is 71 MB and yields the 3,687 990-EZ returns above.
+The IRS publishes every e-filed 990 as XML at `apps.irs.gov/pub/epostcard/990/xml/2026/`. The directory listing 404s; files are reachable only by exact name from an index CSV. The 2026 index holds 385,890 returns, of which 121,299 are 990-EZ. One zip batch, `2026_TEOS_XML_01A`, is 71 MB and yields 3,687 990-EZ files, of which 3,632 carry a checkable line 9 (the counts above).
 
 Each return carries both its line items and its own stated totals:
 
@@ -49,7 +49,7 @@ The Streamlit app reads `results/validation.json` and shows the three rates abov
 ## Takeaways
 
 - If your agent hands a job to deterministic code, test that code against ground truth from the domain, not against fixtures you wrote.
-- Government data is often published in an awkward but complete form. 71 MB of XML is a free test set of 3,687 accountant-reviewed answers.
+- Government data is often published in an awkward but complete form. 71 MB of XML is a free test set of 3,632 accountant-reviewed answers.
 - Put the validation number in the product, not only in the README.
 
 Built with Strands Agents for the AWS Agents for Humans hackathon. Repo: https://github.com/ishal1410/ninetyninety

@@ -71,3 +71,5 @@ Compute totals. Line 9, 17 and 18 come from `formmath.py`, a module no model out
 - Blind parallel entry nodes are the cheapest way to get a second opinion; Strands gives you that isolation without any prompt trickery.
 - A conditional edge means the expensive arbiter only runs when it is needed. Four of five batches needed it only because the fixtures were made harder on purpose.
 - Make the citation a schema field and verify it in code. The model is not the last line of defence.
+
+Built with Strands Agents for the AWS Agents for Humans hackathon. Repo: https://github.com/ishal1410/ninetyninety

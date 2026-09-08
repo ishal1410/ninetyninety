@@ -21,6 +21,7 @@ from ninetyninety.ledger import load_ledger
 from ninetyninety.lines import EXPENSE_LINES, REVENUE_LINES, form_order, line_by_number
 from ninetyninety.pdffill import download_form, fill_form
 from ninetyninety.prepare import prepare_ledger
+from ninetyninety.recorded import load_recorded_run
 
 BASE = Path(__file__).parent
 st.set_page_config(page_title="NinetyNinety", page_icon=str(BASE / "assets" / "favicon.png"),
@@ -312,12 +313,16 @@ with body:
     with c2:
         org_name = st.text_input("Organisation name for the PDF", "DEMO COMMUNITY ORG")
         ein = st.text_input("EIN for the PDF", "00-0000000")
-    go = st.button("Draft a return", type="primary")
+    b1, b2 = st.columns([1, 2])
+    go = b1.button("Draft a return", type="primary")
+    replay = b2.button("Replay the recorded run (no model calls)",
+                       help="Shows the draft recorded on 2026-09-08 from the demo ledger through Google Gemini. "
+                            "Same code path, no quota used. Use it if the free tier for the day is spent.")
 
-    if go:
+    if go or replay:
         workdir = Path(tempfile.mkdtemp(prefix="ninetyninety-"))
         path = BASE / "fixtures" / "demo_ledger.csv"
-        if uploaded is not None and not use_demo:
+        if go and uploaded is not None and not use_demo:
             path = workdir / "ledger.csv"
             path.write_bytes(uploaded.getvalue())
         skipped: list[dict] = []
@@ -326,6 +331,10 @@ with body:
         except ValueError as error:
             st.error(f"Could not read the ledger: {error}")
             st.stop()
+    if replay:
+        form = load_recorded_run(BASE / "results" / "demo_run.json")
+        st.caption("Recorded on 2026-09-08 through Google Gemini; live runs use the same code.")
+    if go:
         bar = st.progress(0.0, text="Preparer and Reviewer are reading the ledger in parallel")
         skeleton = st.empty()
         skeleton.markdown('<div class="shell"><div class="form skel">'
@@ -342,6 +351,10 @@ with body:
             st.stop()
         skeleton.empty()
         bar.empty()
+        if form.unclassified and len(form.unclassified) == len(transactions) and form.trace                 and "exhausted" in str(form.trace[0].get("error", "")):
+            st.warning("Every batch failed: the free-tier quota for today is spent. "
+                       "Use the replay button above to see the recorded run.")
+    if go or replay:
         pdf_bytes, pdf_error = None, None
         try:
             pdf = fill_form(form, download_form(BASE / "data" / "f990ez.pdf"),

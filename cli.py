@@ -14,6 +14,9 @@ def main(argv: list[str]) -> int:
     if len(argv) < 2:
         print(__doc__)
         return 1
+    for stream in (sys.stdout, sys.stderr):  # a cp1252 console must not crash on "CAFÉ"
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
     skipped: list[dict] = []
     try:
         transactions = load_ledger(Path(argv[1]), skipped)

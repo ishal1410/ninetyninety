@@ -11,7 +11,7 @@ from .agents import (
     TOOL_CALLS, BatchCalls, ReviewGraph, RowCall, Verdict, batch_task,
     rule_is_grounded,
 )
-from .config import build_model, provider_label
+from .config import build_model, model_ids, provider_label
 from .formmath import excess_or_deficit, total_expenses, total_revenue
 from .ledger import Transaction
 from .lines import ALL_LINE_NUMBERS, line_by_number
@@ -130,7 +130,9 @@ _DELAY = re.compile(r'retryDelay"?\s*:\s*"?(\d+(?:\.\d+)?)s|retry in (\d+(?:\.\d
 _TRANSIENT = (429, 500, 502, 503, 504)
 
 
-_TRANSIENT_CLASS = re.compile(r"Throttl|RateLimit|ServiceUnavailable|Overloaded", re.I)
+# botocore names these in the error code; the openai client and Strands in the class name.
+_TRANSIENT_WORDS = re.compile(
+    r"Throttl|RateLimit|TooManyRequests|ServiceUnavailable|InternalServer|ModelNotReady|Overloaded", re.I)
 # A status code stands alone ("429 RESOURCE_EXHAUSTED", "Error code: 503 - {"),
 # never glued to "=", "$" or digits the way an echoed amount in a
 # validation error is ("input_value=500 is not a str").
@@ -138,11 +140,17 @@ _STATUS = re.compile(r"(?<![=$\d.])\b(429|50[0234])\b(?=\s*(?:[A-Z(\-:]|$))")
 
 
 def _is_transient(error: Exception) -> bool:
-    """Rate limits and provider-side outages: retry, then fail over."""
+    """Rate limits and provider-side outages: retry, then give up on the batch."""
     code = getattr(error, "code", None) or getattr(error, "status_code", None)
     if code in _TRANSIENT:
         return True
-    if _TRANSIENT_CLASS.search(type(error).__name__):
+    response = getattr(error, "response", None)  # botocore ClientError
+    if isinstance(response, dict):
+        if response.get("ResponseMetadata", {}).get("HTTPStatusCode") in _TRANSIENT:
+            return True
+        if _TRANSIENT_WORDS.search(str(response.get("Error", {}).get("Code", ""))):
+            return True
+    if _TRANSIENT_WORDS.search(type(error).__name__):
         return True
     return _STATUS.search(str(error)) is not None
 
@@ -176,34 +184,53 @@ def _calls_by_row(calls: BatchCalls | None) -> dict[int, RowCall]:
 def prepare_ledger(transactions: list[Transaction], model=None, progress=None,
                    batch_size: int = 12) -> Form990EZ:
     """Classify the ledger batch by batch through the Strands graph on
-    Amazon Bedrock. `model` overrides the configured BedrockModel (tests).
+    Gemini. `model` pins one model (tests); otherwise the ids in
+    `model_ids()` are tried in order, moving to the next when one is
+    rate-limited out, because the free tier's daily cap is per model.
     `progress(done, total)` is called after each batch if given.
 
-    A batch that Bedrock cannot answer even after backoff is recorded as
+    A batch no model can answer even after backoff is recorded as
     unclassified with the error text; the run continues and nothing
     already classified is lost.
     """
-    model = model if model is not None else build_model()
-    provider = provider_label(model)
-    graph = ReviewGraph(model)
+    candidates = [model] if model is not None else model_ids()
+    models: list = []
+    graphs: list[ReviewGraph] = []
+    retired: set[int] = set()  # model ids whose daily cap is gone for this run
+
+    def graph_at(i: int) -> ReviewGraph:
+        while len(graphs) <= i:
+            c = candidates[len(graphs)]
+            models.append(c if model is not None else build_model(c))
+            graphs.append(ReviewGraph(models[-1]))
+        return graphs[i]
 
     rows: list[tuple[Transaction, RowCall | None, RowCall | None]] = []
     verdicts: dict[int, Verdict] = {}
     trace: list[dict] = []
     failed_rows: dict[int, str] = {}
     batches = [transactions[i:i + batch_size] for i in range(0, len(transactions), batch_size)]
+    error = None  # the last failure; once every model is out, later batches inherit it
     for index, batch in enumerate(batches, start=1):
         task = batch_task(batch)
-        TOOL_CALLS["line_guidance"] = 0
+        result, graph, provider = None, None, None
         started = time.time()
-        result, error = None, None
-        try:
-            result = run_graph(graph, task)
-        except ProviderExhausted as exhausted:
-            error = f"{provider} exhausted: {exhausted}"
-        except Exception as failure:  # noqa: BLE001 - a malformed structured
-            # answer must not discard the batches already classified
-            error = f"{provider} failed: {type(failure).__name__}: {str(failure)[:200]}"
+        for i in range(len(candidates)):
+            if i in retired:
+                continue
+            graph = graph_at(i)
+            provider = provider_label(models[i])
+            TOOL_CALLS["line_guidance"] = 0
+            try:
+                result = run_graph(graph, task)
+                break
+            except ProviderExhausted as exhausted:
+                error = f"{provider} exhausted: {exhausted}"
+                retired.add(i)
+            except Exception as failure:  # noqa: BLE001 - a 404 model id or a malformed
+                # structured answer costs this batch on this model only; the next
+                # model gets the batch and this model stays available for the next
+                error = f"{provider} failed: {type(failure).__name__}: {str(failure)[:200]}"
         if result is None:
             for tx in batch:
                 rows.append((tx, None, None))

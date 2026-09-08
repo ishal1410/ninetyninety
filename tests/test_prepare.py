@@ -162,7 +162,7 @@ def _fake_graph_factory(outcomes, made):
     return FakeReviewGraph
 
 
-def test_prepare_ledger_batches_through_one_bedrock_graph(monkeypatch):
+def test_prepare_ledger_batches_through_one_graph(monkeypatch):
     import ninetyninety.prepare as prepare
     rows = [tx(i, f"ROW {i}", 10) for i in range(2, 8)]  # 6 rows, batch 4 -> 2 batches
     first = _Result(BatchCalls(calls=[call(i, "1") for i in range(2, 6)]),
@@ -176,20 +176,20 @@ def test_prepare_ledger_batches_through_one_bedrock_graph(monkeypatch):
     assert made == ["fake"]  # one graph, reused for every batch
     assert form.totals["line9"] == 60
     assert form.disagreements[0]["referee"] == "2"
-    assert [t["provider"] for t in form.trace] == ["bedrock:fake-model"] * 2
+    assert [t["provider"] for t in form.trace] == ["gemini:fake-model"] * 2
     assert form.trace[1]["referee_ran"] is True
 
 
-def test_an_exhausted_batch_is_unclassified_with_the_error_and_the_run_continues(monkeypatch):
+def test_an_exhausted_model_marks_that_batch_and_later_ones_unclassified(monkeypatch):
+    """Exhausted = daily cap gone; with no other model id, stop calling it."""
     import ninetyninety.prepare as prepare
-    good = _Result(BatchCalls(calls=[call(3, "1")]), BatchCalls(calls=[call(3, "1")]))
     monkeypatch.setattr(prepare, "ReviewGraph",
-                        _fake_graph_factory([ProviderExhausted("throttled"), good], []))
+                        _fake_graph_factory([ProviderExhausted("throttled")], []))
     form = prepare_ledger([tx(2, "X", 5), tx(3, "Y", 7)], model=_FakeModel(), batch_size=1)
-    assert form.unclassified[0]["source_row"] == 2
-    assert form.unclassified[0]["error"] == "bedrock:fake-model exhausted: throttled"
+    assert [u["source_row"] for u in form.unclassified] == [2, 3]
+    assert form.unclassified[1]["error"] == "gemini:fake-model exhausted: throttled"
     assert form.trace[0]["error"] and "seconds" in form.trace[0]
-    assert form.totals["line9"] == 7  # batch 2 still classified
+    assert form.totals["line9"] == 0
 
 
 def test_a_non_transient_error_does_not_discard_finished_batches(monkeypatch):
@@ -199,7 +199,7 @@ def test_a_non_transient_error_does_not_discard_finished_batches(monkeypatch):
                         _fake_graph_factory([good, ValueError("malformed answer")], []))
     form = prepare_ledger([tx(2, "A", 10), tx(3, "B", 10)], model=_FakeModel(), batch_size=1)
     assert form.totals["line9"] == 10
-    assert form.unclassified[0]["error"].startswith("bedrock:fake-model failed: ValueError")
+    assert form.unclassified[0]["error"].startswith("gemini:fake-model failed: ValueError")
 
 
 def test_referee_may_only_pick_one_of_the_two_disputed_lines():
@@ -246,7 +246,54 @@ def test_every_batch_failing_reports_each_error(monkeypatch):
     monkeypatch.setattr(prepare, "ReviewGraph", _fake_graph_factory(
         [ProviderExhausted("quota"), ProviderExhausted("quota")], []))
     form = prepare_ledger([tx(2, "A", 1), tx(3, "B", 1)], model=_FakeModel(), batch_size=1)
-    assert [t["error"] for t in form.trace] == ["bedrock:fake-model exhausted: quota"] * 2
-    assert form.unclassified[1]["error"] == "bedrock:fake-model exhausted: quota"
+    assert [t["error"] for t in form.trace] == ["gemini:fake-model exhausted: quota"] * 2
+    assert form.unclassified[1]["error"] == "gemini:fake-model exhausted: quota"
 
 
+
+
+def test_is_transient_recognises_bedrock_client_errors_by_code():
+    from botocore.exceptions import ClientError
+    from ninetyninety.prepare import _is_transient
+
+    def err(code, status):
+        return ClientError({"Error": {"Code": code, "Message": "x"},
+                            "ResponseMetadata": {"HTTPStatusCode": status}}, "ConverseStream")
+    for code, status in (("ThrottlingException", 429), ("ServiceUnavailableException", 503),
+                         ("InternalServerException", 500), ("ModelNotReadyException", 429)):
+        assert _is_transient(err(code, status)), code
+    assert not _is_transient(err("ValidationException", 400))
+    assert not _is_transient(err("AccessDeniedException", 403))
+
+
+def test_prepare_ledger_rotates_to_the_next_model_when_one_is_exhausted(monkeypatch):
+    import ninetyninety.prepare as prepare
+    rows = [tx(2, "A", 10), tx(3, "B", 10)]
+    good = _Result(BatchCalls(calls=[call(2, "1"), call(3, "1")]),
+                   BatchCalls(calls=[call(2, "1"), call(3, "1")]))
+    made = []
+    monkeypatch.setattr(prepare, "ReviewGraph",
+                        _fake_graph_factory([ProviderExhausted("quota"), good], made))
+    monkeypatch.setattr(prepare, "model_ids", lambda: ["m1", "m2"])
+    monkeypatch.setattr(prepare, "build_model", lambda mid: type("M", (), {"config": {"model_id": mid}, "__str__": lambda self: mid})())
+    form = prepare_ledger(rows, batch_size=2)
+    assert made == ["m1", "m2"]
+    assert form.totals["line9"] == 20 and form.unclassified == []
+    assert form.trace[0]["provider"] == "gemini:m2"
+
+
+def test_a_non_transient_failure_costs_one_batch_not_the_model(monkeypatch):
+    """Batch 1: m1 gives a malformed answer, m2 takes it. Batch 2 goes back to m1."""
+    import ninetyninety.prepare as prepare
+    good = _Result(BatchCalls(calls=[call(2, "1"), call(3, "1")]),
+                   BatchCalls(calls=[call(2, "1"), call(3, "1")]))
+    made = []
+    monkeypatch.setattr(prepare, "ReviewGraph",
+                        _fake_graph_factory([ValueError("malformed"), good, good], made))
+    monkeypatch.setattr(prepare, "model_ids", lambda: ["m1", "m2"])
+    monkeypatch.setattr(prepare, "build_model",
+                        lambda mid: type("M", (), {"config": {"model_id": mid}, "__str__": lambda self: mid})())
+    form = prepare_ledger([tx(2, "A", 10), tx(3, "B", 10)], batch_size=1)
+    assert made == ["m1", "m2"]
+    assert [t["provider"] for t in form.trace] == ["gemini:m2", "gemini:m1"]
+    assert form.unclassified == [] and form.totals["line9"] == 20

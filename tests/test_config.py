@@ -1,34 +1,37 @@
 import pytest
 
-from ninetyninety.config import bedrock_configured, build_model, provider_label
+from ninetyninety.config import (
+    DEFAULT_MODEL_IDS, build_model, gemini_configured, model_ids, provider_label,
+)
 
 
-def test_bedrock_configured_needs_both_keys():
-    assert bedrock_configured({"AWS_ACCESS_KEY_ID": "a", "AWS_SECRET_ACCESS_KEY": "b"})
-    assert not bedrock_configured({"AWS_ACCESS_KEY_ID": "a"})
-    assert not bedrock_configured({})
+def test_gemini_configured_needs_the_key():
+    assert gemini_configured({"GOOGLE_API_KEY": "k"})
+    assert not gemini_configured({"GOOGLE_API_KEY": ""})
+    assert not gemini_configured({})
+
+
+def test_model_ids_default_and_override():
+    assert model_ids({}) == DEFAULT_MODEL_IDS.split(",")
+    assert model_ids({"GEMINI_MODEL_IDS": " a , b ,"}) == ["a", "b"]
+    assert model_ids({"GEMINI_MODEL_IDS": " , "}) == DEFAULT_MODEL_IDS.split(",")
 
 
 def test_build_model_raises_with_setup_instructions(monkeypatch):
-    monkeypatch.delenv("AWS_ACCESS_KEY_ID", raising=False)
-    monkeypatch.delenv("AWS_SECRET_ACCESS_KEY", raising=False)
-    with pytest.raises(RuntimeError, match="AWS_ACCESS_KEY_ID"):
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    with pytest.raises(RuntimeError, match="GOOGLE_API_KEY"):
         build_model()
 
 
-def test_build_model_returns_a_bedrock_model_with_region_and_default_profile(monkeypatch):
-    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "a")
-    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "b")
-    monkeypatch.setenv("AWS_REGION", "us-east-1")
-    monkeypatch.delenv("BEDROCK_MODEL_ID", raising=False)
+def test_build_model_returns_a_gemini_model_for_the_first_id_by_default(monkeypatch):
+    monkeypatch.setenv("GOOGLE_API_KEY", "k")
+    monkeypatch.delenv("GEMINI_MODEL_IDS", raising=False)
     model = build_model()
-    assert type(model).__name__ == "BedrockModel"
-    assert model.config["model_id"]  # SDK default Claude inference profile
-    assert provider_label(model) == f"bedrock:{model.config['model_id']}"
+    assert type(model).__name__ == "GeminiModel"
+    assert model.config["model_id"] == "gemini-3.8-flash"
+    assert provider_label(model) == "gemini:gemini-3.8-flash"
 
 
-def test_build_model_honours_bedrock_model_id_override(monkeypatch):
-    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "a")
-    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "b")
-    monkeypatch.setenv("BEDROCK_MODEL_ID", "us.anthropic.claude-haiku-4-5-20251001-v1:0")
-    assert build_model().config["model_id"] == "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+def test_build_model_takes_an_explicit_model_id(monkeypatch):
+    monkeypatch.setenv("GOOGLE_API_KEY", "k")
+    assert build_model("gemini-3.5-flash-lite").config["model_id"] == "gemini-3.5-flash-lite"

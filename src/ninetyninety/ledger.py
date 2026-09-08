@@ -5,6 +5,7 @@ Whole dollars as integers. Positive is money in, negative is money out.
 exact rows it came from.
 """
 import csv
+import io
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -35,7 +36,12 @@ def load_ledger(path: Path, skipped: list[dict] | None = None) -> list[Transacti
     """Read the CSV. Rows with a description but an unreadable amount are
     appended to `skipped` (if given) so they can be shown to the user."""
     transactions: list[Transaction] = []
-    with open(Path(path), newline="", encoding="utf-8-sig") as handle:
+    raw = Path(path).read_bytes()
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:  # Windows bank exports are often cp1252
+        text = raw.decode("cp1252", errors="replace")
+    with io.StringIO(text, newline="") as handle:
         reader = csv.DictReader(handle)
         # Bank exports capitalise headers ("Date,Description,Amount"): match
         # case- and space-insensitively, and refuse a file with no such columns

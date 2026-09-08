@@ -67,3 +67,11 @@ def test_load_ledger_refuses_a_file_without_the_required_columns(tmp_path):
     path.write_text("posted,memo,value\n2025-01-01,DONATION,100\n", encoding="utf-8")
     with pytest.raises(ValueError, match="description, amount"):
         load_ledger(path)
+
+
+def test_load_ledger_accepts_a_cp1252_bank_export(tmp_path):
+    from ninetyninety.ledger import load_ledger
+    path = tmp_path / "bank.csv"
+    path.write_bytes("date,description,amount\r\n2025-03-01,CAF\u00c9 DONATION,100\r\n".encode("cp1252"))
+    [tx] = load_ledger(path)
+    assert tx.description == "CAF\u00c9 DONATION" and tx.amount == 100

@@ -9,3 +9,5 @@ venv/
 .venv_diag/
 .superpowers/
 .bug-hunter/
+.impeccable/review/
+.impeccable/build/

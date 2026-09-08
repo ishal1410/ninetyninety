@@ -25,10 +25,11 @@ BOXES = [
      ["@tool line_guidance returns the IRS 990-EZ Part I instruction text",
       "pydantic BatchCalls / Verdicts: structured output",
       "IRS e-file XML corpus: 3,687 real returns validate formmath.py"]),
-    ("AWS services",
-     ["Amazon Bedrock: Claude through Strands' native BedrockModel (one provider)",
-      "Standard AWS credentials; Free-plan account, signup credit",
-      "Throttle or 5xx: advertised-delay backoff, 3 attempts, then surfaced"]),
+    ("Model provider",
+     ["Google Gemini through Strands' native GeminiModel (one provider, free tier)",
+      "Per-model daily cap: rotates gemini-3.8-flash -> 3.5 -> 3.6 -> 3.7 -> 3.5-lite",
+      "429 or 5xx: advertised-delay backoff, 3 attempts, next model, then surfaced",
+      "Amazon Bedrock is the one-line swap once the account's quota is seeded"]),
     ("Output",
      ["Form 990-EZ Part I, every line citing its rows and the IRS rule",
       "Lines 9, 17, 18 computed in formmath.py, never by a model",
@@ -126,7 +127,7 @@ def build_html() -> str:
     ])
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>{CSS}</style></head><body>
 <div class="page">
-  <h1>NinetyNinety <span>ledger in, drafted Form 990-EZ out. Built with Strands Agents on Amazon Bedrock.</span></h1>
+  <h1>NinetyNinety <span>ledger in, drafted Form 990-EZ out. Built with Strands Agents on Google Gemini.</span></h1>
   <p class="sub">Two agents classify every bank row without seeing each other; a third rules only on disagreement; totals are arithmetic in Python, never model output.</p>
   <svg style="position:absolute;left:0;top:0;width:1600px;height:760px">
     <defs><marker id="pm" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">

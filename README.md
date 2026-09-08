@@ -46,11 +46,15 @@ PYTHONPATH=src python cli.py fixtures/demo_ledger.csv
 
 Web UI: `streamlit run app.py`
 
+Landing page: `index.html` (GitHub Pages, repo root). It shows the recorded demo run; refresh it after a run with `PYTHONPATH=src python scripts/dump_run.py && PYTHONPATH=src python scripts/build_landing.py`.
+
 Tests: `PYTHONPATH=src python -m pytest`
 
-## Model: Amazon Bedrock
+## Model: Google Gemini
 
-One provider: Amazon Bedrock through Strands' native `BedrockModel` (`src/ninetyninety/config.py`), Claude via the SDK's default cross-region inference profile, overridable with `BEDROCK_MODEL_ID`. Credentials are the standard AWS environment variables in `.env` (see `.env.example`). On a throttle or a 5xx the batch sleeps for the delay Bedrock advertises and retries; after three attempts, or on any other error, that batch is recorded as unclassified with the error text and the run continues, so nothing already classified is lost. The hosted demo runs on a Free-plan AWS account's signup credit.
+One provider: Google Gemini through Strands' native `GeminiModel` (`src/ninetyninety/config.py`). `GOOGLE_API_KEY` in `.env` is the only required setting (see `.env.example`); the free tier needs no card. Its daily cap is per model id (measured 2026-09-06: 20 requests a day per model per project), so `prepare_ledger` rotates through `GEMINI_MODEL_IDS` when one is exhausted. On a 429 or a 5xx the batch sleeps for the delay Gemini advertises and retries; after three attempts it moves to the next model id, and a batch no model can answer is recorded as unclassified with the error text while the run continues, so nothing already classified is lost.
+
+Amazon Bedrock was the first choice and is a one-line swap (`BedrockModel` in place of `GeminiModel`). It is not used for the demo because a new AWS account's applied Bedrock quota is 0 tokens/day for every model and region until AWS Support seeds it, which did not happen before the deadline.
 
 ## Live demo
 

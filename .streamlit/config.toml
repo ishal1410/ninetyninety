@@ -1,0 +1,16 @@
+[theme]
+base = "dark"
+primaryColor = "#62D39A"
+backgroundColor = "#07090F"
+secondaryBackgroundColor = "#0E121B"
+textColor = "#EDEFF5"
+linkColor = "#62D39A"
+borderColor = "#1E2533"
+baseRadius = "6px"
+font = "Outfit, sans-serif"
+headingFont = "Outfit, sans-serif"
+codeFont = "IBM Plex Mono, monospace"
+showWidgetBorder = true
+
+[server]
+headless = true

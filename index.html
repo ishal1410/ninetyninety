@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NinetyNinety drafts Form 990-EZ from a bank export</title>
+<meta name="description" content="Two Strands agents post each bank transaction to a Form 990-EZ Part I line and quote the IRS instruction. A Referee settles disputes. Python foots the totals.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07090d; --bg-2: #0c1016; --panel: #10151d; --panel-2: #151b25;
+    --ink: #eef1f5; --ink-2: #a7b0bd; --ink-3: #6b7482;
+    --line: rgba(255,255,255,.08); --line-2: rgba(255,255,255,.14);
+    --accent: #35d07f; --accent-ink: #06130c; --accent-soft: rgba(53,208,127,.14);
+    --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --ease: cubic-bezier(.32,.72,0,1); --r-lg: 28px; --r-md: 20px; --r-sm: 12px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: clip; }
+  a { color: inherit; text-decoration: none; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+  h1, h2, h3 { margin: 0; letter-spacing: -0.03em; line-height: 1.05; font-weight: 600; }
+  h1 { font-size: clamp(2.6rem, 5.2vw, 4.4rem); }
+  h2 { font-size: clamp(1.9rem, 3vw, 2.6rem); }
+  h3 { font-size: 1.15rem; letter-spacing: -0.01em; }
+  p { margin: 0; }
+  .sub { color: var(--ink-2); font-size: 1.1rem; max-width: 34em; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* atmosphere */
+  .mesh { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .mesh i { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .55; }
+  .mesh .a { width: 720px; height: 720px; left: -180px; top: -240px; background: radial-gradient(circle, rgba(53,208,127,.28), transparent 62%); }
+  .mesh .b { width: 640px; height: 640px; right: -200px; top: 160px; background: radial-gradient(circle, rgba(88,130,255,.16), transparent 62%); }
+  .mesh .c { width: 900px; height: 600px; left: 30%; top: 1400px; background: radial-gradient(circle, rgba(53,208,127,.12), transparent 62%); }
+  .grain { position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: .045; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  main, header, footer { position: relative; z-index: 1; }
+
+  /* floating island nav */
+  .navwrap { position: sticky; top: 18px; z-index: 40; display: flex; justify-content: center; padding: 0 16px; }
+  .nav { display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 18px; border-radius: 999px; background: rgba(16,21,29,.72); border: 1px solid var(--line-2); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 20px 50px -30px rgba(0,0,0,.8); }
+  .nav .brand { font-weight: 600; letter-spacing: -0.02em; margin-right: 14px; }
+  .nav a.l { padding: 8px 12px; border-radius: 999px; color: var(--ink-2); font-size: .92rem; transition: color .3s var(--ease), background .3s var(--ease); }
+  .nav a.l:hover { color: var(--ink); background: rgba(255,255,255,.06); }
+  .btn { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 8px 0 18px; border-radius: 999px; font-weight: 500; font-size: .95rem; transition: transform .5s var(--ease), background .4s var(--ease), border-color .4s var(--ease); white-space: nowrap; }
+  .btn .i { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: transform .5s var(--ease); }
+  .btn .i svg { width: 14px; height: 14px; }
+  .btn:hover .i { transform: translate(2px, -1px) scale(1.06); }
+  .btn:active { transform: scale(.98); }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary .i { background: rgba(6,19,12,.12); }
+  .btn-primary:hover { background: #45dc8d; }
+  .btn-ghost { background: rgba(255,255,255,.04); color: var(--ink); border: 1px solid var(--line-2); }
+  .btn-ghost .i { background: rgba(255,255,255,.08); }
+  .btn-ghost:hover { background: rgba(255,255,255,.08); }
+  .btn-sm { height: 36px; font-size: .88rem; }
+  .btn-sm .i { width: 24px; height: 24px; }
+
+  /* hero */
+  .hero { padding: 72px 0 40px; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 48px; align-items: center; min-height: calc(100dvh - 80px); }
+  .hero .copy { display: flex; flex-direction: column; gap: 22px; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; width: max-content; max-width: 100%; flex-wrap: wrap; padding: 6px 12px 6px 8px; border-radius: 999px; border: 1px solid var(--line-2); background: rgba(255,255,255,.04); font-size: .8rem; color: var(--ink-2); }
+  .pill b { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+  .hero .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+
+  .stage { position: relative; }
+  .bezel { padding: 8px; border-radius: var(--r-lg); background: rgba(255,255,255,.04); border: 1px solid var(--line); box-shadow: 0 40px 100px -40px rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.05) inset; }
+  .bezel > .core { border-radius: calc(var(--r-lg) - 8px); overflow: hidden; background: var(--panel); box-shadow: 0 1px 1px rgba(255,255,255,.08) inset; }
+  .stage .bezel { transform: rotate(-2deg); }
+  .stage img { display: block; width: 100%; height: auto; }
+  .chip { position: absolute; display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: var(--r-md); background: rgba(16,21,29,.78); border: 1px solid var(--line-2); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 30px 60px -30px rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.06) inset; min-width: 220px; font-size: .86rem; }
+  .chip .k { color: var(--ink-3); font-size: .74rem; }
+  .chip .v { font-weight: 600; letter-spacing: -0.01em; }
+  .chip .v em { font-style: normal; color: var(--accent); }
+  .chip.c1 { left: -36px; top: 22%; }
+  .chip.c2 { right: -28px; top: 48%; }
+  .chip.c3 { left: 8%; bottom: -26px; }
+
+  /* sections */
+  section { padding: 120px 0 0; }
+  .head { display: flex; flex-direction: column; gap: 14px; margin-bottom: 44px; }
+
+  /* bento proof: 3 items, 1 big + 2 stacked */
+  .bento { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); grid-template-rows: auto auto; gap: 14px; }
+  .tile { border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--panel); padding: 28px; display: flex; flex-direction: column; justify-content: space-between; gap: 22px; position: relative; overflow: hidden; box-shadow: 0 1px 0 rgba(255,255,255,.05) inset; }
+  .tile.big { grid-row: 1 / span 2; background: linear-gradient(160deg, #101a15, var(--panel) 55%); }
+  .tile .n { font-size: clamp(3rem, 6vw, 5rem); font-weight: 600; letter-spacing: -0.04em; line-height: 1; }
+  .tile .n small { font-size: .5em; color: var(--ink-2); letter-spacing: -0.02em; margin-left: 4px; }
+  .tile .l { color: var(--ink-2); max-width: 30em; }
+  .tile table { width: 100%; border-collapse: collapse; font-size: .9rem; margin-top: 4px; }
+  .tile td, .tile th { padding: 9px 0; border-top: 1px solid var(--line); text-align: left; font-weight: 500; }
+  .tile th { color: var(--ink-3); font-weight: 400; border-top: 0; }
+  .tile td.r, .tile th.r { text-align: right; }
+  .tile.img { padding: 0; }
+  .tile.img .n, .tile.img .l { padding: 0 28px; }
+  .tile.img .n { padding-top: 28px; }
+  .tile.img .l { padding-bottom: 20px; }
+  .tile.img figure { margin: 0; overflow: hidden; border-top: 1px solid var(--line); }
+  .tile.img img { display: block; width: 100%; height: 150px; object-fit: cover; object-position: 0 100%; opacity: .92; }
+  .bars { display: flex; gap: 6px; align-items: flex-end; height: 64px; }
+  .bars i { flex: 1; border-radius: 6px 6px 3px 3px; background: linear-gradient(180deg, var(--accent), rgba(53,208,127,.35)); min-height: 8px; transform-origin: bottom; }
+
+  /* pipeline diagram */
+  .pipe { position: relative; border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--panel); padding: 40px 32px; overflow: hidden; }
+  .pipe svg.wire { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .pipe svg.wire path { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 6 8; opacity: .6; }
+  .nodes { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: center; }
+  .node { border-radius: var(--r-md); border: 1px solid var(--line-2); background: var(--panel-2); padding: 20px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 0 rgba(255,255,255,.06) inset; }
+  .node .t { font-size: .74rem; color: var(--ink-3); font-family: var(--mono); }
+  .node p { color: var(--ink-2); font-size: .92rem; }
+  .node.pair { display: flex; flex-direction: column; gap: 14px; background: transparent; border: 0; padding: 0; box-shadow: none; }
+  .node.pair .node { width: 100%; }
+  .node.ref { border-color: rgba(53,208,127,.35); background: linear-gradient(160deg, #10201a, var(--panel-2) 60%); }
+  .node.py { background: var(--ink); color: var(--bg); border-color: transparent; }
+  .node.py .t, .node.py p { color: #3a4350; }
+  .node.py p { color: #2a323d; }
+
+  /* Part I */
+  .part { border-radius: calc(var(--r-lg) - 8px); overflow: hidden; }
+  .part .hd, .row { display: grid; grid-template-columns: 60px minmax(0, 1fr) 150px 190px; align-items: center; }
+  .part .hd { padding: 14px 18px; background: var(--panel-2); font-size: .78rem; color: var(--ink-3); border-bottom: 1px solid var(--line); }
+  .part .hd .r, .row .amt { text-align: right; }
+  .row { width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); color: inherit; font: inherit; padding: 0; cursor: pointer; transition: background .3s var(--ease); }
+  .row:hover { background: rgba(255,255,255,.03); }
+  .row > div { padding: 14px 18px; }
+  .row .ln { font-family: var(--mono); color: var(--ink-3); }
+  .row .desc { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .row .desc span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .desc .lead { flex: 1; border-bottom: 1px dashed var(--line-2); min-width: 20px; }
+  .row .amt { font-family: var(--mono); font-size: 1rem; }
+  .row .who { color: var(--ink-2); font-size: .9rem; white-space: nowrap; }
+  .row .who.ref span { color: var(--accent); }
+  .row.total { background: rgba(255,255,255,.04); cursor: default; font-weight: 600; }
+  .row.total .who { color: var(--ink); }
+  .row.empty .amt, .row.empty .who { color: var(--ink-3); }
+  .row[aria-expanded="true"] { background: rgba(53,208,127,.06); }
+  .tx { border-bottom: 1px solid var(--line); background: rgba(0,0,0,.25); padding: 8px 18px 14px 78px; }
+  .tx table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  .tx td { padding: 8px 8px; vertical-align: top; border-top: 1px solid var(--line); }
+  .tx td.d { white-space: nowrap; color: var(--ink-3); width: 110px; font-family: var(--mono); }
+  .tx td.a { text-align: right; white-space: nowrap; width: 110px; font-family: var(--mono); }
+  .tx td.r { color: var(--ink-2); font-size: .88rem; }
+  .tx td.r b { color: var(--accent); font-weight: 500; }
+  .tx .none { padding: 8px; color: var(--ink-3); }
+
+  /* disputes: 2 items, 2 cells */
+  .duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .verdict { border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--panel); padding: 28px; display: flex; flex-direction: column; gap: 18px; }
+  .verdict .tx-name { font-weight: 600; font-size: 1.15rem; letter-spacing: -0.01em; }
+  .verdict .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .verdict .cell { border-radius: var(--r-sm); background: var(--panel-2); border: 1px solid var(--line); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+  .verdict .cell .k { color: var(--ink-3); font-size: .74rem; }
+  .verdict .cell .v { font-weight: 600; }
+  .verdict .cell.win { border-color: rgba(53,208,127,.4); background: var(--accent-soft); }
+  .verdict .cell.win .v { color: var(--accent); }
+  .verdict .q { color: var(--ink-2); font-size: .92rem; border-left: 2px solid var(--accent); padding-left: 14px; }
+
+  /* trace */
+  .trace { border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--panel); overflow-x: auto; overflow-y: hidden; }
+  .trace table { width: 100%; border-collapse: collapse; font-size: .92rem; min-width: 760px; }
+  .trace th { text-align: left; padding: 14px 18px; color: var(--ink-3); font-weight: 400; font-size: .78rem; border-bottom: 1px solid var(--line); background: var(--panel-2); }
+  .trace td { padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .trace tr:last-child td { border-bottom: 0; }
+  .trace .on { color: var(--accent); font-weight: 500; }
+  .scroll { overflow-x: auto; }
+
+  /* run */
+  .run { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 40px; align-items: center; }
+  pre { margin: 0; border-radius: calc(var(--r-lg) - 8px); background: #0a0d12; padding: 22px 24px; overflow-x: auto; font-family: var(--mono); font-size: .9rem; line-height: 1.7; color: var(--ink-2); }
+  pre b { color: var(--ink); font-weight: 500; }
+
+  footer { margin-top: 120px; padding: 36px 0 48px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: .9rem; }
+  footer .wrap { display: flex; gap: 28px; flex-wrap: wrap; }
+  footer a:hover { color: var(--ink); }
+
+  /* motion */
+  .rv { opacity: 0; transform: translateY(22px); filter: blur(6px); transition: opacity .9s var(--ease), transform .9s var(--ease), filter .9s var(--ease); }
+  .rv.in { opacity: 1; transform: none; filter: none; }
+  .rv.d1 { transition-delay: .08s; } .rv.d2 { transition-delay: .16s; } .rv.d3 { transition-delay: .24s; } .rv.d4 { transition-delay: .32s; } .rv.d5 { transition-delay: .4s; }
+  .pipe svg.wire path { opacity: 0; transition: opacity 1.2s var(--ease) .4s; }
+  .pipe.in svg.wire path { opacity: .6; }
+  .bars i { transform: scaleY(0); transition: transform .8s var(--ease); }
+  .in .bars i { transform: scaleY(1); }
+  .in .bars i:nth-child(2) { transition-delay: .06s; } .in .bars i:nth-child(3) { transition-delay: .12s; } .in .bars i:nth-child(4) { transition-delay: .18s; } .in .bars i:nth-child(5) { transition-delay: .24s; }
+  @media (prefers-reduced-motion: reduce) {
+    .rv, .rv.in { opacity: 1; transform: none; filter: none; transition: none; }
+    .bars i { transform: none; transition: none; }
+    .pipe svg.wire path { opacity: .6; transition: none; }
+    .btn, .btn .i { transition: none; }
+  }
+
+  @media (max-width: 960px) {
+    .hero { grid-template-columns: minmax(0, 1fr); min-height: 0; padding-top: 48px; }
+    .stage { margin: 24px 24px 40px; }
+    .chip.c1 { left: 0; } .chip.c2 { right: 0; } .chip.c3 { left: 0; } .chip { min-width: 170px; }
+    .bento { grid-template-columns: minmax(0, 1fr); }
+    .tile.big { grid-row: auto; }
+    .nodes { grid-template-columns: minmax(0, 1fr); }
+    .pipe svg.wire { display: none; }
+    .duo, .run { grid-template-columns: minmax(0, 1fr); }
+    .part .hd { display: none; }
+    .row { grid-template-columns: 48px minmax(0, 1fr) 110px; }
+    .row .who { display: none; }
+    .tx { padding-left: 18px; }
+    .nav a.l { display: none; }
+    section { padding-top: 80px; }
+    .wrap { padding: 0 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="mesh" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i></div>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="navwrap">
+  <nav class="nav" aria-label="Primary">
+    <a class="brand" href="#">NinetyNinety</a>
+    <a class="l" href="#proof">Proof</a>
+    <a class="l" href="#how">How it works</a>
+    <a class="l" href="#part1">Part I</a>
+    <a class="l" href="https://github.com/ishal1410/ninetyninety">GitHub</a>
+    <a class="btn btn-primary btn-sm" id="cta-top" href="#run-it">Run it<span class="i"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13 13 3M5 3h8v8"/></svg></span></a>
+  </nav>
+</div>
+
+<header class="wrap">
+  <div class="hero">
+    <div class="copy">
+      <span class="pill rv"><b>Strands Agents</b> built for the Agents for Humans hackathon</span>
+      <h1 class="rv d1">A bank export in. A drafted Form 990-EZ out.</h1>
+      <p class="sub rv d2">Two agents that never see each other post every transaction to a line and cite the IRS rule. A Referee settles disputes.</p>
+      <div class="actions rv d3">
+        <a class="btn btn-primary" id="cta" href="#run-it">Run it locally<span class="i"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13 13 3M5 3h8v8"/></svg></span></a>
+        <a class="btn btn-ghost" href="https://github.com/ishal1410/ninetyninety">Read the code<span class="i"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13 13 3M5 3h8v8"/></svg></span></a>
+      </div>
+    </div>
+    <div class="stage rv d2">
+      <div class="bezel"><div class="core"><img src="assets/draft-page1.jpg" width="1100" height="1290" alt="Page one of the drafted Form 990-EZ that NinetyNinety produced from the demo bank export, stamped DRAFT" fetchpriority="high"></div></div>
+      <div class="chip c1 rv d3"><span class="k">Line 1, contributions</span><span class="v" id="chip-1"></span></div>
+      <div class="chip c2 rv d4"><span class="k">Line 6d, fundraising events</span><span class="v" id="chip-6d"></span></div>
+      <div class="chip c3 rv d5"><span class="k">Line 9, total revenue</span><span class="v" id="chip-9"></span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+<section id="proof">
+  <div class="wrap">
+    <div class="head rv"><h2>Checked against real filed returns.</h2><p class="sub">The footing code ran over a batch of IRS e-file returns and compared its totals with what each filer reported.</p></div>
+    <div class="bento">
+      <div class="tile big rv">
+        <div><div class="n" id="p-rate"></div><p class="l" id="p-rate-l"></p></div>
+        <table><thead><tr><th>Line</th><th class="r">Checked</th><th class="r">Matched</th><th class="r">Rate</th></tr></thead><tbody id="p-rows"></tbody></table>
+      </div>
+      <div class="tile img rv d1">
+        <div class="n" id="p-rows-n"></div><p class="l" id="p-rows-l"></p>
+        <figure><img src="assets/draft-partI.jpg" width="1000" height="710" alt="Part I of the drafted form with amounts filled" loading="lazy"></figure>
+      </div>
+      <div class="tile rv d2">
+        <div><div class="n" id="p-batch"></div><p class="l" id="p-batch-l"></p></div>
+        <div class="bars" id="bars" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="head rv"><h2>One Strands graph per batch of twelve rows.</h2><p class="sub">Three agents, one tool, and a rule about arithmetic: the model never adds.</p></div>
+    <div class="pipe rv">
+      <svg class="wire" aria-hidden="true"><path id="wire-path" d=""/></svg>
+      <div class="nodes">
+        <div class="node" data-n="in"><span class="t">input</span><h3>Bank export, 54 rows</h3><p>Date, description, amount. Batches of twelve go into the graph.</p></div>
+        <div class="node pair">
+          <div class="node" data-n="prep"><span class="t">entry node, parallel</span><h3>Preparer</h3><p>Posts each row to a Part I line and quotes the IRS instruction through the line_guidance tool.</p></div>
+          <div class="node" data-n="rev"><span class="t">entry node, parallel, blind</span><h3>Reviewer</h3><p>Same job, never sees the Preparer. Agreement posts the row. Disagreement escalates.</p></div>
+        </div>
+        <div class="node ref" data-n="ref"><span class="t">conditional node</span><h3>Referee</h3><p>Runs only on a split. Reads both quoted rules, decides, and its reason is kept with the row.</p></div>
+        <div class="node py" data-n="py"><span class="t">python, no model</span><h3>Foot and fill</h3><p>Sums lines 9, 17, 18, checks every quoted rule against the IRS text, fills the PDF, stamps DRAFT.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="part1">
+  <div class="wrap">
+    <div class="head rv"><h2>Every line, and who decided it.</h2><p class="sub">The same figures as the drafted page, with one column the form lacks. Open a line to read its transactions and the instruction each one quotes.</p></div>
+    <div class="bezel rv"><div class="core part">
+      <div class="hd"><div>Line</div><div>Revenue, expenses, and changes in net assets</div><div class="r">Amount</div><div>Decided by</div></div>
+      <div id="rows"></div>
+    </div></div>
+    <p class="sub rv" id="synthetic-note" hidden style="margin-top:14px;font-size:.9rem">Illustrative run: these figures come from a hand-assigned ledger, not a live model run.</p>
+  </div>
+</section>
+
+<section id="disputes">
+  <div class="wrap">
+    <div class="head rv"><h2 id="dis-h">Where the agents disagreed.</h2><p class="sub" id="dis-sub"></p></div>
+    <div class="duo" id="duo"></div>
+  </div>
+</section>
+
+<section id="trace">
+  <div class="wrap">
+    <div class="head rv"><h2>The trace, batch by batch.</h2><p class="sub">Which model answered, how long each node took, and whether the Referee was needed.</p></div>
+    <div class="trace rv scroll"><table><thead><tr><th>Batch</th><th>Rows</th><th>Model</th><th>Preparer</th><th>Reviewer</th><th>Referee</th><th>Tool calls</th><th>Wall</th></tr></thead><tbody id="trace-rows"></tbody></table></div>
+  </div>
+</section>
+
+<section id="run-it">
+  <div class="wrap">
+    <div class="run">
+      <div class="head rv" style="margin:0"><h2>Run it in ten minutes.</h2><p class="sub" id="run-sub">Nothing is hosted. A free Gemini key and five commands print the same trace and write the same PDF.</p></div>
+      <div class="bezel rv d1"><div class="core"><pre><b>git clone</b> https://github.com/ishal1410/ninetyninety
+<b>cd</b> ninetyninety
+<b>pip install</b> -r requirements.txt
+<b>cp</b> .env.example .env    # paste a free key from aistudio.google.com/apikey
+<b>PYTHONPATH=src python</b> cli.py fixtures/demo_ledger.csv</pre></div></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>NinetyNinety, MIT licensed.</span>
+    <a href="https://github.com/ishal1410/ninetyninety">GitHub</a>
+    <a id="foot-app" href="#" hidden>Open the app</a>
+    <span>The form is an IRS PDF filled for officer review, never a filing.</span>
+  </div>
+</footer>
+
+<script id="run" type="application/json">{"lines":{"1":{"line_number":"1","amount":9100,"transactions":[{"source_row":2,"date":"2025-01-08","description":"ONLINE DONATION STRIPE PAYOUT BATCH 4471","amount":1250,"rule":"Voluntary transfers where the donor receives nothing of comparable value in return: donations, grants from foundations or government, bequests, and the contribution portion of a fundraising ticket.","why":"This is an online donation processed via Stripe, representing a voluntary transfer with nothing of value received in return."},{"source_row":11,"date":"2025-02-14","description":"CHECK 1187 GRAINGER FOUNDATION GRANT","amount":5000,"rule":"Voluntary transfers where the donor receives nothing of comparable value in return: donations, grants from foundations or government, bequests, and the contribution portion of a fundraising ticket.","why":"This is a grant received from the Grainger Foundation, which represents a voluntary transfer with nothing of comparable value returned."},{"source_row":32,"date":"2025-04-08","description":"ZELLE FROM R PATEL","amount":500,"rule":"Voluntary transfers where the donor receives nothing of comparable value in return: donations, grants from foundations or government, bequests, and the contribution portion of a fundraising ticket.","why":"A Zelle payment from an individual is classified as a voluntary contribution or donation."},{"source_row":33,"date":"2025-04-09","description":"ZELLE FROM R PATEL","amount":500,"rule":"Voluntary transfers where the donor receives nothing of comparable value in return: donations, grants from foundations or government, bequests, and the contribution portion of a fundraising ticket.","why":"A Zelle payment from an individual is classified as a voluntary contribution or donation."},{"source_row":47,"date":"2025-05-06","description":"PAYPAL GIVING FUND DISBURSEMENT","amount":975,"rule":"Voluntary transfers where the donor receives nothing of comparable value in return: donations, grants from foundations or government, bequests, and the contribution portion of a fundraising ticket.","why":"PayPal Giving Fund disbursements represent public contribution donations."},{"source_row":54,"date":"2025-05-23","description":"STRIPE PAYOUT SUMMER CAMP EARLY BIRD + DONATION","amount":875,"rule":"Line 1 (revenue): Contributions, gifts, grants, and similar amounts received. Voluntary transfers where the donor receives nothing of comparable value in return: donations, grants from foundations or government, bequests, and the contribution portion of a fundraising ticket.","why":"Donations received alongside summer camp early bird registrations are contributions."}]},"2":{"line_number":"2","amount":23660,"transactions":[{"source_row":3,"date":"2025-01-12","description":"IL DEPT HUMAN SVCS CONTRACT PMT Q1 YOUTH PRG","amount":8750,"rule":"Program service revenue including government fees and contracts. Income earned by carrying out the organisation's exempt purpose: tuition, admissions, class fees, service fees paid by clients or by a government agency buying the service.","why":"This is a contract payment from a state government agency (Illinois Dept of Human Services) to fund a youth program, representing program service revenue."},{"source_row":34,"date":"2025-04-11","description":"IL DEPT HUMAN SVCS CONTRACT PMT Q2 YOUTH PRG","amount":8750,"rule":"Income earned by carrying out the organisation's exempt purpose: tuition, admissions, class fees, service fees paid by clients or by a government agency buying the service.","why":"A government contract payment for a youth program is program service revenue paid by a government agency buying the service."},{"source_row":35,"date":"2025-04-14","description":"SUMMER CAMP REG FEES SQUARE DEPOSIT","amount":2160,"rule":"Income earned by carrying out the organisation's exempt purpose: tuition, admissions, class fees, service fees paid by clients or by a government agency buying the service.","why":"Summer camp registration fees are program service revenues consisting of class or service fees."},{"source_row":50,"date":"2025-05-14","description":"CITY OF ELGIN YOUTH SVCS AGREEMENT PMT","amount":4000,"rule":"Line 2 (revenue): Program service revenue including government fees and contracts. Income earned by carrying out the organisation's exempt purpose: tuition, admissions, class fees, service fees paid by clients or by a government agency buying the service.","why":"Government agreement payment from the City of Elgin for youth services is a government fee/contract for program services."}]},"3":{"line_number":"3","amount":350,"transactions":[{"source_row":4,"date":"2025-01-15","description":"ANNUAL MEMBER DUES 14 @ 25","amount":350,"rule":"Membership dues and assessments. Dues paid to belong to the organisation.","why":"This represents annual dues paid by members to belong to the organization."}]},"4":{"line_number":"4","amount":36,"transactions":[{"source_row":5,"date":"2025-01-31","description":"INTEREST PAID FIRST COMMUNITY BK","amount":9,"rule":"Investment income. Interest, dividends, and rent from investment property. Bank account interest belongs here.","why":"This represents bank account interest paid to the organization by First Community Bank."},{"source_row":14,"date":"2025-02-28","description":"INTEREST PAID FIRST COMMUNITY BK","amount":9,"rule":"Interest, dividends, and rent from investment property. Bank account interest belongs here.","why":"This is bank account interest paid by First Community Bank."},{"source_row":28,"date":"2025-03-31","description":"INTEREST PAID FIRST COMMUNITY BK","amount":9,"rule":"Interest, dividends, and rent from investment property. Bank account interest belongs here.","why":"Interest paid by First Community Bank is interest income from a bank account."},{"source_row":43,"date":"2025-04-30","description":"INTEREST PAID FIRST COMMUNITY BK","amount":9,"rule":"Bank account interest belongs here.","why":"Interest paid by First Community Bank is bank account interest revenue."}]},"12":{"line_number":"12","amount":23040,"transactions":[{"source_row":6,"date":"2025-02-03","description":"ACH PAYROLL ADP RUN 0203","amount":-3120,"rule":"Salaries, other compensation, and employee benefits. Wages, payroll taxes, pension and health benefits for EMPLOYEES.","why":"This is a payroll payout processed through ADP, representing wages or salaries paid to employees."},{"source_row":12,"date":"2025-02-18","description":"ACH PAYROLL ADP RUN 0218","amount":-3120,"rule":"Salaries, other compensation, and employee benefits. Wages, payroll taxes, pension and health benefits for EMPLOYEES.","why":"This is a payroll disbursement processed via ADP, representing salaries and wages for employees."},{"source_row":15,"date":"2025-03-03","description":"ACH PAYROLL ADP RUN 0303","amount":-3120,"rule":"Wages, payroll taxes, pension and health benefits for EMPLOYEES.","why":"This is an ADP payroll run representing wages and compensation for employees."},{"source_row":24,"date":"2025-03-17","description":"ACH PAYROLL ADP RUN 0317","amount":-3120,"rule":"Wages, payroll taxes, pension and health benefits for EMPLOYEES.","why":"This is an ADP payroll run representing employee wages and compensation."},{"source_row":29,"date":"2025-04-01","description":"ACH PAYROLL ADP RUN 0401","amount":-3120,"rule":"Wages, payroll taxes, pension and health benefits for EMPLOYEES.","why":"ACH payroll processed through ADP represents wages and compensation for employees."},{"source_row":36,"date":"2025-04-15","description":"ACH PAYROLL ADP RUN 0415","amount":-3120,"rule":"Wages, payroll taxes, pension and health benefits for EMPLOYEES.","why":"ACH payroll processed through ADP represents wages and compensation for employees."},{"source_row":44,"date":"2025-05-01","description":"ACH PAYROLL ADP RUN 0501","amount":-3120,"rule":"Wages, payroll taxes, pension and health benefits for EMPLOYEES.","why":"ACH payroll disbursements via ADP represent wages paid to employees."},{"source_row":55,"date":"2025-05-27","description":"VENMO T NGUYEN PART TIME COORDINATOR MAY","amount":-1200,"rule":"Line 12 (expense): Salaries, other compensation, and employee benefits. Wages, payroll taxes, pension and health benefits for EMPLOYEES. Payments to non-employees belong on line 13.","why":"Part-time coordinator payment for May compensation is employee salary."}]},"13":{"line_number":"13","amount":2300,"transactions":[{"source_row":7,"date":"2025-02-04","description":"VENMO J MARTINEZ SAT WORKSHOP INSTRUCTION","amount":-600,"rule":"Professional fees and other payments to independent contractors. Payments to people and firms who are not employees: accountants, lawyers, consultants, contract cleaners, freelance instructors.","why":"This is a payment to an individual (J. Martinez) for workshop instruction, representing a fee paid to a freelance instructor or independent contractor."},{"source_row":25,"date":"2025-03-19","description":"VENMO J MARTINEZ SAT WORKSHOP INSTRUCTION","amount":-600,"rule":"Payments to people and firms who are not employees: accountants, lawyers, consultants, contract cleaners, freelance instructors.","why":"This is a payment to J Martinez as an independent freelance instructor for Saturday workshop instruction."},{"source_row":40,"date":"2025-04-25","description":"CHECK 1192 DELIA FIGUEROA CPA","amount":-750,"rule":"Payments to people and firms who are not employees: accountants, lawyers, consultants, contract cleaners, freelance instructors.","why":"Payment to a CPA for professional accounting services is a payment to an independent contractor."},{"source_row":53,"date":"2025-05-21","description":"CHECK 1196 D LEE BOOKKEEPING MONTHLY","amount":-350,"rule":"Line 13 (expense): Professional fees and other payments to independent contractors. Payments to people and firms who are not employees: accountants, lawyers, consultants, contract cleaners, freelance instructors.","why":"Monthly bookkeeping payment to D Lee is a payment to an independent contractor/professional service provider."}]},"14":{"line_number":"14","amount":6278,"transactions":[{"source_row":8,"date":"2025-02-05","description":"ELGIN PROPERTIES LLC FEB RENT","amount":-1450,"rule":"Occupancy, rent, utilities, and maintenance. Rent or mortgage interest on premises, electricity, gas, water, internet at the premises, cleaning and repairs to the premises.","why":"This is a payment for monthly rent on the premises to Elgin Properties LLC."},{"source_row":9,"date":"2025-02-07","description":"COMED ELECTRIC 8837 ACCT 4410-22","amount":-212,"rule":"Occupancy, rent, utilities, and maintenance. Rent or mortgage interest on premises, electricity, gas, water, internet at the premises, cleaning and repairs to the premises.","why":"This is a payment to ComEd for electricity utilities at the premises."},{"source_row":17,"date":"2025-03-05","description":"ELGIN PROPERTIES LLC MAR RENT","amount":-1450,"rule":"Rent or mortgage interest on premises, electricity, gas, water, internet at the premises, cleaning and repairs to the premises.","why":"This represents rent paid on premises to Elgin Properties LLC."},{"source_row":18,"date":"2025-03-06","description":"CITY OF ELGIN WATER SEWER 0306","amount":-88,"rule":"Rent or mortgage interest on premises, electricity, gas, water, internet at the premises, cleaning and repairs to the premises.","why":"This represents water and sewer utility payments for the premises to the city."},{"source_row":30,"date":"2025-04-03","description":"ELGIN PROPERTIES LLC APR RENT","amount":-1450,"rule":"Rent or mortgage interest on premises, electricity, gas, water, internet at the premises, cleaning and repairs to the premises.","why":"Monthly rent payment to Elgin Properties LLC is occupancy rent on the premises."},{"source_row":31,"date":"2025-04-04","description":"COMED ELECTRIC 8837 ACCT 4410-22","amount":-178,"rule":"Rent or mortgage interest on premises, electricity, gas, water, internet at the premises, cleaning and repairs to the premises.","why":"Electricity bill paid to ComEd is a utility expense for the premises."},{"source_row":46,"date":"2025-05-05","description":"ELGIN PROPERTIES LLC MAY RENT","amount":-1450,"rule":"Rent or mortgage interest on premises, electricity, gas, water, internet at the premises, cleaning and repairs to the premises.","why":"Rent paid to Elgin Properties LLC is an expense for rent on premises."}]},"15":{"line_number":"15","amount":384,"transactions":[{"source_row":10,"date":"2025-02-11","description":"USPS PO 60120 STAMPS BULK","amount":-146,"rule":"Printing, publications, postage, and shipping. Printing, newsletters, stationery, stamps, courier and shipping.","why":"This represents a postage expense for bulk stamp purchases from the USPS."},{"source_row":27,"date":"2025-03-24","description":"VISTAPRINT SPRING NEWSLETTER 500 PCS","amount":-238,"rule":"Printing, newsletters, stationery, stamps, courier and shipping.","why":"Payment to Vistaprint for printing 500 copies of a spring newsletter is classified as printing and newsletters."}]},"16":{"line_number":"16","amount":1944,"transactions":[{"source_row":13,"date":"2025-02-20","description":"AMZN MKTP US ART SUPPLIES YOUTH PRG","amount":-288,"rule":"Other expenses. Expenses fitting none of lines 10 through 15: insurance, software subscriptions, bank fees, supplies, travel, training.","why":"This purchase of art supplies from Amazon for the youth program represents general supplies fitting none of lines 10 through 15."},{"source_row":26,"date":"2025-03-21","description":"STATE FARM INS PREM ANNUAL GL POLICY","amount":-1180,"rule":"Expenses fitting none of lines 10 through 15: insurance, software subscriptions, bank fees, supplies, travel, training.","why":"General liability insurance premiums paid to State Farm represent insurance expenses fitting none of lines 10 through 15."},{"source_row":37,"date":"2025-04-17","description":"WALMART 1938 SNACKS YOUTH PRG","amount":-96,"rule":"Expenses fitting none of lines 10 through 15: insurance, software subscriptions, bank fees, supplies, travel, training.","why":"Snacks purchased from Walmart for a youth program represent program supplies, fitting none of lines 10 through 15."},{"source_row":38,"date":"2025-04-18","description":"ELGIN LITTLE LEAGUE SPONSOR REFUND","amount":-250,"rule":"Expenses fitting none of lines 10 through 15: insurance, software subscriptions, bank fees, supplies, travel, training.","why":"This outgoing refund payment does not fall under expense lines 10 through 15, so it is reported as an other expense."},{"source_row":39,"date":"2025-04-22","description":"QUICKBOOKS ONLINE SUBSCR","amount":-65,"rule":"Expenses fitting none of lines 10 through 15: insurance, software subscriptions, bank fees, supplies, travel, training.","why":"QuickBooks Online subscription is a software subscription categorized under other expenses."},{"source_row":41,"date":"2025-04-28","description":"CHECK 1193 TOWN OF ELGIN PARK PERMIT","amount":-40,"rule":"Expenses fitting none of lines 10 through 15: insurance, software subscriptions, bank fees, supplies, travel, training.","why":"Park permit fees fit none of lines 10 through 15 and belong under other expenses."},{"source_row":45,"date":"2025-05-02","description":"CHECK 1194 MEMBER DUES REFUND K OWENS","amount":-25,"rule":"Expenses fitting none of lines 10 through 15: insurance, software subscriptions, bank fees, supplies, travel, training.","why":"This outgoing member dues refund does not fall under lines 10 through 15, so it is classified as an other expense."}]},"6d":{"line_number":"6d","amount":5235,"transactions":[{"source_row":16,"date":"2025-03-04","description":"SQUARE INC DEPOSIT SPRING GALA TICKETS","amount":4200,"rule":"Gross receipts from events such as galas, raffles and bingo, minus the direct expenses of those events.","why":"This represents gross ticket sales receipts for a Spring Gala fundraising event."},{"source_row":19,"date":"2025-03-07","description":"HOLIDAY INN ELGIN BANQUET RM SPRING GALA DEP","amount":-1500,"rule":"Gross receipts from events such as galas, raffles and bingo, minus the direct expenses of those events.","why":"This represents a deposit for a banquet room, which is a direct expense of the Spring Gala fundraising event."},{"source_row":20,"date":"2025-03-08","description":"RAFFLE CASH DEPOSIT SPRING GALA","amount":830,"rule":"Gross receipts from events such as galas, raffles and bingo, minus the direct expenses of those events.","why":"This represents gross raffle cash receipts from the Spring Gala event."},{"source_row":21,"date":"2025-03-10","description":"PARTY CITY 2211 DECOR GALA","amount":-215,"rule":"Gross receipts from events such as galas, raffles and bingo, minus the direct expenses of those events.","why":"This represents party decorations, which are direct expenses for the Spring Gala event."},{"source_row":51,"date":"2025-05-16","description":"ACME HARDWARE GALA TABLE SPONSOR","amount":1500,"rule":"Voluntary transfers where the donor receives nothing of comparable value in return: donations, grants from foundations or government, bequests, and the contribution portion of a fundraising ticket. Gross receipts from events such as galas, raffles and bingo, minus the direct expenses of those events.","why":"referee's verdict"},{"source_row":52,"date":"2025-05-19","description":"MEMBER APPRECIATION DINNER TICKETS","amount":420,"rule":"Voluntary transfers where the donor receives nothing of comparable value in return: donations, grants from foundations or government, bequests, and the contribution portion of a fundraising ticket. Gross receipts from events such as galas, raffles and bingo, minus the direct expenses of those events.","why":"referee's verdict"}]},"7c":{"line_number":"7c","amount":538,"transactions":[{"source_row":22,"date":"2025-03-12","description":"SQUARE INC DEPOSIT TSHIRT SALES","amount":640,"rule":"Sales of goods (merchandise, cookbooks, thrift goods) minus cost of goods sold.","why":"This represents gross revenue from the sale of t-shirt merchandise."},{"source_row":23,"date":"2025-03-14","description":"CUSTOMINK TSHIRTS 60 UNITS","amount":-412,"rule":"Sales of goods (merchandise, cookbooks, thrift goods) minus cost of goods sold.","why":"This represents the purchase of t-shirts, which constitutes cost of goods sold for inventory."},{"source_row":42,"date":"2025-04-29","description":"SQUARE INC DEPOSIT TSHIRT SALES","amount":310,"rule":"Sales of goods (merchandise, cookbooks, thrift goods) minus cost of goods sold.","why":"T-shirt sales represent gross proceeds from sales of merchandise inventory."}]},"10":{"line_number":"10","amount":1000,"transactions":[{"source_row":48,"date":"2025-05-09","description":"ELGIN COMMUNITY FOUNDATION SCHOLARSHIP GRANT TO M ORTIZ","amount":-1000,"rule":"Grants, scholarships and assistance the organisation pays out to others, including direct aid to the people it serves.","why":"This payment is a scholarship grant paid out to an individual student recipient."}]},"8":{"line_number":"8","amount":1450,"transactions":[{"source_row":49,"date":"2025-05-12","description":"CHECK 1195 RENT DEPOSIT REFUND FROM ELGIN PROPERTIES","amount":1450,"rule":"Revenue that fits none of lines 1 through 7c.","why":"A rent deposit refund is incoming revenue that fits none of the specific lines 1 through 7c."}]}},"totals":{"line9":40369,"line17":34946,"line18":5423},"disagreements":[{"source_row":51,"description":"ACME HARDWARE GALA TABLE SPONSOR","preparer":"6d","preparer_rule":"Line 6d (revenue): Net income or (loss) from gaming and fundraising events. Gross receipts from events such as galas, raffles and bingo, minus the direct expenses of those events. NET, and may be negative.","reviewer":"1","reviewer_rule":"Voluntary transfers where the donor receives nothing of comparable value in return: donations, grants from foundations or government, bequests, and the contribution portion of a fundraising ticket.","referee":"6d","referee_reason":"Voluntary transfers where the donor receives nothing of comparable value in return: donations, grants from foundations or government, bequests, and the contribution portion of a fundraising ticket. Gross receipts from events such as galas, raffles and bingo, minus the direct expenses of those events.","used":"6d"},{"source_row":52,"description":"MEMBER APPRECIATION DINNER TICKETS","preparer":"6d","preparer_rule":"Line 6d (revenue): Net income or (loss) from gaming and fundraising events. Gross receipts from events such as galas, raffles and bingo, minus the direct expenses of those events. NET, and may be negative.","reviewer":"3","reviewer_rule":"Dues paid to belong to the organisation. If members receive benefits of comparable value the payment belongs on line 3; if it is really a donation with no benefit it belongs on line 1.","referee":"6d","referee_reason":"Voluntary transfers where the donor receives nothing of comparable value in return: donations, grants from foundations or government, bequests, and the contribution portion of a fundraising ticket. Gross receipts from events such as galas, raffles and bingo, minus the direct expenses of those events.","used":"6d"}],"low_confidence":[{"source_row":19,"description":"HOLIDAY INN ELGIN BANQUET RM SPRING GALA DEP","line":"6d","note":"money flows against this line; netted as a refund"},{"source_row":21,"description":"PARTY CITY 2211 DECOR GALA","line":"6d","note":"money flows against this line; netted as a refund"},{"source_row":23,"description":"CUSTOMINK TSHIRTS 60 UNITS","line":"7c","note":"money flows against this line; netted as a refund"}],"unclassified":[],"unreviewed":[],"ungrounded":[],"trace":[{"batch":1,"rows":12,"provider":"gemini:gemini-3.5-flash","nodes":["reviewer","preparer"],"referee_ran":false,"tool_calls":18,"node_ms":{"reviewer":28173,"preparer":37542},"seconds":212.4},{"batch":2,"rows":12,"provider":"gemini:gemini-3.5-flash","nodes":["preparer","reviewer"],"referee_ran":false,"tool_calls":23,"node_ms":{"preparer":27430,"reviewer":34232},"seconds":76.5},{"batch":3,"rows":12,"provider":"gemini:gemini-3.5-flash","nodes":["reviewer","preparer"],"referee_ran":false,"tool_calls":14,"node_ms":{"reviewer":21357,"preparer":37696},"seconds":37.7},{"batch":4,"rows":12,"provider":"gemini:gemini-3.6-flash","nodes":["reviewer","preparer"],"referee_ran":false,"tool_calls":20,"node_ms":{"reviewer":18713,"preparer":28156},"seconds":137.3},{"batch":5,"rows":6,"provider":"gemini:gemini-3.5-flash-lite","nodes":["preparer","reviewer","referee"],"referee_ran":true,"tool_calls":17,"node_ms":{"preparer":5704,"reviewer":15393,"referee":3988},"seconds":112.7}],"meta":{"ledger":"fixtures\\demo_ledger.csv","rows":54,"skipped":[],"seconds":576.6,"ran_at":"2026-09-08T05:42:23-0400","synthetic":false},"validation":{"batch":"2026_TEOS_XML_01A","returns":3687,"matched":{"line9":3632,"line17":3617,"line18":3619},"checked":{"line9":3632,"line17":3618,"line18":3621},"rates":{"line9":100.0,"line17":99.97,"line18":99.94},"mismatch_count":3}}</script>
+<script id="lines" type="application/json">[{"number":"1","label":"Contributions, gifts, grants, and similar amounts received","kind":"revenue"},{"number":"2","label":"Program service revenue including government fees and contracts","kind":"revenue"},{"number":"3","label":"Membership dues and assessments","kind":"revenue"},{"number":"4","label":"Investment income","kind":"revenue"},{"number":"5c","label":"Gain or (loss) from sale of assets other than inventory","kind":"revenue"},{"number":"6d","label":"Net income or (loss) from gaming and fundraising events","kind":"revenue"},{"number":"7c","label":"Gross profit or (loss) from sales of inventory","kind":"revenue"},{"number":"8","label":"Other revenue","kind":"revenue"},{"number":"10","label":"Grants and similar amounts paid","kind":"expense"},{"number":"11","label":"Benefits paid to or for members","kind":"expense"},{"number":"12","label":"Salaries, other compensation, and employee benefits","kind":"expense"},{"number":"13","label":"Professional fees and other payments to independent contractors","kind":"expense"},{"number":"14","label":"Occupancy, rent, utilities, and maintenance","kind":"expense"},{"number":"15","label":"Printing, publications, postage, and shipping","kind":"expense"},{"number":"16","label":"Other expenses","kind":"expense"}]</script>
+<script>
+  const STREAMLIT_URL = '';
+  const run = JSON.parse(document.getElementById('run').textContent);
+  const taxonomy = JSON.parse(document.getElementById('lines').textContent);
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const money = n => n == null ? '' : (n < 0 ? '(' + Math.abs(n).toLocaleString('en-US') + ')' : n.toLocaleString('en-US'));
+  const dis = run.disagreements || [], lines = run.lines || {}, totals = run.totals || {}, trace = run.trace || [], v = run.validation || {};
+  const disputed = new Set(dis.map(d => d.source_row));
+  const txOn = n => (lines[n] && lines[n].transactions) || [];
+  const refOn = n => txOn(n).filter(t => disputed.has(t.source_row)).length;
+  const rows = run.meta?.rows ?? 0;
+
+  if (STREAMLIT_URL) {
+    for (const id of ['cta', 'cta-top']) { const a = $(id); a.href = STREAMLIT_URL; a.firstChild.textContent = 'Draft a return'; }
+    $('run-sub').textContent = 'Or run the commands below on a free Gemini key.';
+    const f = $('foot-app'); f.href = STREAMLIT_URL; f.hidden = false;
+  }
+
+  // hero chips
+  $('chip-1').innerHTML = `${money(lines['1']?.amount)} <em>agreed on ${txOn('1').length}</em>`;
+  $('chip-6d').innerHTML = `${money(lines['6d']?.amount)} <em>Referee on ${refOn('6d')}</em>`;
+  $('chip-9').innerHTML = `${money(totals.line9)} <em>footed in Python</em>`;
+
+  // proof bento
+  $('p-rate').innerHTML = v.rates?.line18 != null ? `${v.rates.line18.toFixed(2)}<small>%</small>` : '';
+  $('p-rate-l').textContent = v.returns ? `Line 18 agreement with what filers reported, across ${v.returns.toLocaleString()} IRS returns.` : 'Validation not run.';
+  $('p-rows').innerHTML = ['line9', 'line17', 'line18'].map(k => `<tr><td>Line ${k.slice(4)}</td><td class="r num">${(v.checked?.[k] ?? '').toLocaleString()}</td><td class="r num">${(v.matched?.[k] ?? '').toLocaleString()}</td><td class="r num">${v.rates?.[k] != null ? v.rates[k].toFixed(2) + '%' : ''}</td></tr>`).join('');
+  const tools = trace.reduce((s, b) => s + (b.tool_calls || 0), 0);
+  $('p-rows-n').innerHTML = `${rows}<small>rows</small>`;
+  $('p-rows-l').textContent = `${dis.length} dispute${dis.length === 1 ? '' : 's'} sent to the Referee, ${tools} tool calls, ${(run.unclassified || []).length} rows left unposted.`;
+  $('p-batch').innerHTML = `${trace.length}<small>batches</small>`;
+  $('p-batch-l').textContent = run.meta?.seconds ? `${Math.round(run.meta.seconds / 60)} minutes on the free Gemini tier. Bars are wall time per batch.` : 'Twelve rows per batch.';
+  const maxS = Math.max(1, ...trace.map(b => b.seconds || 0));
+  $('bars').innerHTML = trace.map(b => `<i style="height:${Math.max(12, Math.round((b.seconds || 0) / maxS * 100))}%"></i>`).join('');
+
+  // Part I
+  const seq = [];
+  for (const l of taxonomy) {
+    seq.push({ n: l.number, label: l.label, amount: lines[l.number]?.amount ?? null });
+    if (l.number === '8') seq.push({ n: '9', label: 'Total revenue', amount: totals.line9, total: true });
+    if (l.number === '16') seq.push({ n: '17', label: 'Total expenses', amount: totals.line17, total: true });
+  }
+  seq.push({ n: '18', label: 'Excess or (deficit) for the year', amount: totals.line18, total: true });
+  $('rows').innerHTML = seq.map(r => {
+    const txs = txOn(r.n), refs = refOn(r.n);
+    const who = r.total ? 'Python' : txs.length === 0 ? 'no rows' : refs ? `<span>Referee ${refs}</span>, agreed ${txs.length - refs}` : `Agreed ${txs.length}`;
+    const cls = ['row', r.total ? 'total' : '', txs.length === 0 && !r.total ? 'empty' : ''].join(' ');
+    const tag = r.total ? 'div' : 'button';
+    const attrs = r.total ? '' : ` type="button" aria-expanded="false" aria-controls="tx-${r.n}"`;
+    const body = r.total ? '' : `<div class="tx" id="tx-${r.n}" hidden>${txs.length ? `<table>${txs.map(t => `<tr><td class="d">${esc(t.date)}</td><td>${esc(t.description)}</td><td class="a">${money(t.amount)}</td></tr><tr><td></td><td class="r" colspan="2">${disputed.has(t.source_row) ? '<b>Referee decided.</b> ' : ''}${esc(t.rule || '')}</td></tr>`).join('')}</table>` : '<div class="none">No transactions were posted to this line in this run.</div>'}</div>`;
+    return `<${tag} class="${cls}"${attrs}><div class="ln">${esc(r.n)}</div><div class="desc"><span>${esc(r.label)}</span><span class="lead"></span></div><div class="amt">${money(r.amount)}</div><div class="who${refs ? ' ref' : ''}">${who}</div></${tag}>${body}`;
+  }).join('');
+  $('rows').addEventListener('click', e => {
+    const b = e.target.closest('button.row'); if (!b) return;
+    const open = b.getAttribute('aria-expanded') === 'true';
+    b.setAttribute('aria-expanded', String(!open));
+    $(b.getAttribute('aria-controls')).hidden = open;
+  });
+  $('synthetic-note').hidden = !run.meta?.synthetic;
+
+  // disputes
+  $('dis-sub').textContent = dis.length ? `${dis.length} of ${rows} rows split the Preparer and Reviewer. The Referee read both quoted rules and decided each one.` : 'The Preparer and Reviewer agreed on every row of this run.';
+  $('duo').innerHTML = dis.map(d => `<article class="verdict rv">
+    <div class="tx-name">${esc(d.description)}</div>
+    <div class="grid3">
+      <div class="cell"><span class="k">Preparer</span><span class="v">Line ${esc(d.preparer)}</span></div>
+      <div class="cell"><span class="k">Reviewer</span><span class="v">Line ${esc(d.reviewer)}</span></div>
+      <div class="cell win"><span class="k">Referee</span><span class="v">Line ${esc(d.used || d.referee)}</span></div>
+    </div>
+    <p class="q">${esc(d.referee_reason || '')}</p>
+  </article>`).join('') || '<p class="sub">No disputes.</p>';
+  if (dis.length === 1) $('duo').style.gridTemplateColumns = '1fr';
+
+  // trace
+  const s = x => x == null ? 'not run' : (x / 1000).toFixed(1) + 's';
+  $('trace-rows').innerHTML = trace.map(b => `<tr><td class="mono">${b.batch}</td><td class="mono">${b.rows}</td><td class="mono">${esc((b.provider || '').replace(/^gemini:/, ''))}</td><td class="mono">${s(b.node_ms?.preparer)}</td><td class="mono">${s(b.node_ms?.reviewer)}</td><td class="mono">${b.referee_ran ? `<span class="on">ran, ${s(b.node_ms?.referee)}</span>` : 'not needed'}</td><td class="mono">${b.tool_calls ?? ''}</td><td class="mono">${b.seconds != null ? Math.round(b.seconds) + 's' : ''}</td></tr>`).join('');
+
+
+  // pipeline wires, measured from the real node boxes
+  function wires() {
+    const pipe = document.querySelector('.pipe'), path = $('wire-path');
+    if (!pipe || !path || window.matchMedia('(max-width: 960px)').matches) { if (path) path.setAttribute('d', ''); return; }
+    const box = pipe.getBoundingClientRect();
+    const r = n => { const b = pipe.querySelector(`[data-n="${n}"]`).getBoundingClientRect(); return { l: b.left - box.left, r: b.right - box.left, y: b.top - box.top + b.height / 2 }; };
+    const link = (a, b) => { const A = r(a), B = r(b), m = (A.r + B.l) / 2; return `M ${A.r} ${A.y} C ${m} ${A.y}, ${m} ${B.y}, ${B.l} ${B.y} `; };
+    path.setAttribute('d', link('in', 'prep') + link('in', 'rev') + link('prep', 'ref') + link('rev', 'ref') + link('ref', 'py'));
+  }
+  wires(); addEventListener('resize', wires); document.fonts?.ready.then(wires);
+
+  // reveal on scroll, one observer
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
+  document.querySelectorAll('.rv').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

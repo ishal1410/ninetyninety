@@ -187,3 +187,14 @@ def test_the_hero_form_image_starts_below_the_buttons_on_a_phone():
     block = css[css.index("@media (max-width:900px)"):]
     block = block[:block.index("\n")]
     assert ".hero .bg{top:76%}" in block
+
+
+def test_the_ledger_gives_the_line_label_room_on_a_phone():
+    at = run_app()
+    css = at.markdown[0].value
+    block = css[css.index("@media (max-width:600px)"):]
+    block = block[:block.index("\n")]
+    # 3.4 + 6.5 + 9 rem of fixed columns leaves a 390px phone 109px for the label
+    assert "table.ledger td.cnt{display:none}" in block
+    assert "table.ledger td.amt{width:6.2rem}" in block
+    assert "table.ledger td.n{width:2.4rem}" in block

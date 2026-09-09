@@ -271,6 +271,28 @@ def test_the_hero_never_prints_a_line_total():
     assert "this row" in strip
 
 
+def test_the_control_lede_keeps_its_size_and_the_hero_has_its_own():
+    at = run_app()
+    css = at.markdown[0].value
+    # p.lede has three call sites; enlarging it undoes the control strip height
+    assert "font-size:.93rem" in css_rule(css, "p.lede")
+    assert "font-size:1.3rem" in css_rule(css, "p.hero-lede")
+
+
+def test_the_masthead_is_a_filled_band_and_the_zones_are_ink():
+    at = run_app()
+    css = at.markdown[0].value
+    assert "background:var(--ink)" in css_rule(css, ".mast")
+    assert "height:3px" in css_rule(css, ".zone")
+
+
+def test_the_controls_come_before_the_explainer_band():
+    at = run_app()
+    page = markdown_text(at)
+    assert page.count('class="zone"') == 2
+    assert page.index('class="steps"') > page.rindex('class="zone"')
+
+
 def test_the_page_boots_without_the_recorded_run():
     path = APP.parent / "results" / "demo_run.json"
     hidden = path.with_name("demo_run.json.hidden")

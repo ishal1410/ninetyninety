@@ -68,24 +68,24 @@ html{scroll-behavior:smooth}
 section[data-testid="stMain"]{background:var(--ground)}
 .block-container{max-width:1320px;margin:0 auto;padding:0 2rem 5rem}
 .mast,.mast *,.steps,.steps *,.shell,.shell *,.adj,.adj *,
-.note,.note *,.graph,.graph *,.foot,.foot *,.head,.head *,h2.sec,h3.sub,
+.note,.note *,.graph,.graph *,.foot,.foot *,.lead,.lead *,h2.sec,h3.sub,
 p.lede,p.hero-lede,p.proof{
   font-family:var(--sans)}
-p.lede{font-size:.93rem;color:var(--muted);max-width:66ch;line-height:1.55;margin:0 0 .9rem}
+p.lede{font-size:.93rem;color:var(--ink);max-width:66ch;line-height:1.55;margin:0 0 .9rem}
 .num,table.ledger td.amt,table.ledger td.n,.adj .line,.adj .who,.mast .omb{
   font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 
 /* Masthead: the page chrome is the form's own header block. */
 .mast{display:flex;align-items:baseline;gap:1.5rem;flex-wrap:wrap;
-  padding:1.15rem 0 .95rem;border-bottom:2px solid var(--ink)}
-.mast .mark{font-weight:800;font-size:1.32rem;letter-spacing:-.022em;color:var(--ink);line-height:1}
-.mast .doc{font-weight:700;font-size:.95rem;color:var(--ink);letter-spacing:-.01em}
-.mast .sub{font-size:.86rem;color:var(--muted)}
-.mast .omb{margin-left:auto;font-size:.74rem;letter-spacing:.02em;color:var(--muted);
-  text-transform:uppercase;border:1px solid var(--rule);background:var(--paper);padding:.3rem .55rem}
+  padding:1.05rem 1.15rem .95rem;background:var(--ink)}
+.mast .mark{font-weight:800;font-size:1.32rem;letter-spacing:-.022em;color:var(--paper);line-height:1}
+.mast .doc{font-weight:700;font-size:.95rem;color:var(--paper);letter-spacing:-.01em}
+.mast .sub{font-size:.86rem;color:#C9CDD2}
+.mast .omb{margin-left:auto;font-size:.74rem;letter-spacing:.02em;color:#C9CDD2;
+  text-transform:uppercase;border:1px solid #4A5056;background:transparent;padding:.3rem .55rem}
 
 /* The strip: one row of a bank export, and where it lands. */
-.head h1{font-size:clamp(2.1rem,3.6vw,3.5rem);font-weight:800;letter-spacing:-.035em;
+.lead h1{font-size:clamp(2.1rem,3.6vw,3.5rem);font-weight:800;letter-spacing:-.035em;
   line-height:1.02;color:var(--ink);margin:1.4rem 0 .9rem;max-width:18ch;text-wrap:balance}
 p.hero-lede{font-size:1.3rem;line-height:1.45;color:var(--ink);max-width:52ch;margin:0 0 1.5rem}
 .lands{display:grid;grid-template-columns:minmax(0,1fr) 3.5rem minmax(0,1.3fr);
@@ -111,6 +111,10 @@ p.hero-lede{font-size:1.3rem;line-height:1.45;color:var(--ink);max-width:52ch;ma
   border-bottom:4px solid transparent}
 p.proof{font-size:.95rem;line-height:1.6;color:var(--ink);max-width:70ch;margin:0}
 p.proof b{font-weight:600}
+
+/* Three regions, three rules. Hairlines are the form's own device and stay
+   inside the form sheet; they do not divide the page. */
+.zone{height:3px;background:var(--ink);margin:1.9rem 0 1.5rem}
 
 h2.sec{font-size:1.42rem;font-weight:700;letter-spacing:-.022em;color:var(--ink);margin:1.7rem 0 .3rem}
 h3.sub{font-size:.98rem;font-weight:700;letter-spacing:-.008em;color:var(--ink);
@@ -174,12 +178,12 @@ table.ledger tr.total td.amt{border-top:1px solid var(--ink);
 .note .pick{font-family:var(--mono);color:var(--accent);font-weight:600}
 .note.bad .pick{color:var(--notice)}
 
-/* Empty state: how the graph reaches each line. Composed, never blank. */
-.steps{margin-top:1.6rem;border-top:1px solid var(--rule)}
-.step{padding:.9rem 0;border-bottom:1px solid var(--rule)}
-.step h4{margin:0 0 .25rem;font-size:.95rem;font-weight:700;color:var(--ink);
-  letter-spacing:-.01em}
-.step p{font-size:.85rem;color:var(--muted);line-height:1.5;margin:0}
+/* The explainer band: how the graph reaches each line, in three columns. */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);border-top:none;margin-top:0}
+.step{padding:0 1.6rem 0 0;border-bottom:none;border-right:1px solid var(--rule)}
+.step:last-child{border-right:none;padding-right:0}
+.step h4{margin:0 0 .4rem;font-size:1rem;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.step p{font-size:.88rem;color:var(--muted);line-height:1.55;margin:0}
 
 /* The graph that ran */
 .graph{border:1px solid var(--rule);background:var(--paper);padding:.9rem;overflow-x:auto}
@@ -252,6 +256,13 @@ div.stButton>button:focus-visible{outline:3px solid var(--accent);outline-offset
   table.ledger td.amt{width:6rem}
   table.ledger td.n{width:2.3rem}
   table.ledger{font-size:.88rem}
+  .lands{grid-template-columns:1fr}
+  .lands .arrow{display:none}
+  .lands .to{border-left-width:1px;border-top-width:3px}
+  .steps{grid-template-columns:1fr}
+  .step{border-right:none;border-bottom:1px solid var(--rule);padding:.9rem 0}
+  .step:last-child{border-bottom:none}
+  p.hero-lede{font-size:1.1rem}
   .form{padding:1.1rem 1rem 1rem}}
 </style>"""
 st.markdown(CSS, unsafe_allow_html=True)
@@ -347,7 +358,7 @@ def hero() -> str:
     <p class="rule">{esc(tx["rule"])}</p>
   </div>
 </div>"""
-    return f"""<div class="head">
+    return f"""<div class="lead">
   <h1>A bank export goes in. This comes back.</h1>
   <p class="hero-lede">Every figure on the drafted form cites the transactions behind it
   and the sentence of the IRS instructions that put them there. It is a draft for an
@@ -362,6 +373,8 @@ def explainer() -> str:
     steps = "".join(f'<div class="step"><h4>{h}</h4><p>{p}</p></div>' for h, p in STEPS)
     return f'<div class="steps">{steps}</div>'
 
+
+ZONE = '<div class="zone"></div>'
 
 FOOTER = ('<div class="foot">'
           '<span>Built with Strands Agents for the AWS Agents for Humans hackathon. '
@@ -441,7 +454,7 @@ pad_l, body, pad_r = st.columns([1, 12, 1])
 with body:
     # Inside body, not above it: filled solid, a full-container masthead would
     # overhang the 12/14 content column by about 95px on each side.
-    st.markdown(masthead() + hero(), unsafe_allow_html=True)
+    st.markdown(masthead() + hero() + ZONE, unsafe_allow_html=True)
     st.markdown('<h2 class="sec" id="draft-a-return">Draft a return</h2>'
                 '<p class="lede">Upload a CSV with date, description and amount, or use the '
                 'synthetic demo ledger. The agents run live; a 54-row ledger takes a few '
@@ -461,6 +474,7 @@ with body:
     replay = b2.button("Replay the recorded run (no model calls)",
                        help="Shows the draft recorded on 2026-09-08 from the demo ledger through Google Gemini. "
                             "Same code path, no quota used. Use it if the free tier for the day is spent.")
+    st.markdown(ZONE, unsafe_allow_html=True)
 
     MAX_ROWS = 60  # the hosted demo shares one free-tier Gemini project
 

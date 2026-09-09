@@ -52,13 +52,14 @@ html{scroll-behavior:smooth}
 body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.045;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
 *{box-sizing:border-box}
 .wrap{max-width:1240px;margin:0 auto;padding:0 2rem}
+.nn{position:relative}
 .nn h1,.nn h2,.nn h3,.nn p{font-family:'Outfit',sans-serif;margin:0}
 .nn a,.nn a:hover{text-decoration:none!important}
 .nn p{color:var(--muted);line-height:1.6}
 .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
 
 /* Nav: floating glass pill */
-.nav{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:5;width:max-content;white-space:nowrap;display:flex;gap:.25rem;align-items:center;padding:.35rem .4rem .35rem 1rem;border-radius:999px;background:rgba(14,18,27,.62);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 20px 50px -20px rgba(0,0,0,.8);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%)}
+.nav{position:absolute;top:18px;left:50%;transform:translateX(-50%);z-index:5;width:max-content;white-space:nowrap;display:flex;gap:.25rem;align-items:center;padding:.35rem .4rem .35rem 1rem;border-radius:999px;background:rgba(14,18,27,.62);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 20px 50px -20px rgba(0,0,0,.8);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%)}
 .nav .mark{font-family:'Outfit',sans-serif;font-weight:700;color:var(--ink);margin-right:.9rem;letter-spacing:-.01em}
 .nav a{font-family:'Outfit',sans-serif;color:var(--muted);text-decoration:none;font-size:.9rem;padding:.45rem .8rem;border-radius:999px;transition:color .3s var(--ease),background .3s var(--ease)}
 .nav a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
@@ -151,7 +152,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:3;opac
 @keyframes dim{to{opacity:.25}}
 @keyframes lit{to{opacity:1}}
 @media (prefers-reduced-motion: reduce){.hero .in,.hero .bg,.rv,.grow,.marq .track,.chap .story .w{animation:none!important;opacity:1!important;transform:none!important}}
-@media (max-width:900px){.bento{grid-template-columns:1fr}.cell.a{grid-column:span 1;grid-row:span 1;min-height:320px}.chap{grid-template-columns:1fr}.chap .pin{position:static}.card{position:static}.spacer{display:none}.sec{padding:5rem 0}.nav a:not(.go){display:none}}
+@media (max-width:1100px){[data-testid="stHorizontalBlock"]{flex-wrap:wrap}[data-testid="stHorizontalBlock"]>[data-testid="stColumn"]{min-width:100%;flex:1 1 100%}}
+@media (max-width:900px){.bento{grid-template-columns:1fr}.cell.a{grid-column:span 1;grid-row:span 1;min-height:320px}.chap{grid-template-columns:1fr}.chap .pin{position:static}.card{position:static}.spacer{display:none}.sec{padding:5rem 0}.nav a:not(.go){display:none}.hero .bg{top:76%}}
 
 /* Tool + results (dark) */
 .tool{padding:5rem 0 2rem}
@@ -178,11 +180,12 @@ table.ledger tr.empty td{color:var(--muted)}
 .note .pick{font-family:'IBM Plex Mono',monospace;color:var(--acc)}
 .skel .bar{height:14px;border-radius:4px;margin:.75rem 0;background:linear-gradient(90deg,var(--line) 0%,#243047 45%,var(--line) 90%);background-size:220% 100%;animation:shimmer 1.6s var(--ease) infinite}
 @keyframes shimmer{to{background-position:-120% 0}}
-.graph svg{width:100%;height:auto;display:block}
+.graph{overflow-x:auto}
+.graph svg{width:100%;max-width:520px;min-width:420px;height:auto;display:block}
 .graph .node{fill:var(--bg2);stroke:var(--line)}
 .graph .node.hot{stroke:var(--acc)}
 .graph .lbl{font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;fill:var(--ink)}
-.graph .ms{font-family:'IBM Plex Mono',monospace;font-size:11px;fill:var(--muted)}
+.graph .ms{font-family:'IBM Plex Mono',monospace;font-size:12px;fill:var(--muted)}
 .graph .edge{stroke:var(--muted);stroke-width:1.5;fill:none}
 .graph .edge.hot{stroke:var(--acc)}
 .graph .edge.cond{stroke-dasharray:5 5}

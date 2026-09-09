@@ -149,3 +149,41 @@ def test_mobile_css_rules_are_present():
     assert "width:max-content" in nav and "white-space:nowrap" in nav
     assert ".block-container{max-width:100%;padding:0 1rem 6rem}" in css
     assert "table.ledger tr.empty td{color:var(--muted)}" in css
+
+
+def css_rule(css: str, selector: str) -> str:
+    """The declaration block for one selector in the page stylesheet."""
+    start = css.index(selector + "{") + len(selector) + 1
+    return css[start:css.index("}", start)]
+
+
+def test_the_nav_pill_scrolls_away_instead_of_floating_over_the_results():
+    at = run_app()
+    css = at.markdown[0].value
+    assert "position:absolute" in css_rule(css, ".nav")
+    assert "position:relative" in css_rule(css, ".nn")
+
+
+def test_the_two_result_columns_stack_before_the_ledger_label_is_crushed():
+    at = run_app()
+    css = at.markdown[0].value
+    block = css[css.index("@media (max-width:1100px)"):]
+    block = block[:block.index("\n")]
+    assert 'stHorizontalBlock' in block and "flex-wrap:wrap" in block
+    assert "min-width:100%" in block
+
+
+def test_the_graph_never_renders_smaller_than_its_designed_size():
+    at = run_app()
+    css = at.markdown[0].value
+    assert "overflow-x:auto" in css_rule(css, ".graph")
+    svg = css_rule(css, ".graph svg")
+    assert "max-width:520px" in svg and "min-width:420px" in svg
+
+
+def test_the_hero_form_image_starts_below_the_buttons_on_a_phone():
+    at = run_app()
+    css = at.markdown[0].value
+    block = css[css.index("@media (max-width:900px)"):]
+    block = block[:block.index("\n")]
+    assert ".hero .bg{top:76%}" in block

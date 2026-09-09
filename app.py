@@ -217,7 +217,8 @@ div.stButton>button:focus-visible{outline:3px solid var(--accent);outline-offset
   background:var(--paper);color:var(--ink);font-family:var(--mono);font-size:.9rem}
 [data-testid="stFileUploaderDropzone"]{border-radius:2px;border:1px solid var(--control);
   background:var(--paper);padding:.65rem .9rem;min-height:0}
-[data-testid="stFileUploaderDropzoneInstructions"] small{display:none}
+/* the uploader ships its own "200MB per file" hint, carrying a middle dot this project does not use */
+[data-testid="stFileUploaderDropzoneInstructions"] span:not([data-testid]){display:none}
 [data-testid="stFileUploaderDropzoneInstructions"]{padding:0}
 [data-testid="stFileUploader"] section{padding:0}
 [data-testid="stWidgetLabel"] p{font-size:.82rem;font-weight:600;color:var(--ink)}

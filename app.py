@@ -2,11 +2,11 @@
 
 Built with Strands Agents.
 
-Front: cinematic dark page (Outfit + IBM Plex Mono, one green accent), motion
-on CSS scroll-driven animations and sticky pinning so it lives in the page
-scroll, no iframe. Below it, the working tool.
+Front: the federal-document interface -- Public Sans (the typeface USWDS
+commissioned for federal use) and IBM Plex Mono on a light ground, one federal
+blue accent. The drafted form is a paper sheet in a tray, the adjudication
+record runs full width beneath it.
 """
-import base64
 import html
 import itertools
 import json
@@ -28,11 +28,6 @@ from ninetyninety.recorded import load_recorded_run
 BASE = Path(__file__).parent
 st.set_page_config(page_title="NinetyNinety", page_icon=str(BASE / "assets" / "favicon.png"),
                    layout="wide")
-
-
-@st.cache_data
-def asset(name: str) -> str:
-    return "data:image/jpeg;base64," + base64.b64encode((BASE / "assets" / name).read_bytes()).decode()
 
 
 def esc(text) -> str:
@@ -72,23 +67,69 @@ html{scroll-behavior:smooth}
 *{box-sizing:border-box}
 section[data-testid="stMain"]{background:var(--ground)}
 .block-container{max-width:1320px;margin:0 auto;padding:0 2rem 5rem}
-.mast,.mast *,.intro,.intro *,.cert,.cert *,.shell,.shell *,.adj,.adj *,
-.note,.note *,.graph,.graph *,.foot,.foot *,h2.sec,h3.sub,p.lede{
+.mast,.mast *,.steps,.steps *,.shell,.shell *,.adj,.adj *,
+.note,.note *,.graph,.graph *,.foot,.foot *,.lead,.lead *,h2.sec,h3.sub,
+p.lede,p.hero-lede,p.proof{
   font-family:var(--sans)}
-p.lede{font-size:.93rem;color:var(--muted);max-width:66ch;line-height:1.55;margin:0 0 .9rem}
+p.lede{font-size:.93rem;color:var(--ink);max-width:66ch;line-height:1.55;margin:0 0 .9rem}
 .num,table.ledger td.amt,table.ledger td.n,.adj .line,.adj .who,.mast .omb{
   font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 
-/* Masthead: the page chrome is the form's own header block. */
+/* Masthead: the page chrome is the form's own header block.
+   #C9CDD2 and #4A5056 are masthead-local shades, not palette tokens: they read
+   against the ink band, not against paper. --muted is measured for contrast on
+   white and goes grey-on-black here; --rule is a near-white hairline that glares
+   on ink. So the band gets its own secondary text and its own hairline.
+   --control (#8D9297) is the one existing token that would clear AA here, at
+   5.49:1, but the band is the loudest thing on the page and #C9CDD2 reads at
+   10.85:1; that trade is worth one local shade.
+   Used nowhere else; not promoted to :root. */
 .mast{display:flex;align-items:baseline;gap:1.5rem;flex-wrap:wrap;
-  padding:1.15rem 0 .95rem;border-bottom:2px solid var(--ink)}
-.mast .mark{font-weight:800;font-size:1.32rem;letter-spacing:-.022em;color:var(--ink);line-height:1}
-.mast .doc{font-weight:700;font-size:.95rem;color:var(--ink);letter-spacing:-.01em}
-.mast .sub{font-size:.86rem;color:var(--muted)}
-.mast .omb{margin-left:auto;font-size:.74rem;letter-spacing:.02em;color:var(--muted);
-  text-transform:uppercase;border:1px solid var(--rule);background:var(--paper);padding:.3rem .55rem}
+  padding:1.05rem 1.15rem .95rem;background:var(--ink)}
+.mast .mark{font-weight:800;font-size:1.32rem;letter-spacing:-.022em;color:var(--paper);line-height:1}
+.mast .doc{font-weight:700;font-size:.95rem;color:var(--paper);letter-spacing:-.01em}
+.mast .sub{font-size:.86rem;color:#C9CDD2}
+.mast .omb{margin-left:auto;font-size:.74rem;letter-spacing:.02em;color:#C9CDD2;
+  text-transform:uppercase;border:1px solid #4A5056;background:transparent;padding:.3rem .55rem}
 
-h2.sec{font-size:1.42rem;font-weight:700;letter-spacing:-.022em;color:var(--ink);margin:1.7rem 0 .3rem}
+/* The strip: one row of a bank export, and where it lands. */
+/* padding:0 drops Streamlit's own 20/16px heading padding, which is framework
+   chrome rather than this page's rhythm; 40ch puts the headline on one line at
+   desktop widths, which is where the fold budget came from. */
+.lead h1{font-size:clamp(1.9rem,2.9vw,2.75rem);font-weight:800;letter-spacing:-.035em;
+  line-height:1.02;color:var(--ink);margin:.9rem 0 .8rem;max-width:40ch;padding:0;
+  text-wrap:balance}
+p.hero-lede{font-size:1.3rem;line-height:1.45;color:var(--ink);max-width:52ch;margin:0 0 1.1rem}
+.lands{display:grid;grid-template-columns:minmax(0,1fr) 3.5rem minmax(0,1.3fr);
+  align-items:start;margin:0 0 1rem}
+.lands .from,.lands .to{background:var(--paper);border:1px solid var(--ink);
+  padding:.85rem 1rem .95rem}
+.lands .to{border-left-width:3px}
+.lands .who{display:block;font-size:.72rem;color:var(--muted);line-height:1.4;
+  margin-bottom:.5rem}
+.lands b{display:block;font-family:var(--mono);font-size:.86rem;font-weight:600;color:var(--ink)}
+.lands .desc{display:block;font-size:.95rem;line-height:1.4;color:var(--ink);margin-top:.2rem}
+.lands .from .amt{display:block;margin-top:.7rem;font-size:1.15rem;font-weight:600;
+  text-align:right;color:var(--ink)}
+.lands .rowamt{display:flex;justify-content:space-between;align-items:baseline;
+  margin-top:.7rem;padding-top:.55rem;border-top:1px solid var(--rule)}
+.lands .rowamt .who{margin:0}
+.lands .rowamt .num{font-family:var(--mono);font-size:1.15rem;font-weight:600;color:var(--ink)}
+.lands .rule{margin:.7rem 0 0;padding-top:.55rem;border-top:1px solid var(--rule);
+  font-size:.82rem;line-height:1.5;color:var(--muted)}
+.lands .arrow{align-self:center;height:1px;background:var(--ink);position:relative}
+.lands .arrow::after{content:"";position:absolute;right:0;top:-4px;
+  border-left:8px solid var(--ink);border-top:4px solid transparent;
+  border-bottom:4px solid transparent}
+p.proof{font-size:.95rem;line-height:1.6;color:var(--ink);max-width:70ch;margin:0}
+p.proof b{font-weight:600}
+
+/* Three regions, three rules. Hairlines are the form's own device and stay
+   inside the form sheet; they do not divide the page. */
+.zone{height:3px;background:var(--ink);margin:1.15rem 0 1rem}
+
+h2.sec{font-size:1.42rem;font-weight:700;letter-spacing:-.022em;color:var(--ink);
+  margin:1.05rem 0 .3rem;padding:0}
 h3.sub{font-size:.98rem;font-weight:700;letter-spacing:-.008em;color:var(--ink);
   margin:2rem 0 .55rem;padding-bottom:.35rem;border-bottom:1px solid var(--rule)}
 
@@ -132,7 +173,7 @@ table.ledger tr.total td.amt{border-top:1px solid var(--ink);
 .adj .who{display:block;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;
   color:var(--muted);margin-bottom:.28rem}
 .adj .line{font-size:1.02rem;font-weight:600;color:var(--ink)}
-.adj .rule{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;margin-top:.35rem;font-size:.79rem;line-height:1.45;color:var(--muted)}
+.adj .rule{display:block;margin-top:.35rem;font-size:.79rem;line-height:1.45;color:var(--muted)}
 .adj .col.win{background:var(--tint);box-shadow:inset 0 2px 0 var(--accent)}
 .adj .col.win .line,.adj .col.win .who{color:var(--accent)}
 .adj .col.out .line{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
@@ -150,23 +191,15 @@ table.ledger tr.total td.amt{border-top:1px solid var(--ink);
 .note .pick{font-family:var(--mono);color:var(--accent);font-weight:600}
 .note.bad .pick{color:var(--notice)}
 
-/* Empty state: the real drafted page, annotated. Composed, never blank. */
-.intro{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:2.4rem;
-  align-items:start;margin-top:1.3rem}
-.intro .sheet{border:1px solid var(--rule);background:var(--paper);padding:6px}
-.intro .sheet img{width:100%;display:block;border:1px solid var(--rule)}
-.intro h1{font-size:clamp(2.1rem,3.6vw,3.5rem);font-weight:800;letter-spacing:-.035em;
-  line-height:1.02;color:var(--ink);margin:0 0 .9rem;max-width:15ch;text-wrap:balance}
-.intro .steps{margin-top:1.6rem;border-top:1px solid var(--rule)}
-.intro .step{padding:.9rem 0;border-bottom:1px solid var(--rule)}
-.intro .step h4{margin:0 0 .25rem;font-size:.95rem;font-weight:700;color:var(--ink);
-  letter-spacing:-.01em}
-.intro .step p{font-size:.85rem;color:var(--muted);line-height:1.5;margin:0}
-.cert{border-top:1px solid var(--ink);border-bottom:1px solid var(--rule);
-  padding:.95rem 0 1rem;margin-top:1.5rem}
-.cert p{font-size:.9rem;line-height:1.6;color:var(--muted);margin:0;max-width:62ch}
-.cert b{color:var(--ink);font-weight:600}
-.cert b.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+/* The explainer band: how the graph reaches each line, in three columns.
+   Three columns, matched to STEPS. Below 1100px they stack: at 768px three
+   columns leave about 23 characters a line, which is a column of rubble. */
+.steps{display:grid;grid-template-columns:repeat(3,1fr)}
+.step{padding:0 1.6rem;border-right:1px solid var(--rule)}
+.step:first-child{padding-left:0}
+.step:last-child{border-right:none;padding-right:0}
+.step h4{margin:0 0 .4rem;font-size:1rem;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.step p{font-size:.88rem;color:var(--muted);line-height:1.55;margin:0}
 
 /* The graph that ran */
 .graph{border:1px solid var(--rule);background:var(--paper);padding:.9rem;overflow-x:auto}
@@ -230,7 +263,9 @@ div.stButton>button:focus-visible{outline:3px solid var(--accent);outline-offset
 @media (max-width:1100px){
   [data-testid="stHorizontalBlock"]{flex-wrap:wrap}
   [data-testid="stHorizontalBlock"]>[data-testid="stColumn"]{min-width:100%;flex:1 1 100%}
-  .intro{grid-template-columns:1fr}}
+  .steps{grid-template-columns:1fr}
+  .step{border-right:none;border-bottom:1px solid var(--rule);padding:.9rem 0}
+  .step:last-child{border-bottom:none}}
 @media (max-width:600px){
   .block-container{padding:0 1rem 4rem}
   .mast .omb{margin-left:0}
@@ -240,6 +275,13 @@ div.stButton>button:focus-visible{outline:3px solid var(--accent);outline-offset
   table.ledger td.amt{width:6rem}
   table.ledger td.n{width:2.3rem}
   table.ledger{font-size:.88rem}
+  .lands{grid-template-columns:1fr}
+  .lands .arrow{display:none}
+  .lands .to{border-left-width:1px;border-top-width:3px}
+  .steps{grid-template-columns:1fr}
+  .step{border-right:none;border-bottom:1px solid var(--rule);padding:.9rem 0}
+  .step:last-child{border-bottom:none}
+  p.hero-lede{font-size:1.1rem}
   .form{padding:1.1rem 1rem 1rem}}
 </style>"""
 st.markdown(CSS, unsafe_allow_html=True)
@@ -248,6 +290,13 @@ report = None
 report_path = BASE / "results" / "validation.json"
 if report_path.exists():
     report = json.loads(report_path.read_text(encoding="utf-8"))
+
+# Same idiom as report above: the hosted app must still boot if the recorded
+# run is absent, it just loses the strip.
+recorded_rows = None
+demo_run_path = BASE / "results" / "demo_run.json"
+if demo_run_path.exists():
+    recorded_rows = json.loads(demo_run_path.read_text(encoding="utf-8"))["lines"]
 
 
 def masthead() -> str:
@@ -274,44 +323,83 @@ STEPS = (
 )
 
 
-def empty_state() -> str:
-    """Shown until a draft exists: the real output, with what produced it."""
-    checked = f"{report['checked']['line9']:,}" if report else "3,632"
-
+def proof() -> str:
+    """The validation numbers, stated at the width they were measured: line by
+    line, against the returns actually checked, never the whole return."""
     def got(kind: str, field: str, fallback: str) -> str:
         return f"{report[kind][field]:,}" if report else fallback
     m9, c9 = got("matched", "line9", "3,632"), got("checked", "line9", "3,632")
     m17, c17 = got("matched", "line17", "3,617"), got("checked", "line17", "3,618")
     m18, c18 = got("matched", "line18", "3,619"), got("checked", "line18", "3,621")
-    steps = "".join(f'<div class="step"><h4>{h}</h4><p>{p}</p></div>' for h, p in STEPS)
-    return f"""<div class="intro">
-<div class="sheet"><img src="{asset('draft-page1.jpg')}"
-  alt="Form 990-EZ Part I drafted from the demo ledger and marked DRAFT"></div>
-<div>
-  <h1>A bank export goes in. This comes back.</h1>
-  <p class="lede">Every figure on the drafted form cites the transactions behind it and the
-  sentence of the IRS instructions that put them there. It is a draft for an officer to
-  review and sign, never a filing.</p>
-  <div class="cert">
-    <p>The arithmetic that fills this form was run against <b>{checked}</b> real filed
-    Form 990-EZ returns from the IRS e-file corpus. It rebuilt line 9 in
-    <b class="num">{m9}</b> of <b class="num">{c9}</b>, line 17 in
-    <b class="num">{m17}</b> of <b class="num">{c17}</b>, and line 18 in
-    <b class="num">{m18}</b> of <b class="num">{c18}</b>. The misses are returns
-    whose own stated totals disagree with their own line items.</p>
-  </div>
-  <div class="steps">{steps}</div>
-</div></div>"""
+    return (f'<p class="proof">Line 9 rebuilt exactly in <b class="num">{m9}</b> of '
+            f'<b class="num">{c9}</b> returns checked from the IRS e-file corpus. '
+            f'Line 17: <b class="num">{m17}</b> of <b class="num">{c17}</b>. '
+            f'Line 18: <b class="num">{m18}</b> of <b class="num">{c18}</b>. '
+            f'The misses are returns whose own stated totals disagree with their '
+            f'own line items.</p>')
 
+
+def hero_row() -> tuple[str, dict] | None:
+    """The first classified row of the recorded run, in form order. Real output
+    from a real Gemini run: description, amount and the rule the model quoted,
+    all verbatim."""
+    if not recorded_rows:
+        return None
+    for number in sorted(recorded_rows, key=form_order):
+        transactions = recorded_rows[number]["transactions"]
+        if transactions:
+            return number, transactions[0]
+    return None
+
+
+def hero() -> str:
+    """The page's one loud element: a line of a bank export becoming the form
+    line it lands on, with the instruction that put it there."""
+    row, strip = hero_row(), ""
+    if row is not None:
+        number, tx = row
+        # The row's own amount only. The line's total belongs to the drafted
+        # form; printing it here would read as this row's figure.
+        strip = f"""<div class="lands">
+  <div class="from">
+    <span class="who">one row of a bank export</span>
+    <b>{esc(tx["date"])}</b>
+    <span class="desc">{esc(tx["description"])}</span>
+    <span class="amt num">{money(tx["amount"])}</span>
+  </div>
+  <div class="arrow" aria-hidden="true"></div>
+  <div class="to">
+    <span class="who">the line, and the instruction that put it there</span>
+    <b class="num">Line {esc(number)}</b>
+    <span class="desc">{esc(line_by_number(number).label)}</span>
+    <span class="rowamt"><span class="who">this row</span>
+      <span class="num">{money(tx["amount"])}</span></span>
+    <p class="rule">{esc(tx["rule"])}</p>
+  </div>
+</div>"""
+    return f"""<div class="lead">
+  <h1>A bank export goes in. This comes back.</h1>
+  <p class="hero-lede">Every figure on the drafted form cites the transactions behind it
+  and the sentence of the IRS instructions that put them there. It is a draft for an
+  officer to review and sign, never a filing.</p>
+  {strip}
+  {proof()}
+</div>"""
+
+
+def explainer() -> str:
+    """Shown until a draft exists: how the graph reaches each line."""
+    steps = "".join(f'<div class="step"><h4>{h}</h4><p>{p}</p></div>' for h, p in STEPS)
+    return f'<div class="steps">{steps}</div>'
+
+
+ZONE = '<div class="zone"></div>'
 
 FOOTER = ('<div class="foot">'
           '<span>Built with Strands Agents for the AWS Agents for Humans hackathon. '
           'Draft output only; an officer must review and sign.</span>'
           '<span><a href="https://github.com/ishal1410/ninetyninety">GitHub, MIT license</a></span>'
           '</div>')
-
-
-st.markdown(masthead(), unsafe_allow_html=True)
 
 
 def adjudication(item: dict) -> str:
@@ -383,6 +471,9 @@ def graph_svg(trace: list[dict] | None) -> str:
 
 pad_l, body, pad_r = st.columns([1, 12, 1])
 with body:
+    # Inside body, not above it: filled solid, a full-container masthead would
+    # overhang the 12/14 content column by about 95px on each side.
+    st.markdown(masthead() + hero() + ZONE, unsafe_allow_html=True)
     st.markdown('<h2 class="sec" id="draft-a-return">Draft a return</h2>'
                 '<p class="lede">Upload a CSV with date, description and amount, or use the '
                 'synthetic demo ledger. The agents run live; a 54-row ledger takes a few '
@@ -402,6 +493,7 @@ with body:
     replay = b2.button("Replay the recorded run (no model calls)",
                        help="Shows the draft recorded on 2026-09-08 from the demo ledger through Google Gemini. "
                             "Same code path, no quota used. Use it if the free tier for the day is spent.")
+    st.markdown(ZONE, unsafe_allow_html=True)
 
     MAX_ROWS = 60  # the hosted demo shares one free-tier Gemini project
 
@@ -482,7 +574,7 @@ with body:
 
     draft = st.session_state.get("draft")
     if not draft:
-        st.markdown(empty_state(), unsafe_allow_html=True)
+        st.markdown(explainer(), unsafe_allow_html=True)
     if draft:
         form, skipped = draft["form"], draft["skipped"]
         if draft.get("recorded"):
@@ -544,8 +636,9 @@ with body:
             st.markdown('<h3 class="sub">Where each line came from</h3>', unsafe_allow_html=True)
             for number in sorted(form.lines, key=form_order):
                 result = form.lines[number]
+                n = len(result.transactions)
                 with st.expander(f"Line {number}, {line_by_number(number).label}: "
-                                 f"{money(result.amount)} from {len(result.transactions)} rows"):
+                                 f'{money(result.amount)} from {n} row{"s" if n != 1 else ""}'):
                     for c in result.transactions:
                         st.markdown(
                             f'<div class="note"><span class="who">row {c["source_row"]}, {esc(c["date"])}</span>'
@@ -554,9 +647,6 @@ with body:
                             unsafe_allow_html=True)
 
         with right:
-            st.markdown('<h3 class="sub">The graph that ran</h3>', unsafe_allow_html=True)
-            st.markdown(graph_svg(form.trace), unsafe_allow_html=True)
-
             st.markdown(f'<h3 class="sub">Low confidence, {len(form.low_confidence)}</h3>',
                         unsafe_allow_html=True)
             for item in form.low_confidence:
@@ -594,6 +684,9 @@ with body:
 
             with st.expander(f"Full Strands trace, {len(form.trace)} graph runs"):
                 st.dataframe(trace_rows(form.trace), width="stretch", hide_index=True)
+
+        st.markdown('<h3 class="sub">The graph that ran</h3>', unsafe_allow_html=True)
+        st.markdown(graph_svg(form.trace), unsafe_allow_html=True)
 
         st.markdown(f'<h3 class="sub">Adjudication record, {len(form.disagreements)} rows</h3>'
                     '<p class="lede">The Reviewer never sees the Preparer, so these are two '

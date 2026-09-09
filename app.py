@@ -75,7 +75,7 @@ section[data-testid="stMain"]{background:var(--ground)}
 .mast,.mast *,.intro,.intro *,.cert,.cert *,.shell,.shell *,.adj,.adj *,
 .note,.note *,.graph,.graph *,.foot,.foot *,h2.sec,h3.sub,p.lede{
   font-family:var(--sans)}
-p.lede{font-size:.93rem;color:var(--muted);max-width:66ch;line-height:1.55;margin:0 0 1.1rem}
+p.lede{font-size:.93rem;color:var(--muted);max-width:66ch;line-height:1.55;margin:0 0 .9rem}
 .num,table.ledger td.amt,table.ledger td.n,.adj .line,.adj .who,.mast .omb{
   font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 
@@ -88,7 +88,7 @@ p.lede{font-size:.93rem;color:var(--muted);max-width:66ch;line-height:1.55;margi
 .mast .omb{margin-left:auto;font-size:.74rem;letter-spacing:.02em;color:var(--muted);
   text-transform:uppercase;border:1px solid var(--rule);background:var(--paper);padding:.3rem .55rem}
 
-h2.sec{font-size:1.42rem;font-weight:700;letter-spacing:-.022em;color:var(--ink);margin:2.4rem 0 .3rem}
+h2.sec{font-size:1.42rem;font-weight:700;letter-spacing:-.022em;color:var(--ink);margin:1.7rem 0 .3rem}
 h3.sub{font-size:.98rem;font-weight:700;letter-spacing:-.008em;color:var(--ink);
   margin:2rem 0 .55rem;padding-bottom:.35rem;border-bottom:1px solid var(--rule)}
 
@@ -151,8 +151,8 @@ table.ledger tr.total td.amt{border-top:1px solid var(--ink);
 .note.bad .pick{color:var(--notice)}
 
 /* Empty state: the real drafted page, annotated. Composed, never blank. */
-.intro{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:2.2rem;
-  align-items:start;margin-top:1.8rem}
+.intro{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:2.4rem;
+  align-items:start;margin-top:1.3rem}
 .intro .sheet{border:1px solid var(--rule);background:var(--paper);padding:6px}
 .intro .sheet img{width:100%;display:block;border:1px solid var(--rule)}
 .intro h1{font-size:clamp(2.1rem,3.6vw,3.5rem);font-weight:800;letter-spacing:-.035em;
@@ -216,7 +216,10 @@ div.stButton>button:focus-visible{outline:3px solid var(--accent);outline-offset
 [data-testid="stTextInput"] input{border-radius:2px;border:1px solid var(--control);
   background:var(--paper);color:var(--ink);font-family:var(--mono);font-size:.9rem}
 [data-testid="stFileUploaderDropzone"]{border-radius:2px;border:1px solid var(--control);
-  background:var(--paper)}
+  background:var(--paper);padding:.65rem .9rem;min-height:0}
+[data-testid="stFileUploaderDropzoneInstructions"] small{display:none}
+[data-testid="stFileUploaderDropzoneInstructions"]{padding:0}
+[data-testid="stFileUploader"] section{padding:0}
 [data-testid="stWidgetLabel"] p{font-size:.82rem;font-weight:600;color:var(--ink)}
 [data-testid="stExpander"] details{border:1px solid var(--rule);border-radius:2px;background:var(--paper)}
 

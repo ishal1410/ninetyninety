@@ -67,7 +67,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:3;opac
 .nav a.go:hover{background:#7BE3AE;color:var(--acc-ink)}
 
 /* Hero: cinematic center over the real product */
-.hero{position:relative;min-height:100dvh;display:grid;place-items:center;text-align:center;overflow:hidden;padding:5rem 0 20rem}
+.hero{position:relative;min-height:100dvh;display:grid;place-items:center;text-align:center;overflow:hidden;padding:5rem 0 12rem}
 .hero .bg{position:absolute;inset:-10% -5% auto;top:57%;width:110%;opacity:.62;filter:contrast(1.05);transform:perspective(1600px) rotateX(38deg) scale(1.02);transform-origin:top center;mask-image:linear-gradient(to bottom,rgba(0,0,0,.95) 10%,transparent 85%);-webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,.95) 10%,transparent 85%)}
 .hero .wash{position:absolute;inset:0;background:radial-gradient(60% 50% at 50% 30%,rgba(98,211,154,.16),transparent 60%),radial-gradient(40% 40% at 80% 70%,rgba(60,120,200,.14),transparent 60%),linear-gradient(to bottom,rgba(7,9,15,.2),var(--bg) 88%)}
 .hero .c{position:relative;max-width:1180px;padding:0 2rem}
@@ -105,7 +105,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:3;opac
 .cell.a{grid-column:span 2;grid-row:span 2}
 .cell img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 1.2s var(--ease)}
 .cell:hover img{transform:scale(1.04)}
-.cell .cap{position:absolute;left:0;right:0;bottom:0;padding:1.4rem 1.6rem;background:linear-gradient(to top,rgba(7,9,15,.9),transparent)}
+.cell .cap{position:absolute;left:0;right:0;bottom:0;padding:1.4rem 1.6rem;background:rgba(7,9,15,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line)}
 .cell .cap h3{font-size:1.35rem;font-weight:600;color:var(--ink)}
 .cell .cap p{font-size:.95rem;margin-top:.3rem}
 .cell.b,.cell.c{padding:1.6rem}
@@ -121,17 +121,15 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:3;opac
 .chap .story{font-size:clamp(1.15rem,1.6vw,1.45rem);line-height:1.5;color:var(--ink);margin-top:1.4rem;max-width:34ch}
 .chap .story .w{opacity:.18;transition:opacity .2s}
 .stack{display:grid;gap:1.2rem}
-.card{position:sticky;background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:1.8rem;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 30px 60px -30px rgba(0,0,0,.9)}
-.card:nth-child(1){top:110px}.card:nth-child(2){top:134px}.card:nth-child(3){top:158px}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:1.8rem;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 30px 60px -30px rgba(0,0,0,.9)}
 .card h3{font-size:1.5rem;font-weight:600;color:var(--ink);letter-spacing:-.02em}
 .card p{margin-top:.5rem;font-size:1rem}
 .card .q{margin-top:1rem;padding:.9rem 1rem;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--line);font-size:.92rem;color:#C9D0DD}
 .card .who{color:var(--acc);font-family:'IBM Plex Mono',monospace;font-size:.82rem;display:block;margin-bottom:.35rem}
 .card img{width:100%;border-radius:10px;margin-top:1.1rem;display:block}
-.spacer{height:38vh}
 
 /* Action */
-.act{text-align:center;padding:10rem 0 6rem}
+.act{text-align:center;padding:6rem 0 4rem}
 .act h2{max-width:none;margin:0 auto}
 .act .ctas{margin-top:2.2rem}
 .foot{border-top:1px solid var(--line);padding:2rem 0 1rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;color:var(--muted);font-family:'Outfit',sans-serif;font-size:.92rem}
@@ -153,7 +151,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:3;opac
 @keyframes lit{to{opacity:1}}
 @media (prefers-reduced-motion: reduce){.hero .in,.hero .bg,.rv,.grow,.marq .track,.chap .story .w{animation:none!important;opacity:1!important;transform:none!important}}
 @media (max-width:1100px){[data-testid="stHorizontalBlock"]{flex-wrap:wrap}[data-testid="stHorizontalBlock"]>[data-testid="stColumn"]{min-width:100%;flex:1 1 100%}}
-@media (max-width:900px){.bento{grid-template-columns:1fr}.cell.a{grid-column:span 1;grid-row:span 1;min-height:320px}.chap{grid-template-columns:1fr}.chap .pin{position:static}.card{position:static}.spacer{display:none}.sec{padding:5rem 0}.nav a:not(.go){display:none}.hero .bg{top:76%}}
+@media (max-width:900px){.bento{grid-template-columns:1fr}.cell.a{grid-column:span 1;grid-row:span 1;min-height:320px}.chap{grid-template-columns:1fr}.chap .pin{position:static}.sec{padding:5rem 0}.nav a:not(.go){display:none}.hero .bg{top:76%}}
 
 /* Tool + results (dark) */
 .tool{padding:5rem 0 2rem}
@@ -250,7 +248,6 @@ def front() -> str:
     <div class="card"><span class="who">preparer</span><h3>Reads the ledger like a bookkeeper</h3><p>Every row gets a line, a confidence, and the deciding sentence copied from the IRS instructions through a real tool call.</p><div class="q">"Voluntary transfers where the donor receives nothing of comparable value in return: donations, grants from foundations or government."</div></div>
     <div class="card"><span class="who">reviewer</span><h3>Audits blind</h3><p>Same batch, same tool, zero visibility into the Preparer. Two independent readings of every transaction.</p><img src="{asset('draft-totals.jpg')}" alt="Lines 17 and 18 of the drafted form, total expenses and excess or deficit"></div>
     <div class="card"><span class="who">referee</span><h3>Runs only when they disagree</h3><p>A conditional edge in the graph. The Referee may pick only one of the two disputed lines; its quoted reason is word-checked against the IRS text like every other rule.</p><div class="q">"Line 3 includes membership dues and assessments paid to belong to the organization."</div></div>
-    <div class="spacer"></div>
   </div>
 </div></section>
 
@@ -258,9 +255,14 @@ def front() -> str:
   <h2 class="rv">Upload a year of bank rows. Get the form back.</h2>
   <div class="ctas rv"><a class="btn p" href="#draft-a-return">Draft a return</a></div>
 </div></section>
-<div class="wrap"><div class="foot"><span>Built with Strands Agents for the AWS Agents for Humans hackathon.</span><span><a href="https://github.com/ishal1410/ninetyninety">GitHub, MIT license</a></span></div></div>
 </div>
 """
+
+
+FOOTER = ('<div class="nn"><div class="wrap"><div class="foot">'
+          '<span>Built with Strands Agents for the AWS Agents for Humans hackathon.</span>'
+          '<span><a href="https://github.com/ishal1410/ninetyninety">GitHub, MIT license</a></span>'
+          '</div></div></div>')
 
 
 st.markdown(front(), unsafe_allow_html=True)
@@ -522,3 +524,5 @@ with body:
 
             with st.expander(f"Full Strands trace, {len(form.trace)} graph runs"):
                 st.dataframe(trace_rows(form.trace), width="stretch", hide_index=True)
+
+st.markdown(FOOTER, unsafe_allow_html=True)

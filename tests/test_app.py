@@ -200,3 +200,34 @@ def test_the_ledger_gives_the_line_label_room_on_a_phone():
     assert "table.ledger td.n{width:2.4rem}" in block
     # equal specificity, so the phone block only wins if it comes last
     assert css.index("@media (max-width:600px)") > css.index("table.ledger td.amt{width:9rem;")
+
+
+def test_the_footer_comes_after_the_tool_not_in_the_middle_of_the_page():
+    at = run_app()
+    blocks = [m.value for m in at.markdown]
+    foot = next(i for i, b in enumerate(blocks) if 'class="foot"' in b)
+    tool = next(i for i, b in enumerate(blocks) if 'id="draft-a-return"' in b)
+    assert foot > tool
+
+
+def test_the_bento_caption_is_readable_over_the_scanned_form():
+    at = run_app()
+    cap = css_rule(at.markdown[0].value, ".cell .cap")
+    # the heading sat where a to-transparent gradient had no ink behind it
+    assert "transparent" not in cap
+    assert "rgba(7,9,15,.92)" in cap
+
+
+def test_the_agent_cards_do_not_cover_each_other():
+    at = run_app()
+    css = at.markdown[0].value
+    assert "position:sticky" not in css_rule(css, ".card")
+    assert ".card:nth-child(1){top:110px}" not in css
+    assert ".spacer" not in css
+
+
+def test_the_page_has_no_screen_sized_empty_gaps():
+    at = run_app()
+    css = at.markdown[0].value
+    assert "padding:5rem 0 12rem" in css_rule(css, ".hero")
+    assert "padding:6rem 0 4rem" in css_rule(css, ".act")

@@ -77,9 +77,10 @@ p.lede{font-size:.93rem;color:var(--ink);max-width:66ch;line-height:1.55;margin:
 
 /* Masthead: the page chrome is the form's own header block.
    #C9CDD2 and #4A5056 are masthead-local shades, not palette tokens: they read
-   against the ink band, not against paper. --muted and --control are measured
-   for contrast on white and go grey-on-black here, so the band gets its own
-   secondary text and hairline. Used nowhere else; not promoted to :root. */
+   against the ink band, not against paper. --muted is measured for contrast on
+   white and goes grey-on-black here; --rule is a near-white hairline that glares
+   on ink. So the band gets its own secondary text and its own hairline.
+   Used nowhere else; not promoted to :root. */
 .mast{display:flex;align-items:baseline;gap:1.5rem;flex-wrap:wrap;
   padding:1.05rem 1.15rem .95rem;background:var(--ink)}
 .mast .mark{font-weight:800;font-size:1.32rem;letter-spacing:-.022em;color:var(--paper);line-height:1}

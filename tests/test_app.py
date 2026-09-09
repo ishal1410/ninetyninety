@@ -152,13 +152,15 @@ def test_the_footer_comes_after_the_tool_not_in_the_middle_of_the_page():
 
 def test_the_app_opens_on_the_product_not_a_marketing_scroll():
     at = run_app()
-    page = at.markdown[0].value + markdown_text(at)
+    page = markdown_text(at)
     for gone in ('class="hero"', 'class="marq"', 'class="bento"',
                  'class="card"', 'class="act"', "position:sticky"):
         assert gone not in page, gone
-    # The masthead moved inside the body column, so match on content, not index.
-    assert 'class="mast"' in markdown_text(at)
-    assert "OMB No. 1545-0047" in markdown_text(at)
+    blocks = [m.value for m in at.markdown]
+    mast = next(i for i, b in enumerate(blocks) if 'class="mast"' in b)
+    tool = next(i for i, b in enumerate(blocks) if 'id="draft-a-return"' in b)
+    assert mast < tool
+    assert "OMB No. 1545-0047" in blocks[mast]
 
 
 def test_the_page_is_set_in_the_federal_typeface():

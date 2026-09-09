@@ -198,3 +198,5 @@ def test_the_ledger_gives_the_line_label_room_on_a_phone():
     assert "table.ledger td.cnt{display:none}" in block
     assert "table.ledger td.amt{width:6.2rem}" in block
     assert "table.ledger td.n{width:2.4rem}" in block
+    # equal specificity, so the phone block only wins if it comes last
+    assert css.index("@media (max-width:600px)") > css.index("table.ledger td.amt{width:9rem}")

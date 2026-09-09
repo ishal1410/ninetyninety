@@ -153,7 +153,6 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:3;opac
 @keyframes lit{to{opacity:1}}
 @media (prefers-reduced-motion: reduce){.hero .in,.hero .bg,.rv,.grow,.marq .track,.chap .story .w{animation:none!important;opacity:1!important;transform:none!important}}
 @media (max-width:1100px){[data-testid="stHorizontalBlock"]{flex-wrap:wrap}[data-testid="stHorizontalBlock"]>[data-testid="stColumn"]{min-width:100%;flex:1 1 100%}}
-@media (max-width:600px){table.ledger td.cnt{display:none}table.ledger td.amt{width:6.2rem}table.ledger td.n{width:2.4rem}table.ledger{font-size:.9rem}.form{padding:1.2rem 1rem 1rem}.tool h2{font-size:2rem}}
 @media (max-width:900px){.bento{grid-template-columns:1fr}.cell.a{grid-column:span 1;grid-row:span 1;min-height:320px}.chap{grid-template-columns:1fr}.chap .pin{position:static}.card{position:static}.spacer{display:none}.sec{padding:5rem 0}.nav a:not(.go){display:none}.hero .bg{top:76%}}
 
 /* Tool + results (dark) */
@@ -193,6 +192,9 @@ table.ledger tr.empty td{color:var(--muted)}
 div.stButton>button[kind="primary"]{background:var(--acc);border:none;color:var(--acc-ink);font-weight:600;padding:.7rem 1.5rem;border-radius:999px;transition:transform .5s var(--ease),background .3s var(--ease)}
 div.stButton>button[kind="primary"]:hover,div.stButton>button[kind="primary"]:focus{background:#7BE3AE;color:var(--acc-ink);transform:translateY(-2px)}
 div.stButton>button[kind="primary"]:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+
+/* Phone: the fixed columns above leave the line label 109px */
+@media (max-width:600px){table.ledger td.cnt{display:none}table.ledger td.amt{width:6.2rem}table.ledger td.n{width:2.4rem}table.ledger{font-size:.9rem}.form{padding:1.2rem 1rem 1rem}.tool h2{font-size:2rem}}
 </style>"""
 st.markdown(CSS, unsafe_allow_html=True)
 

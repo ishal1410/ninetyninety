@@ -90,11 +90,15 @@ p.lede{font-size:.93rem;color:var(--ink);max-width:66ch;line-height:1.55;margin:
   text-transform:uppercase;border:1px solid #4A5056;background:transparent;padding:.3rem .55rem}
 
 /* The strip: one row of a bank export, and where it lands. */
-.lead h1{font-size:clamp(2.1rem,3.6vw,3.5rem);font-weight:800;letter-spacing:-.035em;
-  line-height:1.02;color:var(--ink);margin:1.4rem 0 .9rem;max-width:18ch;text-wrap:balance}
-p.hero-lede{font-size:1.3rem;line-height:1.45;color:var(--ink);max-width:52ch;margin:0 0 1.5rem}
+/* padding:0 drops Streamlit's own 20/16px heading padding, which is framework
+   chrome rather than this page's rhythm; 40ch puts the headline on one line at
+   desktop widths, which is where the fold budget came from. */
+.lead h1{font-size:clamp(1.9rem,2.9vw,2.75rem);font-weight:800;letter-spacing:-.035em;
+  line-height:1.02;color:var(--ink);margin:.9rem 0 .8rem;max-width:40ch;padding:0;
+  text-wrap:balance}
+p.hero-lede{font-size:1.3rem;line-height:1.45;color:var(--ink);max-width:52ch;margin:0 0 1.1rem}
 .lands{display:grid;grid-template-columns:minmax(0,1fr) 3.5rem minmax(0,1.3fr);
-  align-items:start;margin:0 0 1.3rem}
+  align-items:start;margin:0 0 1rem}
 .lands .from,.lands .to{background:var(--paper);border:1px solid var(--ink);
   padding:.85rem 1rem .95rem}
 .lands .to{border-left-width:3px}
@@ -119,9 +123,10 @@ p.proof b{font-weight:600}
 
 /* Three regions, three rules. Hairlines are the form's own device and stay
    inside the form sheet; they do not divide the page. */
-.zone{height:3px;background:var(--ink);margin:1.9rem 0 1.5rem}
+.zone{height:3px;background:var(--ink);margin:1.15rem 0 1rem}
 
-h2.sec{font-size:1.42rem;font-weight:700;letter-spacing:-.022em;color:var(--ink);margin:1.7rem 0 .3rem}
+h2.sec{font-size:1.42rem;font-weight:700;letter-spacing:-.022em;color:var(--ink);
+  margin:1.05rem 0 .3rem;padding:0}
 h3.sub{font-size:.98rem;font-weight:700;letter-spacing:-.008em;color:var(--ink);
   margin:2rem 0 .55rem;padding-bottom:.35rem;border-bottom:1px solid var(--rule)}
 

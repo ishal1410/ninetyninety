@@ -243,11 +243,13 @@ def test_the_strip_shows_a_real_recorded_row():
     rule_beginning = "Voluntary transfers where the donor receives nothing"
 
     at = run_app()
-    text = markdown_text(at)
-    assert 'class="lands"' in text
-    assert transaction_description in text
-    assert rule_beginning in text
-    assert f"Line {line_number}" in text
+    page = markdown_text(at)
+    assert 'class="lands"' in page
+    strip = page[page.index('class="lands"'):page.index('class="proof"')]
+    assert transaction_description in strip
+    assert rule_beginning in strip
+    # Closing tag included: a loose "Line 1" also matches proof()'s "Line 17".
+    assert f">Line {line_number}</b>" in strip
 
 
 def test_the_hero_never_prints_a_line_total():

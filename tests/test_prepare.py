@@ -5,6 +5,14 @@ from ninetyninety.ledger import Transaction
 from ninetyninety.prepare import ProviderExhausted, assemble, prepare_ledger, run_graph
 
 
+@pytest.fixture(autouse=True)
+def _forget_exhausted_models():
+    from ninetyninety import prepare
+    prepare._EXHAUSTED.clear()
+    yield
+    prepare._EXHAUSTED.clear()
+
+
 def tx(row, description, amount):
     return Transaction(date="2025-01-01", description=description,
                        amount=amount, source_row=row)
@@ -307,3 +315,80 @@ def test_referee_reason_is_grounding_checked_too():
     assert form.lines["13"].amount == 600
     assert [u["source_row"] for u in form.ungrounded] == [4]
     assert form.ungrounded[0]["rule"] == "Because I said so"
+
+
+def test_first_call_per_row_wins_over_a_forged_duplicate():
+    from ninetyninety.prepare import _calls_by_row
+    calls = BatchCalls(calls=[call(4, "13"), call(4, "1")])
+    assert _calls_by_row(calls)[4].line == "13"
+
+
+def test_money_flowing_against_a_referee_line_is_flagged_low_confidence():
+    form = assemble([(tx(4, "PAYROLL", -3000), call(4, "1"), call(4, "12"))],
+                    {4: Verdict(row=4, line="1", reason="Voluntary transfers where the donor receives nothing")})
+    assert form.lines["1"].amount == -3000
+    assert [i["source_row"] for i in form.low_confidence] == [4]
+    assert "against" in form.low_confidence[0]["note"]
+
+
+def test_a_404_model_id_is_retired_for_the_run(monkeypatch):
+    from ninetyninety import prepare
+    made = []
+
+    class Gone(Exception):
+        code = 404
+    good = _Result(BatchCalls(calls=[call(2, "1")]), BatchCalls(calls=[call(2, "1")]))
+    monkeypatch.setattr(prepare, "ReviewGraph",
+                        _fake_graph_factory([Gone("NOT_FOUND"), good, good], made))
+    monkeypatch.setattr(prepare, "model_ids", lambda: ["dead", "alive"])
+    monkeypatch.setattr(prepare, "build_model",
+                        lambda mid: type("M", (), {"config": {"model_id": mid}, "__str__": lambda self: mid})())
+    form = prepare_ledger([tx(2, "A", 1), tx(3, "B", 1)], batch_size=1)
+    assert made == ["dead", "alive"]
+    assert [t["provider"] for t in form.trace] == ["gemini:alive", "gemini:alive"]
+
+
+def test_calls_for_rows_outside_the_batch_are_dropped():
+    from ninetyninety.prepare import _calls_by_row
+    calls = BatchCalls(calls=[call(4, "1"), call(99, "1")])
+    assert set(_calls_by_row(calls, rows={4})) == {4}
+
+
+def test_ledger_over_max_rows_is_refused_before_any_model_call():
+    with pytest.raises(ValueError, match="60"):
+        prepare_ledger([tx(i, "X", 1) for i in range(2, 64)], max_rows=60)
+
+
+def test_exclusive_run_refuses_while_another_draft_holds_the_lock():
+    from ninetyninety import prepare
+    with prepare.RUN_LOCK:
+        with pytest.raises(RuntimeError, match="another draft"):
+            prepare_ledger([], exclusive=True)
+
+
+def test_an_exhausted_model_id_stays_retired_for_later_runs_today(monkeypatch):
+    from ninetyninety import prepare
+    made = []
+    good = _Result(BatchCalls(calls=[call(2, "1")]), BatchCalls(calls=[call(2, "1")]))
+    monkeypatch.setattr(prepare, "ReviewGraph",
+                        _fake_graph_factory([ProviderExhausted("daily cap"), good, good], made))
+    monkeypatch.setattr(prepare, "model_ids", lambda: ["dead", "alive"])
+    monkeypatch.setattr(prepare, "build_model",
+                        lambda mid: type("M", (), {"config": {"model_id": mid}, "__str__": lambda self: mid})())
+    prepare_ledger([tx(2, "A", 1)])
+    prepare_ledger([tx(2, "A", 1)])
+    assert made == ["dead", "alive", "alive"]
+
+
+def test_trace_rows_only_suffix_ms_on_node_ms():
+    from ninetyninety.prepare import trace_rows
+    [row] = trace_rows([{"batch": 1, "rows": 12, "provider": "gemini:x", "nodes": ["preparer", "reviewer"],
+                         "referee_ran": False, "tool_calls": 18, "tool_calls_by_node": {"preparer": 9},
+                         "model_calls": {"preparer": 4}, "node_ms": {"preparer": 28173.4, "referee": None},
+                         "seconds": 212.4}])
+    assert row["tool calls by node"] == "preparer 9"
+    assert row["model calls"] == "preparer 4"
+    assert row["node ms"] == "preparer 28173ms"
+    assert row["nodes"] == "preparer, reviewer"
+    assert row["seconds"] == 212.4
+    assert "tool_calls_by_node" not in row

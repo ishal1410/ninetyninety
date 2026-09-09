@@ -11,6 +11,7 @@ import html
 import json
 import sys
 import tempfile
+import threading
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -20,7 +21,7 @@ import streamlit as st
 from ninetyninety.ledger import load_ledger
 from ninetyninety.lines import EXPENSE_LINES, REVENUE_LINES, form_order, line_by_number
 from ninetyninety.pdffill import download_form, fill_form
-from ninetyninety.prepare import prepare_ledger
+from ninetyninety.prepare import prepare_ledger, trace_rows
 from ninetyninety.recorded import load_recorded_run
 
 BASE = Path(__file__).parent
@@ -46,7 +47,7 @@ CSS = """<style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{--bg:#07090F;--bg2:#0E121B;--line:#1E2533;--ink:#EDEFF5;--muted:#9AA3B5;--acc:#62D39A;--acc-ink:#07090F;--danger:#F0716B;--ease:cubic-bezier(.32,.72,0,1)}
 #MainMenu, footer, header[data-testid="stHeader"]{visibility:hidden;height:0}
-.block-container{max-width:100%;padding:0 0 6rem}
+.block-container{max-width:100%;padding:0 1rem 6rem}
 html{scroll-behavior:smooth}
 body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.045;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
 *{box-sizing:border-box}
@@ -57,7 +58,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:3;opac
 .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
 
 /* Nav: floating glass pill */
-.nav{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:5;display:flex;gap:.25rem;align-items:center;padding:.35rem .4rem .35rem 1rem;border-radius:999px;background:rgba(14,18,27,.62);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 20px 50px -20px rgba(0,0,0,.8);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%)}
+.nav{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:5;width:max-content;white-space:nowrap;display:flex;gap:.25rem;align-items:center;padding:.35rem .4rem .35rem 1rem;border-radius:999px;background:rgba(14,18,27,.62);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 20px 50px -20px rgba(0,0,0,.8);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%)}
 .nav .mark{font-family:'Outfit',sans-serif;font-weight:700;color:var(--ink);margin-right:.9rem;letter-spacing:-.01em}
 .nav a{font-family:'Outfit',sans-serif;color:var(--muted);text-decoration:none;font-size:.9rem;padding:.45rem .8rem;border-radius:999px;transition:color .3s var(--ease),background .3s var(--ease)}
 .nav a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
@@ -170,7 +171,7 @@ table.ledger td.cnt{width:6.5rem;text-align:right;font-size:.8rem;color:var(--mu
 table.ledger tr.part td{border-bottom:1.5px solid var(--muted);padding-top:1rem;font-weight:600}
 table.ledger tr.total td{border-bottom:none;padding-top:.55rem;font-weight:600}
 table.ledger tr.total td.amt{border-top:1px solid var(--muted);border-bottom:3px double var(--acc);color:var(--acc)}
-table.ledger tr.empty td{color:#56617A}
+table.ledger tr.empty td{color:var(--muted)}
 .note{border-left:2px solid var(--acc);padding:.45rem 0 .45rem .9rem;margin:0 0 .9rem;font-size:.93rem;line-height:1.5;color:var(--ink)}
 .note.bad{border-left-color:var(--danger)}
 .note .who{color:var(--muted)}
@@ -202,7 +203,7 @@ def story_words(text: str) -> str:
 
 
 def front() -> str:
-    returns = f"{report['returns']:,}" if report else "3,687"
+    returns = f"{report['checked']['line9']:,}" if report else "3,632"  # returns with a checkable Part I
     l9 = report["rates"]["line9"] if report else "100.0"
     l18 = report["rates"]["line18"] if report else "99.94"
     return f"""
@@ -286,10 +287,11 @@ def graph_svg(trace: list[dict] | None) -> str:
     else:
         task = ["12 rows per batch", "same task to both"]
         prep, rev, ref = "quotes an IRS rule", "never sees Preparer", "quotes the IRS text"
-    svg = ['<svg viewBox="0 0 500 230" role="img" aria-label="Strands agent graph">',
+    svg = ['<svg viewBox="0 0 520 230" role="img" aria-label="Strands agent graph">',
            '<text class="lbl" x="6" y="112">Batch task</text>',
            f'<text class="ms" x="6" y="132">{task[0]}</text>',
            f'<text class="ms" x="6" y="150">{task[1]}</text>',
+           f'<text class="ms" x="6" y="168">{task[2]}</text>' if len(task) > 2 else '',
            '<path class="edge hot" d="M112 120 C 130 120, 130 70, 150 70"/>',
            '<path class="edge hot" d="M112 120 C 130 120, 130 170, 150 170"/>',
            f'<path class="edge cond{" hot" if hot else ""}" d="M310 70 C 330 70, 330 120, 348 120"/>',
@@ -302,16 +304,15 @@ def graph_svg(trace: list[dict] | None) -> str:
 
 pad_l, body, pad_r = st.columns([1, 12, 1])
 with body:
-    st.markdown('<div class="tool"><h2>Draft a return</h2><p class="lede">Upload a CSV with date, description, amount, '
+    st.markdown('<div class="tool"><h2 id="draft-a-return">Draft a return</h2><p class="lede">Upload a CSV with date, description, amount, '
                 'or use the synthetic demo ledger. The agents run live; a 54-row ledger takes a few minutes on the free tier.</p></div>',
                 unsafe_allow_html=True)
-    st.subheader("", anchor="draft-a-return")
     c1, c2 = st.columns([3, 2])
     with c1:
         uploaded = st.file_uploader("Transaction ledger as CSV with date, description, amount", type="csv")
         use_demo = st.checkbox("Use the synthetic demo ledger instead", value=uploaded is None)
     with c2:
-        org_name = st.text_input("Organisation name for the PDF", "DEMO COMMUNITY ORG")
+        org_name = st.text_input("Organization name for the PDF", "DEMO COMMUNITY ORG")
         ein = st.text_input("EIN for the PDF", "00-0000000")
     b1, b2 = st.columns([1, 2])
     go = b1.button("Draft a return", type="primary")
@@ -319,57 +320,88 @@ with body:
                        help="Shows the draft recorded on 2026-09-08 from the demo ledger through Google Gemini. "
                             "Same code path, no quota used. Use it if the free tier for the day is spent.")
 
-    if go or replay:
-        workdir = Path(tempfile.mkdtemp(prefix="ninetyninety-"))
-        path = BASE / "fixtures" / "demo_ledger.csv"
-        if go and uploaded is not None and not use_demo:
-            path = workdir / "ledger.csv"
-            path.write_bytes(uploaded.getvalue())
-        skipped: list[dict] = []
-        try:
-            transactions = load_ledger(path, skipped)
-        except ValueError as error:
-            st.error(f"Could not read the ledger: {error}")
+    MAX_ROWS = 60  # the hosted demo shares one free-tier Gemini project
+
+    def start_job(transactions, skipped):
+        """Run the graph on a worker thread so a widget rerun (Enter in a text
+        box, a click) cannot kill the run; the next script run resumes it."""
+        job = {"done": (0, 1), "form": None, "error": None,
+               "loaded": len(transactions), "skipped": skipped}
+
+        def work():
+            try:
+                job["form"] = prepare_ledger(
+                    transactions, max_rows=MAX_ROWS, exclusive=True,
+                    progress=lambda done, total: job.__setitem__("done", (done, total)))
+            except Exception as error:  # noqa: BLE001 - shown to the user below
+                job["error"] = error
+        job["thread"] = threading.Thread(target=work, daemon=True)
+        job["thread"].start()
+        st.session_state["job"] = job
+        return job
+
+    job = st.session_state.get("job")
+    form, recorded, loaded, skipped = None, False, 0, []
+    if (go or replay) and job is None:
+        st.session_state.pop("draft", None)  # never show a stale draft under a new run
+        with tempfile.TemporaryDirectory(prefix="ninetyninety-") as tmp:
+            path = BASE / "fixtures" / "demo_ledger.csv"
+            if go and uploaded is not None and not use_demo:
+                path = Path(tmp) / "ledger.csv"
+                path.write_bytes(uploaded.getvalue())
+            try:
+                transactions = load_ledger(path, skipped)
+            except ValueError as error:
+                st.error(f"Could not read the ledger: {error}")
+                st.stop()
+        if not transactions:
+            st.error("No readable rows in the ledger: every row needs a description and an amount.")
             st.stop()
-    if replay:
-        form = load_recorded_run(BASE / "results" / "demo_run.json")
-        st.caption("Recorded on 2026-09-08 through Google Gemini; live runs use the same code.")
-    if go:
+        if replay:
+            form, recorded, loaded = load_recorded_run(BASE / "results" / "demo_run.json"), True, len(transactions)
+        else:
+            job = start_job(transactions, skipped)
+    if job is not None:
         bar = st.progress(0.0, text="Preparer and Reviewer are reading the ledger in parallel")
         skeleton = st.empty()
         skeleton.markdown('<div class="shell"><div class="form skel">'
                           + "".join(f'<div class="bar" style="width:{w}%"></div>' for w in (38, 82, 74, 88, 61, 79, 45, 84, 70))
                           + '</div></div>', unsafe_allow_html=True)
-        try:
-            form = prepare_ledger(
-                transactions,
-                progress=lambda done, total: bar.progress(
-                    done / total, text=f"Batch {done} of {total} through the Strands graph"))
-        except Exception as error:  # noqa: BLE001 - surface any failure to the user
-            skeleton.empty()
-            st.error(f"Could not complete the draft: {error}")
-            st.stop()
+        while job["thread"].is_alive():
+            done, total = job["done"]
+            if done:
+                bar.progress(done / total, text=f"Batch {done} of {total} through the Strands graph")
+            job["thread"].join(0.5)
+        st.session_state.pop("job", None)
         skeleton.empty()
         bar.empty()
-        if form.unclassified and len(form.unclassified) == len(transactions) and form.trace                 and "exhausted" in str(form.trace[0].get("error", "")):
-            st.warning("Every batch failed: the free-tier quota for today is spent. "
+        if job["error"] is not None:
+            st.error(f"Could not complete the draft: {job['error']}")
+            st.stop()
+        form, loaded, skipped = job["form"], job["loaded"], job["skipped"]
+        exhausted = sum(t.get("rows", 0) for t in form.trace if "exhausted" in str(t.get("error", "")))
+        if exhausted:
+            st.warning(f"{exhausted} rows were not classified: the free-tier quota for today is spent. "
                        "Use the replay button above to see the recorded run.")
-    if go or replay:
+    if form is not None:
         pdf_bytes, pdf_error = None, None
         try:
-            pdf = fill_form(form, download_form(BASE / "data" / "f990ez.pdf"),
-                            workdir / "draft.pdf", org_name, ein)
-            pdf_bytes = pdf.read_bytes()
+            with tempfile.TemporaryDirectory(prefix="ninetyninety-") as tmp:
+                pdf = fill_form(form, download_form(BASE / "data" / "f990ez.pdf"),
+                                Path(tmp) / "draft.pdf", org_name, ein)
+                pdf_bytes = pdf.read_bytes()
         except Exception as error:  # noqa: BLE001
             pdf_error = str(error)
         # Kept across reruns: the download button reruns the script and st.button
         # is False on that rerun, so without this the whole draft would vanish.
-        st.session_state["draft"] = {"form": form, "skipped": skipped, "loaded": len(transactions),
-                                     "pdf": pdf_bytes, "pdf_error": pdf_error}
+        st.session_state["draft"] = {"form": form, "skipped": skipped, "loaded": loaded,
+                                     "pdf": pdf_bytes, "pdf_error": pdf_error, "recorded": recorded}
 
     draft = st.session_state.get("draft")
     if draft:
         form, skipped = draft["form"], draft["skipped"]
+        if draft.get("recorded"):
+            st.caption("Recorded on 2026-09-08 through Google Gemini; live runs use the same code.")
         st.markdown(
             f'<p class="lede" style="margin-top:.6rem">Read {draft["loaded"]} transactions'
             + (f", skipped {len(skipped)} with unreadable amounts." if skipped else ".") + "</p>",
@@ -434,14 +466,14 @@ with body:
                         'independent readings. The Referee runs only when they differ; its reason is '
                         'checked against the IRS text.</p>', unsafe_allow_html=True)
             for item in form.disagreements:
-                referee = (f'<span class="who">Referee</span> <span class="pick">line {item["referee"]}</span>: '
+                referee = (f'<span class="who">Referee</span> <span class="pick">line {esc(item["referee"])}</span>: '
                            f'{esc(item["referee_reason"])}' if item["referee"]
                            else '<span class="who">Referee did not rule; the Preparer&rsquo;s line is used.</span>')
                 st.markdown(
                     f'<div class="note"><b>row {item["source_row"]}</b> {esc(item["description"])}<br>'
-                    f'<span class="who">Preparer</span> <span class="pick">line {item["preparer"]}</span>: {esc(item["preparer_rule"])}<br>'
-                    f'<span class="who">Reviewer</span> <span class="pick">line {item["reviewer"]}</span>: {esc(item["reviewer_rule"])}<br>'
-                    f'{referee}<br><span class="who">On the form:</span> <span class="pick">line {item["used"]}</span></div>',
+                    f'<span class="who">Preparer</span> <span class="pick">line {esc(item["preparer"])}</span>: {esc(item["preparer_rule"])}<br>'
+                    f'<span class="who">Reviewer</span> <span class="pick">line {esc(item["reviewer"])}</span>: {esc(item["reviewer_rule"])}<br>'
+                    f'{referee}<br><span class="who">On the form:</span> <span class="pick">line {esc(item["used"])}</span></div>',
                     unsafe_allow_html=True)
             if not form.disagreements:
                 st.markdown('<div class="note">Preparer and Reviewer agreed on every row.</div>',
@@ -483,7 +515,4 @@ with body:
                                 unsafe_allow_html=True)
 
             with st.expander(f"Full Strands trace, {len(form.trace)} graph runs"):
-                st.table([{k: (", ".join(v) if isinstance(v, list) else
-                               ", ".join(f"{n} {round(ms)}ms" for n, ms in v.items() if ms is not None)
-                               if isinstance(v, dict) else v)
-                           for k, v in t.items()} for t in form.trace])
+                st.dataframe(trace_rows(form.trace), width="stretch", hide_index=True)

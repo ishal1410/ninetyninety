@@ -54,3 +54,33 @@ def test_download_form_leaves_nothing_behind_when_the_request_fails(tmp_path, mo
     with pytest.raises(ConnectionError):
         pdffill.download_form(dest)
     assert not dest.exists() and not list(tmp_path.iterdir())
+
+
+def test_two_sessions_can_download_the_form_at_once(tmp_path, monkeypatch):
+    import threading
+    from ninetyninety import pdffill
+
+    class Slow:
+        content = b"%PDF-fake"
+
+        def raise_for_status(self):
+            pass
+
+    def get(url, timeout):
+        threading.Event().wait(0.2)
+        return Slow()
+    monkeypatch.setattr(pdffill.requests, "get", get)
+    dest = tmp_path / "f990ez.pdf"
+    errors = []
+
+    def worker():
+        try:
+            pdffill.download_form(dest)
+        except Exception as e:  # noqa: BLE001
+            errors.append(e)
+    threads = [threading.Thread(target=worker) for _ in range(2)]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    assert errors == []
+    assert dest.read_bytes() == b"%PDF-fake"
+    assert [p.name for p in tmp_path.iterdir()] == ["f990ez.pdf"]

@@ -4,8 +4,10 @@
 model. Disagreements are recorded with all three opinions; nothing is hidden.
 """
 import re
+import threading
 import time
 from dataclasses import dataclass, field
+from datetime import date, datetime, timezone
 
 from .agents import (
     BatchCalls, ReviewGraph, RowCall, Verdict, batch_task,
@@ -112,7 +114,10 @@ def assemble(rows: list[tuple[Transaction, RowCall | None, RowCall | None]],
         })
         low = "low" in (preparer.confidence.lower(),
                         reviewer.confidence.lower() if reviewer else "")
-        if not disputed and (low or signed < 0):
+        # Money flowing against the chosen line's kind is flagged even when a
+        # Referee settled the dispute: an expense on a revenue line is wrong
+        # direction, not a refund, and a quoted rule cannot prove otherwise.
+        if signed < 0 or (not disputed and low):
             form.low_confidence.append({
                 "source_row": row, "description": transaction.description, "line": chosen,
                 "note": ("money flows against this line; netted as a refund"
@@ -178,12 +183,43 @@ def run_graph(review_graph, task: str, sleep=time.sleep):
     raise ProviderExhausted("unreachable")
 
 
-def _calls_by_row(calls: BatchCalls | None) -> dict[int, RowCall]:
-    return {c.row: c for c in calls.calls} if calls else {}
+def _calls_by_row(calls: BatchCalls | None, rows: set[int] | None = None) -> dict[int, RowCall]:
+    """First call per row wins and rows outside the batch are ignored, so a
+    description that forges an extra "row N | ..." line cannot overwrite a
+    real row's classification."""
+    by_row: dict[int, RowCall] = {}
+    for c in (calls.calls if calls else []):
+        if c.row not in by_row and (rows is None or c.row in rows):
+            by_row[c.row] = c
+    return by_row
+
+
+def _is_not_found(error: Exception) -> bool:
+    """A model id the provider does not serve: never retry it this run."""
+    code = getattr(error, "code", None) or getattr(error, "status_code", None)
+    return code == 404 or "NOT_FOUND" in str(error) or type(error).__name__ == "NotFound"
+
+
+def _today() -> date:
+    """Gemini's daily caps reset at midnight Pacific."""
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo("America/Los_Angeles")).date()
+    except Exception:  # noqa: BLE001 - no tz database on this host
+        return datetime.now(timezone.utc).date()
+
+
+# Shared by every session of the hosted app: model ids whose daily cap was
+# hit, keyed to the Pacific day it happened, so later runs skip them at once
+# instead of paying the retry sleeps again.
+_EXHAUSTED: dict[str, date] = {}
+# One live draft at a time on the shared host; the free tier is per project.
+RUN_LOCK = threading.Lock()
 
 
 def prepare_ledger(transactions: list[Transaction], model=None, progress=None,
-                   batch_size: int = 12) -> Form990EZ:
+                   batch_size: int = 12, max_rows: int | None = None,
+                   exclusive: bool = False) -> Form990EZ:
     """Classify the ledger batch by batch through the Strands graph on
     Gemini. `model` pins one model (tests); otherwise the ids in
     `model_ids()` are tried in order, moving to the next when one is
@@ -193,17 +229,37 @@ def prepare_ledger(transactions: list[Transaction], model=None, progress=None,
     A batch no model can answer even after backoff is recorded as
     unclassified with the error text; the run continues and nothing
     already classified is lost.
+
+    `max_rows` refuses a bigger ledger before any model call (the hosted demo
+    shares one free-tier project). `exclusive` refuses to start while another
+    draft holds RUN_LOCK.
     """
+    if max_rows is not None and len(transactions) > max_rows:
+        raise ValueError(f"Max {max_rows} rows on the shared demo; this ledger has "
+                         f"{len(transactions)}. Run it locally for bigger ledgers.")
+    if not exclusive:
+        return _prepare(transactions, model, progress, batch_size)
+    if not RUN_LOCK.acquire(blocking=False):
+        raise RuntimeError("another draft is running on this host; try again in a few minutes")
+    try:
+        return _prepare(transactions, model, progress, batch_size)
+    finally:
+        RUN_LOCK.release()
+
+
+def _prepare(transactions: list[Transaction], model, progress, batch_size: int) -> Form990EZ:
     candidates = [model] if model is not None else model_ids()
-    models: list = []
-    graphs: list[ReviewGraph] = []
-    retired: set[int] = set()  # model ids whose daily cap is gone for this run
+    models: dict[int, object] = {}
+    graphs: dict[int, ReviewGraph] = {}
+    today = _today()
+    # model ids whose daily cap is gone: remembered across runs, per day
+    retired: set[int] = {i for i, c in enumerate(candidates)
+                         if model is None and _EXHAUSTED.get(c) == today}
 
     def graph_at(i: int) -> ReviewGraph:
-        while len(graphs) <= i:
-            c = candidates[len(graphs)]
-            models.append(c if model is not None else build_model(c))
-            graphs.append(ReviewGraph(models[-1]))
+        if i not in graphs:
+            models[i] = candidates[i] if model is not None else build_model(candidates[i])
+            graphs[i] = ReviewGraph(models[i])
         return graphs[i]
 
     rows: list[tuple[Transaction, RowCall | None, RowCall | None]] = []
@@ -227,10 +283,15 @@ def prepare_ledger(transactions: list[Transaction], model=None, progress=None,
             except ProviderExhausted as exhausted:
                 error = f"{provider} exhausted: {exhausted}"
                 retired.add(i)
-            except Exception as failure:  # noqa: BLE001 - a 404 model id or a malformed
-                # structured answer costs this batch on this model only; the next
-                # model gets the batch and this model stays available for the next
+                if model is None:
+                    _EXHAUSTED[candidates[i]] = today
+            except Exception as failure:  # noqa: BLE001 - a malformed structured
+                # answer costs this batch on this model only; the next model gets
+                # the batch and this model stays available for the next. A model
+                # id the provider does not serve (404) is retired for the run.
                 error = f"{provider} failed: {type(failure).__name__}: {str(failure)[:200]}"
+                if _is_not_found(failure):
+                    retired.add(i)
         if result is None:
             for tx in batch:
                 rows.append((tx, None, None))
@@ -238,8 +299,9 @@ def prepare_ledger(transactions: list[Transaction], model=None, progress=None,
             trace.append({"batch": index, "rows": len(batch), "provider": provider,
                           "error": error, "seconds": round(time.time() - started, 1)})
         else:
-            prep = _calls_by_row(graph.calls(result, "preparer"))
-            rev = _calls_by_row(graph.calls(result, "reviewer"))
+            batch_rows = {tx.source_row for tx in batch}
+            prep = _calls_by_row(graph.calls(result, "preparer"), batch_rows)
+            rev = _calls_by_row(graph.calls(result, "reviewer"), batch_rows)
             batch_verdicts = graph.verdicts(result)
             for verdict in (batch_verdicts.verdicts if batch_verdicts else []):
                 verdicts[verdict.row] = verdict
@@ -264,3 +326,22 @@ def prepare_ledger(transactions: list[Transaction], model=None, progress=None,
             item["error"] = failed_rows[item["source_row"]]
     form.trace = trace
     return form
+
+
+def trace_rows(trace: list[dict]) -> list[dict]:
+    """The trace as flat table rows: readable column names, milliseconds
+    only on node_ms, seconds to one decimal."""
+    rows = []
+    for entry in trace:
+        row = {}
+        for key, value in entry.items():
+            if isinstance(value, list):
+                value = ", ".join(value)
+            elif isinstance(value, dict):
+                unit = "ms" if key == "node_ms" else ""
+                value = ", ".join(f"{n} {round(v)}{unit}" for n, v in value.items() if v is not None)
+            elif key == "seconds":
+                value = round(value, 1)
+            row[key.replace("_", " ")] = value
+        rows.append(row)
+    return rows

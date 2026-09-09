@@ -7,6 +7,8 @@ Output is always a DRAFT: e-filing requires an Authorized IRS e-File Provider
 EFIN, which this project does not have.
 """
 import os
+import threading
+import uuid
 from pathlib import Path
 
 import requests
@@ -46,18 +48,23 @@ FIELD_MAP: dict[str, str] = {
 }
 
 
+_FORM_LOCK = threading.Lock()
+
+
 def download_form(dest: Path) -> Path:
     dest = Path(dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    if dest.exists() and dest.stat().st_size > 0:
-        return dest
-    response = requests.get(FORM_URL, timeout=120)
-    response.raise_for_status()
-    # The hosted app is shared: write beside the target and rename, so a
-    # second visitor never opens a half-written form.
-    partial = dest.with_name(f"{dest.name}.{os.getpid()}.part")
-    partial.write_bytes(response.content)
-    os.replace(partial, dest)
+    # The hosted app is shared and every session is a thread of one process:
+    # one download at a time, and a unique partial name, so two first
+    # visitors never truncate each other's half-written form.
+    with _FORM_LOCK:
+        if dest.exists() and dest.stat().st_size > 0:
+            return dest
+        response = requests.get(FORM_URL, timeout=120)
+        response.raise_for_status()
+        partial = dest.with_name(f"{dest.name}.{uuid.uuid4().hex}.part")
+        partial.write_bytes(response.content)
+        os.replace(partial, dest)
     return dest
 
 

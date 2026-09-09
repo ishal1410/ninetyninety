@@ -14,3 +14,7 @@ showWidgetBorder = true
 
 [server]
 headless = true
+
+[client]
+# Never show a traceback (with the server path) to a visitor.
+showErrorDetails = "type"

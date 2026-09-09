@@ -1,6 +1,6 @@
 # Agents for Humans: does the model provider affect eligibility or scoring?
 
-Verified 2026-09-06 against primary sources only (Official Rules fetched raw via curl and grepped; FAQ, updates, forum, past galleries and winner pages fetched). Builds on `C:\Users\vp141\research\2026-09-05-agents-for-humans-verification.md`.
+Verified 2026-09-06 against primary sources only (Official Rules fetched raw via curl and grepped; FAQ, updates, forum, past galleries and winner pages fetched). Builds on the 2026-09-05 Agents for Humans verification note (kept outside the repo).
 
 ## TL;DR
 

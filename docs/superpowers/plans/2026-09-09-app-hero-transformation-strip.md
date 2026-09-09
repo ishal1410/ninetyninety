@@ -604,6 +604,25 @@ Change `p.lede` so the copy carries ink, keeping its size:
 p.lede{font-size:.93rem;color:var(--ink);max-width:66ch;line-height:1.55;margin:0 0 .9rem}
 ```
 
+- [ ] **Step 4b: Rename the hero wrapper `.head` to `.lead`**
+
+Task 2's review flagged that `.head` shares a generic name with the existing
+`.form .head` rule, which styles the drafted form's own header row. They do not
+collide today because that rule is scoped, but two unrelated components must
+not share a name.
+
+In `hero()`, change the wrapper of the returned f-string from `<div class="head">`
+to `<div class="lead">`.
+
+In the `CSS` string, change `.head h1{` to `.lead h1{`, and in the shared
+font-family selector list change `.head,.head *,` to `.lead,.lead *,`.
+
+Confirm nothing else refers to the old name:
+
+Run: `grep -n 'class="head"' app.py`
+Expected: no output. The `.form .head{...}` CSS rule stays; it belongs to the
+drafted form, not the hero.
+
 - [ ] **Step 5: Emit the zone rules**
 
 Add a module-level constant beside `FOOTER` in `app.py`:

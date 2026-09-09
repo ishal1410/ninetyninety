@@ -276,6 +276,7 @@ def test_the_control_lede_keeps_its_size_and_the_hero_has_its_own():
     css = at.markdown[0].value
     # p.lede has three call sites; enlarging it undoes the control strip height
     assert "font-size:.93rem" in css_rule(css, "p.lede")
+    assert "color:var(--ink)" in css_rule(css, "p.lede")
     assert "font-size:1.3rem" in css_rule(css, "p.hero-lede")
 
 
@@ -284,6 +285,7 @@ def test_the_masthead_is_a_filled_band_and_the_zones_are_ink():
     css = at.markdown[0].value
     assert "background:var(--ink)" in css_rule(css, ".mast")
     assert "height:3px" in css_rule(css, ".zone")
+    assert "background:var(--ink)" in css_rule(css, ".zone")
 
 
 def test_the_controls_come_before_the_explainer_band():
@@ -291,6 +293,9 @@ def test_the_controls_come_before_the_explainer_band():
     page = markdown_text(at)
     assert page.count('class="zone"') == 2
     assert page.index('class="steps"') > page.rindex('class="zone"')
+    css = at.markdown[0].value
+    # css_rule takes the first ".steps{"; the phone override comes later in the sheet.
+    assert "grid-template-columns:repeat(3,1fr)" in css_rule(css, ".steps")
 
 
 def test_the_page_boots_without_the_recorded_run():

@@ -75,7 +75,11 @@ p.lede{font-size:.93rem;color:var(--ink);max-width:66ch;line-height:1.55;margin:
 .num,table.ledger td.amt,table.ledger td.n,.adj .line,.adj .who,.mast .omb{
   font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 
-/* Masthead: the page chrome is the form's own header block. */
+/* Masthead: the page chrome is the form's own header block.
+   #C9CDD2 and #4A5056 are masthead-local shades, not palette tokens: they read
+   against the ink band, not against paper. --muted and --control are measured
+   for contrast on white and go grey-on-black here, so the band gets its own
+   secondary text and hairline. Used nowhere else; not promoted to :root. */
 .mast{display:flex;align-items:baseline;gap:1.5rem;flex-wrap:wrap;
   padding:1.05rem 1.15rem .95rem;background:var(--ink)}
 .mast .mark{font-weight:800;font-size:1.32rem;letter-spacing:-.022em;color:var(--paper);line-height:1}
@@ -180,7 +184,8 @@ table.ledger tr.total td.amt{border-top:1px solid var(--ink);
 
 /* The explainer band: how the graph reaches each line, in three columns. */
 .steps{display:grid;grid-template-columns:repeat(3,1fr);border-top:none;margin-top:0}
-.step{padding:0 1.6rem 0 0;border-bottom:none;border-right:1px solid var(--rule)}
+.step{padding:0 1.6rem;border-bottom:none;border-right:1px solid var(--rule)}
+.step:first-child{padding-left:0}
 .step:last-child{border-right:none;padding-right:0}
 .step h4{margin:0 0 .4rem;font-size:1rem;font-weight:700;color:var(--ink);letter-spacing:-.01em}
 .step p{font-size:.88rem;color:var(--muted);line-height:1.55;margin:0}

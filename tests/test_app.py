@@ -2,7 +2,6 @@
 
 Each test pins one of the 2026-09-08 bug-hunter findings against app.py.
 """
-import json
 import tempfile
 import threading
 from pathlib import Path
@@ -11,7 +10,6 @@ from streamlit.testing.v1 import AppTest
 
 from ninetyninety.agents import RowCall
 from ninetyninety.ledger import Transaction
-from ninetyninety.lines import form_order
 from ninetyninety.prepare import Form990EZ, assemble
 
 APP = Path(__file__).resolve().parent.parent / "app.py"
@@ -238,33 +236,30 @@ def test_the_proof_line_names_line_9_and_does_not_claim_whole_returns():
         assert overclaim not in text, overclaim
 
 
-def recorded_first_row():
-    """The row the strip is specified to show: the first classified row of the
-    recorded run, in Form 990-EZ Part I order."""
-    data = json.loads((APP.parent / "results" / "demo_run.json").read_text(encoding="utf-8"))
-    number = next(n for n in sorted(data["lines"], key=form_order)
-                  if data["lines"][n]["transactions"])
-    return number, data["lines"][number]
-
-
 def test_the_strip_shows_a_real_recorded_row():
-    number, line = recorded_first_row()
-    tx = line["transactions"][0]
+    # Fixture constants from results/demo_run.json, deliberately not derived through the code.
+    line_number = "1"
+    transaction_description = "ONLINE DONATION STRIPE PAYOUT BATCH 4471"
+    rule_beginning = "Voluntary transfers where the donor receives nothing"
+
     at = run_app()
     text = markdown_text(at)
     assert 'class="lands"' in text
-    assert tx["description"] in text
-    assert tx["rule"][:60] in text
-    assert f"Line {number}" in text
+    assert transaction_description in text
+    assert rule_beginning in text
+    assert f"Line {line_number}" in text
 
 
 def test_the_hero_never_prints_a_line_total():
-    number, line = recorded_first_row()
+    # Fixture constants from results/demo_run.json, deliberately not derived through the code.
+    transaction_amount_formatted = "1,250"
+    line_total_formatted = "9,100"
+
     at = run_app()
     page = markdown_text(at)
     strip = page[page.index('class="lands"'):page.index('class="proof"')]
-    assert f"{line['transactions'][0]['amount']:,}" in strip
-    assert f"{line['amount']:,}" not in strip
+    assert transaction_amount_formatted in strip
+    assert line_total_formatted not in strip
     assert "this row" in strip
 
 

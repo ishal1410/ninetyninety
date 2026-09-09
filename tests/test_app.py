@@ -156,8 +156,9 @@ def test_the_app_opens_on_the_product_not_a_marketing_scroll():
     for gone in ('class="hero"', 'class="marq"', 'class="bento"',
                  'class="card"', 'class="act"', "position:sticky"):
         assert gone not in page, gone
-    assert 'class="mast"' in at.markdown[1].value
-    assert "OMB No. 1545-0047" in at.markdown[1].value
+    # The masthead moved inside the body column, so match on content, not index.
+    assert 'class="mast"' in markdown_text(at)
+    assert "OMB No. 1545-0047" in markdown_text(at)
 
 
 def test_the_page_is_set_in_the_federal_typeface():
@@ -186,14 +187,17 @@ def test_the_document_has_corners():
         assert big not in css, big
 
 
-def test_the_empty_state_shows_the_real_drafted_form_and_then_makes_way():
+def test_the_strip_stays_and_the_explainer_band_makes_way():
     at = run_app()
     text = markdown_text(at)
-    # asset() inlines the render as a data URI, so match the element, not a filename
-    assert 'class="intro"' in text and 'class="sheet"' in text
-    assert 'src="data:image/jpeg;base64,' in text
+    assert 'class="steps"' in text
+    # the scanned page render is gone from the app
+    assert 'class="intro"' not in text and 'class="sheet"' not in text
+    assert 'src="data:image/jpeg;base64,' not in text
     at.button[1].click().run()
-    assert 'class="intro"' not in markdown_text(at)
+    after = markdown_text(at)
+    assert 'class="steps"' not in after
+    assert 'class="lands"' in after, "the strip is the page's head, it stays"
 
 
 def test_the_adjudication_record_marks_the_column_that_reached_the_form():

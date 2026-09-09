@@ -7,7 +7,6 @@ commissioned for federal use) and IBM Plex Mono on a light ground, one federal
 blue accent. The drafted form is a paper sheet in a tray, the adjudication
 record runs full width beneath it.
 """
-import base64
 import html
 import itertools
 import json
@@ -29,11 +28,6 @@ from ninetyninety.recorded import load_recorded_run
 BASE = Path(__file__).parent
 st.set_page_config(page_title="NinetyNinety", page_icon=str(BASE / "assets" / "favicon.png"),
                    layout="wide")
-
-
-@st.cache_data
-def asset(name: str) -> str:
-    return "data:image/jpeg;base64," + base64.b64encode((BASE / "assets" / name).read_bytes()).decode()
 
 
 def esc(text) -> str:
@@ -73,7 +67,7 @@ html{scroll-behavior:smooth}
 *{box-sizing:border-box}
 section[data-testid="stMain"]{background:var(--ground)}
 .block-container{max-width:1320px;margin:0 auto;padding:0 2rem 5rem}
-.mast,.mast *,.intro,.intro *,.cert,.cert *,.shell,.shell *,.adj,.adj *,
+.mast,.mast *,.steps,.steps *,.shell,.shell *,.adj,.adj *,
 .note,.note *,.graph,.graph *,.foot,.foot *,.head,.head *,h2.sec,h3.sub,
 p.lede,p.hero-lede,p.proof{
   font-family:var(--sans)}
@@ -180,23 +174,12 @@ table.ledger tr.total td.amt{border-top:1px solid var(--ink);
 .note .pick{font-family:var(--mono);color:var(--accent);font-weight:600}
 .note.bad .pick{color:var(--notice)}
 
-/* Empty state: the real drafted page, annotated. Composed, never blank. */
-.intro{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:2.4rem;
-  align-items:start;margin-top:1.3rem}
-.intro .sheet{border:1px solid var(--rule);background:var(--paper);padding:6px}
-.intro .sheet img{width:100%;display:block;border:1px solid var(--rule)}
-.intro h1{font-size:clamp(2.1rem,3.6vw,3.5rem);font-weight:800;letter-spacing:-.035em;
-  line-height:1.02;color:var(--ink);margin:0 0 .9rem;max-width:15ch;text-wrap:balance}
-.intro .steps{margin-top:1.6rem;border-top:1px solid var(--rule)}
-.intro .step{padding:.9rem 0;border-bottom:1px solid var(--rule)}
-.intro .step h4{margin:0 0 .25rem;font-size:.95rem;font-weight:700;color:var(--ink);
+/* Empty state: how the graph reaches each line. Composed, never blank. */
+.steps{margin-top:1.6rem;border-top:1px solid var(--rule)}
+.step{padding:.9rem 0;border-bottom:1px solid var(--rule)}
+.step h4{margin:0 0 .25rem;font-size:.95rem;font-weight:700;color:var(--ink);
   letter-spacing:-.01em}
-.intro .step p{font-size:.85rem;color:var(--muted);line-height:1.5;margin:0}
-.cert{border-top:1px solid var(--ink);border-bottom:1px solid var(--rule);
-  padding:.95rem 0 1rem;margin-top:1.5rem}
-.cert p{font-size:.9rem;line-height:1.6;color:var(--muted);margin:0;max-width:62ch}
-.cert b{color:var(--ink);font-weight:600}
-.cert b.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.step p{font-size:.85rem;color:var(--muted);line-height:1.5;margin:0}
 
 /* The graph that ran */
 .graph{border:1px solid var(--rule);background:var(--paper);padding:.9rem;overflow-x:auto}
@@ -259,8 +242,7 @@ div.stButton>button:focus-visible{outline:3px solid var(--accent);outline-offset
   div.stButton>button{transition:none}}
 @media (max-width:1100px){
   [data-testid="stHorizontalBlock"]{flex-wrap:wrap}
-  [data-testid="stHorizontalBlock"]>[data-testid="stColumn"]{min-width:100%;flex:1 1 100%}
-  .intro{grid-template-columns:1fr}}
+  [data-testid="stHorizontalBlock"]>[data-testid="stColumn"]{min-width:100%;flex:1 1 100%}}
 @media (max-width:600px){
   .block-container{padding:0 1rem 4rem}
   .mast .omb{margin-left:0}
@@ -375,20 +357,10 @@ def hero() -> str:
 </div>"""
 
 
-def empty_state() -> str:
-    """Shown until a draft exists: the real output, with what produced it."""
+def explainer() -> str:
+    """Shown until a draft exists: how the graph reaches each line."""
     steps = "".join(f'<div class="step"><h4>{h}</h4><p>{p}</p></div>' for h, p in STEPS)
-    return f"""<div class="intro">
-<div class="sheet"><img src="{asset('draft-page1.jpg')}"
-  alt="Form 990-EZ Part I drafted from the demo ledger and marked DRAFT"></div>
-<div>
-  <h1>A bank export goes in. This comes back.</h1>
-  <p class="lede">Every figure on the drafted form cites the transactions behind it and the
-  sentence of the IRS instructions that put them there. It is a draft for an officer to
-  review and sign, never a filing.</p>
-  <div class="cert">{proof()}</div>
-  <div class="steps">{steps}</div>
-</div></div>"""
+    return f'<div class="steps">{steps}</div>'
 
 
 FOOTER = ('<div class="foot">'
@@ -569,7 +541,7 @@ with body:
 
     draft = st.session_state.get("draft")
     if not draft:
-        st.markdown(empty_state(), unsafe_allow_html=True)
+        st.markdown(explainer(), unsafe_allow_html=True)
     if draft:
         form, skipped = draft["form"], draft["skipped"]
         if draft.get("recorded"):

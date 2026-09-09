@@ -391,8 +391,11 @@ with body:
         uploaded = st.file_uploader("Transaction ledger as CSV with date, description, amount", type="csv")
         use_demo = st.checkbox("Use the synthetic demo ledger instead", value=uploaded is None)
     with c2:
-        org_name = st.text_input("Organization name for the PDF", "DEMO COMMUNITY ORG")
-        ein = st.text_input("EIN for the PDF", "00-0000000")
+        # side by side, so the control strip's height is the uploader's, not
+        # two stacked fields pushing the document out of the first viewport
+        o1, o2 = st.columns([3, 2])
+        org_name = o1.text_input("Organization name for the PDF", "DEMO COMMUNITY ORG")
+        ein = o2.text_input("EIN for the PDF", "00-0000000")
     b1, b2 = st.columns([1, 2])
     go = b1.button("Draft a return", type="primary")
     replay = b2.button("Replay the recorded run (no model calls)",

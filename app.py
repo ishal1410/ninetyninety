@@ -8,6 +8,7 @@ scroll, no iframe. Below it, the working tool.
 """
 import base64
 import html
+import itertools
 import json
 import sys
 import tempfile
@@ -57,15 +58,25 @@ CSS = """<style>
   --sans:'Public Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
 }
 #MainMenu, footer, header[data-testid="stHeader"]{visibility:hidden;height:0}
+::selection{background:#CBE1F2;color:var(--ink)}
+::-moz-selection{background:#CBE1F2;color:var(--ink)}
+input,textarea{caret-color:var(--accent)}
+a{text-underline-offset:.18em;text-decoration-thickness:1px}
+*{scrollbar-width:thin;scrollbar-color:var(--control) var(--ground)}
+*::-webkit-scrollbar{width:11px;height:11px}
+*::-webkit-scrollbar-track{background:var(--ground)}
+*::-webkit-scrollbar-thumb{background:var(--control);border:3px solid var(--ground)}
+*::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 html{scroll-behavior:smooth}
 *{box-sizing:border-box}
 section[data-testid="stMain"]{background:var(--ground)}
 .block-container{max-width:1320px;margin:0 auto;padding:0 2rem 5rem}
-.mast,.mast *,.intro,.intro *,.figs,.figs *,.shell,.shell *,.adj,.adj *,
+.mast,.mast *,.intro,.intro *,.cert,.cert *,.shell,.shell *,.adj,.adj *,
 .note,.note *,.graph,.graph *,.foot,.foot *,h2.sec,h3.sub,p.lede{
   font-family:var(--sans)}
 p.lede{font-size:.93rem;color:var(--muted);max-width:66ch;line-height:1.55;margin:0 0 1.1rem}
-.num,table.ledger td.amt,table.ledger td.n,.figs .v,.adj .line,.adj .who,.mast .omb{
+.num,table.ledger td.amt,table.ledger td.n,.adj .line,.adj .who,.mast .omb{
   font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 
 /* Masthead: the page chrome is the form's own header block. */
@@ -82,8 +93,7 @@ h3.sub{font-size:.98rem;font-weight:700;letter-spacing:-.008em;color:var(--ink);
   margin:2rem 0 .55rem;padding-bottom:.35rem;border-bottom:1px solid var(--rule)}
 
 /* The drafted form: a paper sheet inside a tray. */
-.shell{background:var(--paper);border:1px solid var(--rule);padding:6px;
-  box-shadow:0 1px 2px rgba(27,27,27,.05)}
+.shell{background:var(--paper);border:1px solid var(--rule);padding:6px}
 .form{background:var(--paper);border:1px solid var(--ink);padding:1.5rem 1.6rem 1.3rem}
 .form .head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;
   border-bottom:2px solid var(--ink);padding-bottom:.7rem}
@@ -133,7 +143,7 @@ table.ledger tr.total td.amt{border-top:1px solid var(--ink);
   text-transform:uppercase}
 
 /* Provenance and flag notes */
-.note{border-left:2px solid var(--accent);background:var(--paper);padding:.55rem .8rem;
+.note{border-left:1px solid var(--accent);background:var(--paper);padding:.55rem .9rem;
   margin:0 0 .55rem;font-size:.87rem;line-height:1.5;color:var(--ink)}
 .note.bad{border-left-color:var(--notice)}
 .note .who{color:var(--muted);font-size:.79rem}
@@ -143,23 +153,20 @@ table.ledger tr.total td.amt{border-top:1px solid var(--ink);
 /* Empty state: the real drafted page, annotated. Composed, never blank. */
 .intro{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:2.2rem;
   align-items:start;margin-top:1.8rem}
-.intro .sheet{border:1px solid var(--rule);background:var(--paper);padding:6px;
-  box-shadow:0 1px 2px rgba(27,27,27,.05)}
+.intro .sheet{border:1px solid var(--rule);background:var(--paper);padding:6px}
 .intro .sheet img{width:100%;display:block;border:1px solid var(--rule)}
-.intro h1{font-size:clamp(1.75rem,2.7vw,2.6rem);font-weight:800;letter-spacing:-.032em;
-  line-height:1.07;color:var(--ink);margin:0 0 .75rem;max-width:17ch}
+.intro h1{font-size:clamp(2.1rem,3.6vw,3.5rem);font-weight:800;letter-spacing:-.035em;
+  line-height:1.02;color:var(--ink);margin:0 0 .9rem;max-width:15ch;text-wrap:balance}
 .intro .steps{margin-top:1.6rem;border-top:1px solid var(--rule)}
-.intro .step{display:grid;grid-template-columns:2.1rem 1fr;gap:.9rem;padding:.85rem 0;
-  border-bottom:1px solid var(--rule)}
-.intro .step b{font-family:var(--mono);font-size:.78rem;font-weight:600;color:var(--accent)}
-.intro .step h4{margin:0 0 .2rem;font-size:.94rem;font-weight:700;color:var(--ink)}
+.intro .step{padding:.9rem 0;border-bottom:1px solid var(--rule)}
+.intro .step h4{margin:0 0 .25rem;font-size:.95rem;font-weight:700;color:var(--ink);
+  letter-spacing:-.01em}
 .intro .step p{font-size:.85rem;color:var(--muted);line-height:1.5;margin:0}
-.figs{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--rule);
-  background:var(--paper);margin-top:1.6rem}
-.figs div{padding:.85rem .9rem;border-right:1px solid var(--rule)}
-.figs div:last-child{border-right:none}
-.figs .v{font-size:1.5rem;font-weight:600;color:var(--ink);line-height:1}
-.figs .k{display:block;margin-top:.32rem;font-size:.76rem;color:var(--muted);line-height:1.35}
+.cert{border-top:1px solid var(--ink);border-bottom:1px solid var(--rule);
+  padding:.95rem 0 1rem;margin-top:1.5rem}
+.cert p{font-size:.9rem;line-height:1.6;color:var(--muted);margin:0;max-width:62ch}
+.cert b{color:var(--ink);font-weight:600}
+.cert b.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 /* The graph that ran */
 .graph{border:1px solid var(--rule);background:var(--paper);padding:.9rem;overflow-x:auto}
@@ -178,6 +185,15 @@ table.ledger tr.total td.amt{border-top:1px solid var(--ink);
   background-size:220% 100%;animation:shimmer 1.5s var(--ease) infinite}
 @keyframes shimmer{to{background-position:-120% 0}}
 
+/* The one authored moment: the sheet posts itself, top to bottom, on arrival.
+   Exponential ease-out from an already-visible default, so nothing is hidden
+   if the animation never runs. */
+@media (prefers-reduced-motion: no-preference){
+  table.ledger tr{animation:post .5s cubic-bezier(.16,1,.3,1) backwards;
+    animation-delay:calc(var(--i,0) * 22ms)}
+  @keyframes post{from{opacity:0;transform:translateY(-5px)}}
+}
+
 /* Footer */
 .foot{border-top:1px solid var(--rule);margin-top:3.5rem;padding:1.1rem 0 .4rem;
   display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
@@ -194,6 +210,8 @@ div.stButton>button[kind="primary"]:hover,div.stButton>button[kind="primary"]:fo
 div.stButton>button[kind="secondary"]{background:var(--paper);border:1px solid var(--control);color:var(--ink)}
 div.stButton>button[kind="secondary"]:hover{border-color:var(--ink);color:var(--ink)}
 div.stButton>button:active{transform:translateY(1px)}
+div.stButton>button:disabled{background:var(--band);border-color:var(--rule);
+  color:var(--control);cursor:not-allowed}
 div.stButton>button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 [data-testid="stTextInput"] input{border-radius:2px;border:1px solid var(--control);
   background:var(--paper);color:var(--ink);font-family:var(--mono);font-size:.9rem}
@@ -214,8 +232,6 @@ div.stButton>button:focus-visible{outline:3px solid var(--accent);outline-offset
   .mast .omb{margin-left:0}
   .adj .cols{grid-template-columns:1fr}
   .adj .col{border-right:none;border-bottom:1px solid var(--rule)}
-  .figs,.figs div{grid-template-columns:1fr;border-right:none}
-  .figs div{border-bottom:1px solid var(--rule)}
   table.ledger td.cnt{display:none}
   table.ledger td.amt{width:6rem}
   table.ledger td.n{width:2.3rem}
@@ -241,26 +257,29 @@ def masthead() -> str:
 
 
 STEPS = (
-    ("01", "Two agents read every row, blind to each other",
+    ("Two agents read every row, blind to each other",
      "Preparer and Reviewer are parallel entry nodes of one Strands graph. Each quotes the "
      "IRS instruction it relied on, and Python checks that quote word by word against the "
      "real text."),
-    ("02", "A referee settles only the rows they read differently",
+    ("A referee settles only the rows they read differently",
      "A conditional edge fires on disagreement. The Referee may pick one of the two disputed "
      "lines and nothing else, and its reason is grounded against the IRS text too."),
-    ("03", "Python adds up, never the model",
+    ("Python adds up, never the model",
      "Lines 9, 17 and 18 are computed from the classified rows by the same module that "
-     "rebuilt thousands of real filed returns from their own line items."),
+     "rebuilt the returns above from their own line items."),
 )
 
 
 def empty_state() -> str:
     """Shown until a draft exists: the real output, with what produced it."""
     checked = f"{report['checked']['line9']:,}" if report else "3,632"
-    l9 = report["rates"]["line9"] if report else "100.0"
-    l18 = report["rates"]["line18"] if report else "99.94"
-    steps = "".join(f'<div class="step"><b>{n}</b><div><h4>{h}</h4><p>{p}</p></div></div>'
-                    for n, h, p in STEPS)
+
+    def got(kind: str, field: str, fallback: str) -> str:
+        return f"{report[kind][field]:,}" if report else fallback
+    m9, c9 = got("matched", "line9", "3,632"), got("checked", "line9", "3,632")
+    m17, c17 = got("matched", "line17", "3,617"), got("checked", "line17", "3,618")
+    m18, c18 = got("matched", "line18", "3,619"), got("checked", "line18", "3,621")
+    steps = "".join(f'<div class="step"><h4>{h}</h4><p>{p}</p></div>' for h, p in STEPS)
     return f"""<div class="intro">
 <div class="sheet"><img src="{asset('draft-page1.jpg')}"
   alt="Form 990-EZ Part I drafted from the demo ledger and marked DRAFT"></div>
@@ -269,10 +288,13 @@ def empty_state() -> str:
   <p class="lede">Every figure on the drafted form cites the transactions behind it and the
   sentence of the IRS instructions that put them there. It is a draft for an officer to
   review and sign, never a filing.</p>
-  <div class="figs">
-    <div><span class="v">{l9}%</span><span class="k">Line 9 rebuilt exactly across {checked} filed returns</span></div>
-    <div><span class="v">{l18}%</span><span class="k">Line 18, excess or deficit</span></div>
-    <div><span class="v">3</span><span class="k">Agents in one Strands graph</span></div>
+  <div class="cert">
+    <p>The arithmetic that fills this form was run against <b>{checked}</b> real filed
+    Form 990-EZ returns from the IRS e-file corpus. It rebuilt line 9 in
+    <b class="num">{m9}</b> of <b class="num">{c9}</b>, line 17 in
+    <b class="num">{m17}</b> of <b class="num">{c17}</b>, and line 18 in
+    <b class="num">{m18}</b> of <b class="num">{c18}</b>. The misses are returns
+    whose own stated totals disagree with their own line items.</p>
   </div>
   <div class="steps">{steps}</div>
 </div></div>"""
@@ -466,29 +488,35 @@ with body:
 
         with left:
             rows = ['<table class="ledger">']
+            order = itertools.count()
+
+            def row(html: str) -> None:
+                """Each row carries its stagger index for the posting animation."""
+                rows.append(html.replace("<tr", f'<tr style="--i:{next(order)}"', 1))
+
             for part, lines, total_key, total_label in (
                     ("Revenue", REVENUE_LINES, "line9", "Total revenue"),
                     ("Expenses", EXPENSE_LINES, "line17", "Total expenses")):
-                rows.append(f'<tr class="part"><td class="n"></td><td class="lab">{part}</td>'
-                            f'<td class="cnt"></td><td class="amt"></td></tr>')
+                row(f'<tr class="part"><td class="n"></td><td class="lab">{part}</td>'
+                    f'<td class="cnt"></td><td class="amt"></td></tr>')
                 for line in lines:
                     result = form.lines.get(line.number)
                     if result is None:
-                        rows.append(f'<tr class="empty"><td class="n">{line.number}</td>'
-                                    f'<td class="lab"><span>{esc(line.label)}</span></td>'
-                                    f'<td class="cnt"></td><td class="amt"></td></tr>')
+                        row(f'<tr class="empty"><td class="n">{line.number}</td>'
+                            f'<td class="lab"><span>{esc(line.label)}</span></td>'
+                            f'<td class="cnt"></td><td class="amt"></td></tr>')
                     else:
                         n = len(result.transactions)
-                        rows.append(f'<tr><td class="n">{line.number}</td>'
-                                    f'<td class="lab"><span>{esc(line.label)}</span></td>'
-                                    f'<td class="cnt">{n} row{"s" if n != 1 else ""}</td>'
-                                    f'<td class="amt">{money(result.amount)}</td></tr>')
-                rows.append(f'<tr class="total"><td class="n">{total_key[4:]}</td>'
-                            f'<td class="lab">{total_label}</td><td class="cnt"></td>'
-                            f'<td class="amt">{money(form.totals[total_key])}</td></tr>')
-            rows.append(f'<tr class="total"><td class="n">18</td>'
-                        f'<td class="lab">Excess or (deficit) for the year</td><td class="cnt"></td>'
-                        f'<td class="amt">{money(form.totals["line18"])}</td></tr>')
+                        row(f'<tr><td class="n">{line.number}</td>'
+                            f'<td class="lab"><span>{esc(line.label)}</span></td>'
+                            f'<td class="cnt">{n} row{"s" if n != 1 else ""}</td>'
+                            f'<td class="amt">{money(result.amount)}</td></tr>')
+                row(f'<tr class="total"><td class="n">{total_key[4:]}</td>'
+                    f'<td class="lab">{total_label}</td><td class="cnt"></td>'
+                    f'<td class="amt">{money(form.totals[total_key])}</td></tr>')
+            row(f'<tr class="total"><td class="n">18</td>'
+                f'<td class="lab">Excess or (deficit) for the year</td><td class="cnt"></td>'
+                f'<td class="amt">{money(form.totals["line18"])}</td></tr>')
             rows.append("</table>")
             st.markdown(
                 '<div class="shell"><div class="form"><div class="head"><div>'

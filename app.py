@@ -2,9 +2,10 @@
 
 Built with Strands Agents.
 
-Front: cinematic dark page (Outfit + IBM Plex Mono, one green accent), motion
-on CSS scroll-driven animations and sticky pinning so it lives in the page
-scroll, no iframe. Below it, the working tool.
+Front: the federal-document interface -- Public Sans (the typeface USWDS
+commissioned for federal use) and IBM Plex Mono on a light ground, one federal
+blue accent. The drafted form is a paper sheet in a tray, the adjudication
+record runs full width beneath it.
 """
 import base64
 import html
@@ -132,7 +133,7 @@ table.ledger tr.total td.amt{border-top:1px solid var(--ink);
 .adj .who{display:block;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;
   color:var(--muted);margin-bottom:.28rem}
 .adj .line{font-size:1.02rem;font-weight:600;color:var(--ink)}
-.adj .rule{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;margin-top:.35rem;font-size:.79rem;line-height:1.45;color:var(--muted)}
+.adj .rule{display:block;margin-top:.35rem;font-size:.79rem;line-height:1.45;color:var(--muted)}
 .adj .col.win{background:var(--tint);box-shadow:inset 0 2px 0 var(--accent)}
 .adj .col.win .line,.adj .col.win .who{color:var(--accent)}
 .adj .col.out .line{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
@@ -544,8 +545,9 @@ with body:
             st.markdown('<h3 class="sub">Where each line came from</h3>', unsafe_allow_html=True)
             for number in sorted(form.lines, key=form_order):
                 result = form.lines[number]
+                n = len(result.transactions)
                 with st.expander(f"Line {number}, {line_by_number(number).label}: "
-                                 f"{money(result.amount)} from {len(result.transactions)} rows"):
+                                 f'{money(result.amount)} from {n} row{"s" if n != 1 else ""}'):
                     for c in result.transactions:
                         st.markdown(
                             f'<div class="note"><span class="who">row {c["source_row"]}, {esc(c["date"])}</span>'
@@ -554,9 +556,6 @@ with body:
                             unsafe_allow_html=True)
 
         with right:
-            st.markdown('<h3 class="sub">The graph that ran</h3>', unsafe_allow_html=True)
-            st.markdown(graph_svg(form.trace), unsafe_allow_html=True)
-
             st.markdown(f'<h3 class="sub">Low confidence, {len(form.low_confidence)}</h3>',
                         unsafe_allow_html=True)
             for item in form.low_confidence:
@@ -594,6 +593,9 @@ with body:
 
             with st.expander(f"Full Strands trace, {len(form.trace)} graph runs"):
                 st.dataframe(trace_rows(form.trace), width="stretch", hide_index=True)
+
+        st.markdown('<h3 class="sub">The graph that ran</h3>', unsafe_allow_html=True)
+        st.markdown(graph_svg(form.trace), unsafe_allow_html=True)
 
         st.markdown(f'<h3 class="sub">Adjudication record, {len(form.disagreements)} rows</h3>'
                     '<p class="lede">The Reviewer never sees the Preparer, so these are two '

@@ -275,15 +275,24 @@ STEPS = (
 )
 
 
-def empty_state() -> str:
-    """Shown until a draft exists: the real output, with what produced it."""
-    checked = f"{report['checked']['line9']:,}" if report else "3,632"
-
+def proof() -> str:
+    """The validation numbers, stated at the width they were measured: line by
+    line, against the returns actually checked, never the whole return."""
     def got(kind: str, field: str, fallback: str) -> str:
         return f"{report[kind][field]:,}" if report else fallback
     m9, c9 = got("matched", "line9", "3,632"), got("checked", "line9", "3,632")
     m17, c17 = got("matched", "line17", "3,617"), got("checked", "line17", "3,618")
     m18, c18 = got("matched", "line18", "3,619"), got("checked", "line18", "3,621")
+    return (f'<p class="proof">Line 9 rebuilt exactly in <b class="num">{m9}</b> of '
+            f'<b class="num">{c9}</b> returns checked from the IRS e-file corpus. '
+            f'Line 17: <b class="num">{m17}</b> of <b class="num">{c17}</b>. '
+            f'Line 18: <b class="num">{m18}</b> of <b class="num">{c18}</b>. '
+            f'The misses are returns whose own stated totals disagree with their '
+            f'own line items.</p>')
+
+
+def empty_state() -> str:
+    """Shown until a draft exists: the real output, with what produced it."""
     steps = "".join(f'<div class="step"><h4>{h}</h4><p>{p}</p></div>' for h, p in STEPS)
     return f"""<div class="intro">
 <div class="sheet"><img src="{asset('draft-page1.jpg')}"
@@ -293,14 +302,7 @@ def empty_state() -> str:
   <p class="lede">Every figure on the drafted form cites the transactions behind it and the
   sentence of the IRS instructions that put them there. It is a draft for an officer to
   review and sign, never a filing.</p>
-  <div class="cert">
-    <p>The arithmetic that fills this form was run against <b>{checked}</b> real filed
-    Form 990-EZ returns from the IRS e-file corpus. It rebuilt line 9 in
-    <b class="num">{m9}</b> of <b class="num">{c9}</b>, line 17 in
-    <b class="num">{m17}</b> of <b class="num">{c17}</b>, and line 18 in
-    <b class="num">{m18}</b> of <b class="num">{c18}</b>. The misses are returns
-    whose own stated totals disagree with their own line items.</p>
-  </div>
+  <div class="cert">{proof()}</div>
   <div class="steps">{steps}</div>
 </div></div>"""
 

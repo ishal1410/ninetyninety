@@ -224,3 +224,13 @@ def test_the_phone_rules_come_last_so_they_win_the_cascade():
     block = css[phone:]
     assert "table.ledger td.cnt{display:none}" in block
     assert "table.ledger td.amt{width:6rem}" in block
+
+
+def test_the_proof_line_names_line_9_and_does_not_claim_whole_returns():
+    at = run_app()
+    text = markdown_text(at)
+    assert "Line 9 rebuilt exactly in" in text
+    assert "returns checked from the IRS e-file corpus" in text
+    for overclaim in ("returns rebuilt exactly",
+                      "The arithmetic that fills this form"):
+        assert overclaim not in text, overclaim

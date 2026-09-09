@@ -74,7 +74,8 @@ html{scroll-behavior:smooth}
 section[data-testid="stMain"]{background:var(--ground)}
 .block-container{max-width:1320px;margin:0 auto;padding:0 2rem 5rem}
 .mast,.mast *,.intro,.intro *,.cert,.cert *,.shell,.shell *,.adj,.adj *,
-.note,.note *,.graph,.graph *,.foot,.foot *,h2.sec,h3.sub,p.lede{
+.note,.note *,.graph,.graph *,.foot,.foot *,.head,.head *,h2.sec,h3.sub,
+p.lede,p.hero-lede,p.proof{
   font-family:var(--sans)}
 p.lede{font-size:.93rem;color:var(--muted);max-width:66ch;line-height:1.55;margin:0 0 .9rem}
 .num,table.ledger td.amt,table.ledger td.n,.adj .line,.adj .who,.mast .omb{
@@ -88,6 +89,34 @@ p.lede{font-size:.93rem;color:var(--muted);max-width:66ch;line-height:1.55;margi
 .mast .sub{font-size:.86rem;color:var(--muted)}
 .mast .omb{margin-left:auto;font-size:.74rem;letter-spacing:.02em;color:var(--muted);
   text-transform:uppercase;border:1px solid var(--rule);background:var(--paper);padding:.3rem .55rem}
+
+/* The strip: one row of a bank export, and where it lands. */
+.head h1{font-size:clamp(2.1rem,3.6vw,3.5rem);font-weight:800;letter-spacing:-.035em;
+  line-height:1.02;color:var(--ink);margin:1.4rem 0 .9rem;max-width:18ch;text-wrap:balance}
+p.hero-lede{font-size:1.3rem;line-height:1.45;color:var(--ink);max-width:52ch;margin:0 0 1.5rem}
+.lands{display:grid;grid-template-columns:minmax(0,1fr) 3.5rem minmax(0,1.3fr);
+  align-items:start;margin:0 0 1.3rem}
+.lands .from,.lands .to{background:var(--paper);border:1px solid var(--ink);
+  padding:.85rem 1rem .95rem}
+.lands .to{border-left-width:3px}
+.lands .who{display:block;font-size:.72rem;color:var(--muted);line-height:1.4;
+  margin-bottom:.5rem}
+.lands b{display:block;font-family:var(--mono);font-size:.86rem;font-weight:600;color:var(--ink)}
+.lands .desc{display:block;font-size:.95rem;line-height:1.4;color:var(--ink);margin-top:.2rem}
+.lands .from .amt{display:block;margin-top:.7rem;font-size:1.15rem;font-weight:600;
+  text-align:right;color:var(--ink)}
+.lands .rowamt{display:flex;justify-content:space-between;align-items:baseline;
+  margin-top:.7rem;padding-top:.55rem;border-top:1px solid var(--rule)}
+.lands .rowamt .who{margin:0}
+.lands .rowamt .num{font-family:var(--mono);font-size:1.15rem;font-weight:600;color:var(--ink)}
+.lands .rule{margin:.7rem 0 0;padding-top:.55rem;border-top:1px solid var(--rule);
+  font-size:.82rem;line-height:1.5;color:var(--muted)}
+.lands .arrow{align-self:center;height:1px;background:var(--ink);position:relative}
+.lands .arrow::after{content:"";position:absolute;right:0;top:-4px;
+  border-left:8px solid var(--ink);border-top:4px solid transparent;
+  border-bottom:4px solid transparent}
+p.proof{font-size:.95rem;line-height:1.6;color:var(--ink);max-width:70ch;margin:0}
+p.proof b{font-weight:600}
 
 h2.sec{font-size:1.42rem;font-weight:700;letter-spacing:-.022em;color:var(--ink);margin:1.7rem 0 .3rem}
 h3.sub{font-size:.98rem;font-weight:700;letter-spacing:-.008em;color:var(--ink);
@@ -250,6 +279,13 @@ report_path = BASE / "results" / "validation.json"
 if report_path.exists():
     report = json.loads(report_path.read_text(encoding="utf-8"))
 
+# Same idiom as report above: the hosted app must still boot if the recorded
+# run is absent, it just loses the strip.
+recorded_rows = None
+demo_run_path = BASE / "results" / "demo_run.json"
+if demo_run_path.exists():
+    recorded_rows = json.loads(demo_run_path.read_text(encoding="utf-8"))["lines"]
+
 
 def masthead() -> str:
     """The page chrome is the form's own header block."""
@@ -291,6 +327,54 @@ def proof() -> str:
             f'own line items.</p>')
 
 
+def hero_row() -> tuple[str, dict] | None:
+    """The first classified row of the recorded run, in form order. Real output
+    from a real Gemini run: description, amount and the rule the model quoted,
+    all verbatim."""
+    if not recorded_rows:
+        return None
+    for number in sorted(recorded_rows, key=form_order):
+        transactions = recorded_rows[number]["transactions"]
+        if transactions:
+            return number, transactions[0]
+    return None
+
+
+def hero() -> str:
+    """The page's one loud element: a line of a bank export becoming the form
+    line it lands on, with the instruction that put it there."""
+    row, strip = hero_row(), ""
+    if row is not None:
+        number, tx = row
+        # The row's own amount only. The line's total belongs to the drafted
+        # form; printing it here would read as this row's figure.
+        strip = f"""<div class="lands">
+  <div class="from">
+    <span class="who">one row of a bank export</span>
+    <b>{esc(tx["date"])}</b>
+    <span class="desc">{esc(tx["description"])}</span>
+    <span class="amt num">{money(tx["amount"])}</span>
+  </div>
+  <div class="arrow" aria-hidden="true"></div>
+  <div class="to">
+    <span class="who">the line, and the instruction that put it there</span>
+    <b class="num">Line {esc(number)}</b>
+    <span class="desc">{esc(line_by_number(number).label)}</span>
+    <span class="rowamt"><span class="who">this row</span>
+      <span class="num">{money(tx["amount"])}</span></span>
+    <p class="rule">{esc(tx["rule"])}</p>
+  </div>
+</div>"""
+    return f"""<div class="head">
+  <h1>A bank export goes in. This comes back.</h1>
+  <p class="hero-lede">Every figure on the drafted form cites the transactions behind it
+  and the sentence of the IRS instructions that put them there. It is a draft for an
+  officer to review and sign, never a filing.</p>
+  {strip}
+  {proof()}
+</div>"""
+
+
 def empty_state() -> str:
     """Shown until a draft exists: the real output, with what produced it."""
     steps = "".join(f'<div class="step"><h4>{h}</h4><p>{p}</p></div>' for h, p in STEPS)
@@ -312,9 +396,6 @@ FOOTER = ('<div class="foot">'
           'Draft output only; an officer must review and sign.</span>'
           '<span><a href="https://github.com/ishal1410/ninetyninety">GitHub, MIT license</a></span>'
           '</div>')
-
-
-st.markdown(masthead(), unsafe_allow_html=True)
 
 
 def adjudication(item: dict) -> str:
@@ -386,6 +467,9 @@ def graph_svg(trace: list[dict] | None) -> str:
 
 pad_l, body, pad_r = st.columns([1, 12, 1])
 with body:
+    # Inside body, not above it: filled solid, a full-container masthead would
+    # overhang the 12/14 content column by about 95px on each side.
+    st.markdown(masthead() + hero(), unsafe_allow_html=True)
     st.markdown('<h2 class="sec" id="draft-a-return">Draft a return</h2>'
                 '<p class="lede">Upload a CSV with date, description and amount, or use the '
                 'synthetic demo ledger. The agents run live; a 54-row ledger takes a few '

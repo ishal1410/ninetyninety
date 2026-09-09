@@ -64,7 +64,7 @@ section[data-testid="stMain"]{background:var(--ground)}
 .mast,.mast *,.intro,.intro *,.figs,.figs *,.shell,.shell *,.adj,.adj *,
 .note,.note *,.graph,.graph *,.foot,.foot *,h2.sec,h3.sub,p.lede{
   font-family:var(--sans)}
-p.lede{font-size:.93rem;color:var(--muted);max-width:66ch;line-height:1.55;margin:0}
+p.lede{font-size:.93rem;color:var(--muted);max-width:66ch;line-height:1.55;margin:0 0 1.1rem}
 .num,table.ledger td.amt,table.ledger td.n,.figs .v,.adj .line,.adj .who,.mast .omb{
   font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 
@@ -122,7 +122,7 @@ table.ledger tr.total td.amt{border-top:1px solid var(--ink);
 .adj .who{display:block;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;
   color:var(--muted);margin-bottom:.28rem}
 .adj .line{font-size:1.02rem;font-weight:600;color:var(--ink)}
-.adj .rule{display:block;margin-top:.35rem;font-size:.79rem;line-height:1.45;color:var(--muted)}
+.adj .rule{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;margin-top:.35rem;font-size:.79rem;line-height:1.45;color:var(--muted)}
 .adj .col.win{background:var(--tint);box-shadow:inset 0 2px 0 var(--accent)}
 .adj .col.win .line,.adj .col.win .who{color:var(--accent)}
 .adj .col.out .line{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
@@ -522,17 +522,6 @@ with body:
             st.markdown('<h3 class="sub">The graph that ran</h3>', unsafe_allow_html=True)
             st.markdown(graph_svg(form.trace), unsafe_allow_html=True)
 
-            st.markdown(f'<h3 class="sub">Adjudication record, {len(form.disagreements)} rows</h3>'
-                        '<p class="lede">The Reviewer never sees the Preparer, so these are two '
-                        'independent readings of the same row. The Referee runs only where they '
-                        'differ, and its reason is checked against the IRS text like any other.'
-                        '</p>', unsafe_allow_html=True)
-            for item in form.disagreements:
-                st.markdown(adjudication(item), unsafe_allow_html=True)
-            if not form.disagreements:
-                st.markdown('<div class="note">Preparer and Reviewer agreed on every row.</div>',
-                            unsafe_allow_html=True)
-
             st.markdown(f'<h3 class="sub">Low confidence, {len(form.low_confidence)}</h3>',
                         unsafe_allow_html=True)
             for item in form.low_confidence:
@@ -570,5 +559,16 @@ with body:
 
             with st.expander(f"Full Strands trace, {len(form.trace)} graph runs"):
                 st.dataframe(trace_rows(form.trace), width="stretch", hide_index=True)
+
+        st.markdown(f'<h3 class="sub">Adjudication record, {len(form.disagreements)} rows</h3>'
+                    '<p class="lede">The Reviewer never sees the Preparer, so these are two '
+                    'independent readings of the same row. The Referee runs only where they '
+                    'differ, and its reason is checked against the IRS text like any other.</p>',
+                    unsafe_allow_html=True)
+        for item in form.disagreements:
+            st.markdown(adjudication(item), unsafe_allow_html=True)
+        if not form.disagreements:
+            st.markdown('<div class="note">Preparer and Reviewer agreed on every row.</div>',
+                        unsafe_allow_html=True)
 
 st.markdown(FOOTER, unsafe_allow_html=True)

@@ -44,155 +44,183 @@ def money(n: int) -> str:
 
 
 CSS = """<style>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
-:root{--bg:#07090F;--bg2:#0E121B;--line:#1E2533;--ink:#EDEFF5;--muted:#9AA3B5;--acc:#62D39A;--acc-ink:#07090F;--danger:#F0716B;--ease:cubic-bezier(.32,.72,0,1)}
-#MainMenu, footer, header[data-testid="stHeader"]{visibility:hidden;height:0}
-.block-container{max-width:100%;padding:0 1rem 6rem}
-html{scroll-behavior:smooth}
-body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.045;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
-*{box-sizing:border-box}
-.wrap{max-width:1240px;margin:0 auto;padding:0 2rem}
-.nn{position:relative}
-.nn h1,.nn h2,.nn h3,.nn p{font-family:'Outfit',sans-serif;margin:0}
-.nn a,.nn a:hover{text-decoration:none!important}
-.nn p{color:var(--muted);line-height:1.6}
-.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
-/* Nav: floating glass pill */
-.nav{position:absolute;top:18px;left:50%;transform:translateX(-50%);z-index:5;width:max-content;white-space:nowrap;display:flex;gap:.25rem;align-items:center;padding:.35rem .4rem .35rem 1rem;border-radius:999px;background:rgba(14,18,27,.62);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 20px 50px -20px rgba(0,0,0,.8);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%)}
-.nav .mark{font-family:'Outfit',sans-serif;font-weight:700;color:var(--ink);margin-right:.9rem;letter-spacing:-.01em}
-.nav a{font-family:'Outfit',sans-serif;color:var(--muted);text-decoration:none;font-size:.9rem;padding:.45rem .8rem;border-radius:999px;transition:color .3s var(--ease),background .3s var(--ease)}
-.nav a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
-.nav a.go{background:var(--acc);color:var(--acc-ink);font-weight:600}
-.nav a.go:hover{background:#7BE3AE;color:var(--acc-ink)}
-
-/* Hero: cinematic center over the real product */
-.hero{position:relative;min-height:100dvh;display:grid;place-items:center;text-align:center;overflow:hidden;padding:5rem 0 12rem}
-.hero .bg{position:absolute;inset:-10% -5% auto;top:57%;width:110%;opacity:.62;filter:contrast(1.05);transform:perspective(1600px) rotateX(38deg) scale(1.02);transform-origin:top center;mask-image:linear-gradient(to bottom,rgba(0,0,0,.95) 10%,transparent 85%);-webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,.95) 10%,transparent 85%)}
-.hero .wash{position:absolute;inset:0;background:radial-gradient(60% 50% at 50% 30%,rgba(98,211,154,.16),transparent 60%),radial-gradient(40% 40% at 80% 70%,rgba(60,120,200,.14),transparent 60%),linear-gradient(to bottom,rgba(7,9,15,.2),var(--bg) 88%)}
-.hero .c{position:relative;max-width:1180px;padding:0 2rem}
-.hero h1{font-size:clamp(2.8rem,5.4vw,5.6rem);font-weight:800;line-height:1.02;letter-spacing:-.035em;color:var(--ink);text-wrap:balance}
-.hero h1 .pill{display:inline-block;vertical-align:middle;width:1.7em;height:.62em;border-radius:999px;background-size:cover;background-position:12% 40%;margin:0 .12em 0 .08em;box-shadow:0 0 0 2px rgba(255,255,255,.14);transform:translateY(-.06em)}
-.hero p{font-size:clamp(1.05rem,1.4vw,1.3rem);max-width:56ch;margin:1.6rem auto 2.4rem;color:#B8C0D0}
-.ctas{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap}
-.btn{font-family:'Outfit',sans-serif;font-weight:600;font-size:1.02rem;padding:.9rem 1.5rem;border-radius:999px;text-decoration:none;transition:transform .5s var(--ease),background .3s var(--ease),border-color .3s var(--ease)}
-.btn.p{background:var(--acc);color:var(--acc-ink)}
-.btn.p:hover{background:#7BE3AE;transform:translateY(-2px);color:var(--acc-ink)}
-.btn.g{color:var(--ink);border:1px solid rgba(255,255,255,.22)}
-.btn.g:hover{border-color:rgba(255,255,255,.5);transform:translateY(-2px);color:var(--ink)}
-.btn:active{transform:translateY(1px)}
-.btn:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
-.hero .in{opacity:0;transform:translateY(18px);animation:rise 1s var(--ease) forwards}
-.hero .in.d1{animation-delay:.1s}.hero .in.d2{animation-delay:.22s}.hero .in.d3{animation-delay:.34s}
-.hero .bg{animation:bgin 1.6s var(--ease) forwards;opacity:0}
-@keyframes rise{to{opacity:1;transform:none}}
-@keyframes bgin{to{opacity:.62}}
-
-/* Marquee */
-.marq{overflow:hidden;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:1.1rem 0;margin:2rem 0 0}
-.marq .track{display:flex;gap:3.5rem;width:max-content;animation:slide 38s linear infinite;font-family:'Outfit',sans-serif;font-weight:500;color:var(--muted);font-size:1rem;white-space:nowrap}
-.marq .track span::after{content:'';display:inline-block;width:6px;height:6px;border-radius:2px;background:var(--acc);margin-left:3.5rem;vertical-align:middle;opacity:.7}
-@keyframes slide{to{transform:translateX(-50%)}}
-
-/* Sections */
-.sec{padding:9rem 0}
-.sec h2{font-size:clamp(2rem,3.6vw,3.4rem);font-weight:700;letter-spacing:-.03em;line-height:1.05;color:var(--ink);max-width:22ch;text-wrap:balance}
-.sec .lead{font-size:1.15rem;max-width:58ch;margin-top:1.1rem}
-
-/* Bento: 3 cells, 3x2, dense */
-.bento{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,minmax(230px,auto));grid-auto-flow:dense;gap:14px;margin-top:3rem}
-.cell{position:relative;border-radius:18px;background:var(--bg2);border:1px solid var(--line);overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
-.cell.a{grid-column:span 2;grid-row:span 2}
-.cell img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 1.2s var(--ease)}
-.cell:hover img{transform:scale(1.04)}
-.cell .cap{position:absolute;left:0;right:0;bottom:0;padding:1.4rem 1.6rem;background:rgba(7,9,15,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line)}
-.cell .cap h3{font-size:1.35rem;font-weight:600;color:var(--ink)}
-.cell .cap p{font-size:.95rem;margin-top:.3rem}
-.cell.b,.cell.c{padding:1.6rem}
-.cell .big{font-size:clamp(2.6rem,4vw,3.6rem);font-weight:500;color:var(--ink);line-height:1;margin:.2rem 0 .5rem}
-.cell .big small{font-size:1.1rem;color:var(--acc);margin-left:.3rem}
-.cell h3{font-size:1.15rem;font-weight:600;color:var(--ink)}
-.cell p{font-size:.95rem}
-.cell.c{background:linear-gradient(160deg,rgba(98,211,154,.14),rgba(14,18,27,0) 60%),var(--bg2)}
-
-/* Pinned chapter with stacking cards */
-.chap{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start}
-.chap .pin{position:sticky;top:110px}
-.chap .story{font-size:clamp(1.15rem,1.6vw,1.45rem);line-height:1.5;color:var(--ink);margin-top:1.4rem;max-width:34ch}
-.chap .story .w{opacity:.18;transition:opacity .2s}
-.stack{display:grid;gap:1.2rem}
-.card{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:1.8rem;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 30px 60px -30px rgba(0,0,0,.9)}
-.card h3{font-size:1.5rem;font-weight:600;color:var(--ink);letter-spacing:-.02em}
-.card p{margin-top:.5rem;font-size:1rem}
-.card .q{margin-top:1rem;padding:.9rem 1rem;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--line);font-size:.92rem;color:#C9D0DD}
-.card .who{color:var(--acc);font-family:'IBM Plex Mono',monospace;font-size:.82rem;display:block;margin-bottom:.35rem}
-.card img{width:100%;border-radius:10px;margin-top:1.1rem;display:block}
-
-/* Action */
-.act{text-align:center;padding:6rem 0 4rem}
-.act h2{max-width:none;margin:0 auto}
-.act .ctas{margin-top:2.2rem}
-.foot{border-top:1px solid var(--line);padding:2rem 0 1rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;color:var(--muted);font-family:'Outfit',sans-serif;font-size:.92rem}
-.foot a{color:var(--muted);text-decoration:none}
-.foot a:hover{color:var(--ink)}
-
-/* Scroll-driven motion (Chromium); everything renders static elsewhere */
-@supports (animation-timeline: view()){
-  .rv{animation:rv linear both;animation-timeline:view();animation-range:entry 0% entry 45%}
-  .grow{animation:grow linear both,dim linear both;animation-timeline:view(),view();animation-range:entry 0% cover 35%,exit 10% exit 100%}
-  .chap{timeline-scope:--story}
-  .chap .story{view-timeline-name:--story}
-  .chap .story .w{animation:lit linear both;animation-timeline:--story}
-  .chap .story .w.k0{animation-range:entry 55% cover 42%}.chap .story .w.k1{animation-range:entry 60% cover 46%}.chap .story .w.k2{animation-range:entry 65% cover 50%}.chap .story .w.k3{animation-range:entry 70% cover 54%}.chap .story .w.k4{animation-range:entry 75% cover 58%}.chap .story .w.k5{animation-range:entry 80% cover 62%}.chap .story .w.k6{animation-range:entry 85% cover 66%}.chap .story .w.k7{animation-range:entry 90% cover 70%}
+/* The typeface is the argument. Public Sans is the face the United States Web
+   Design System commissioned for federal government use, so the tool that
+   drafts a federal form is set in the federal typeface. */
+:root{
+  --paper:#FFFFFF; --ground:#F4F5F6; --ink:#1B1B1B; --muted:#565C65;
+  --accent:#005EA2; --accent-dark:#00437A; --notice:#B50909;
+  --rule:#DFE1E2; --control:#8D9297; --band:#EDEFF0; --tint:#F0F6FB;
+  --ease:cubic-bezier(.2,0,0,1);
+  --sans:'Public Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
 }
-@keyframes rv{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
-@keyframes grow{from{transform:scale(.86);opacity:.35}to{transform:none;opacity:1}}
-@keyframes dim{to{opacity:.25}}
-@keyframes lit{to{opacity:1}}
-@media (prefers-reduced-motion: reduce){.hero .in,.hero .bg,.rv,.grow,.marq .track,.chap .story .w{animation:none!important;opacity:1!important;transform:none!important}}
-@media (max-width:1100px){[data-testid="stHorizontalBlock"]{flex-wrap:wrap}[data-testid="stHorizontalBlock"]>[data-testid="stColumn"]{min-width:100%;flex:1 1 100%}}
-@media (max-width:900px){.bento{grid-template-columns:1fr}.cell.a{grid-column:span 1;grid-row:span 1;min-height:320px}.chap{grid-template-columns:1fr}.chap .pin{position:static}.sec{padding:5rem 0}.nav a:not(.go){display:none}.hero .bg{top:76%}}
+#MainMenu, footer, header[data-testid="stHeader"]{visibility:hidden;height:0}
+html{scroll-behavior:smooth}
+*{box-sizing:border-box}
+section[data-testid="stMain"]{background:var(--ground)}
+.block-container{max-width:1320px;margin:0 auto;padding:0 2rem 5rem}
+.mast,.mast *,.intro,.intro *,.figs,.figs *,.shell,.shell *,.adj,.adj *,
+.note,.note *,.graph,.graph *,.foot,.foot *,h2.sec,h3.sub,p.lede{
+  font-family:var(--sans)}
+p.lede{font-size:.93rem;color:var(--muted);max-width:66ch;line-height:1.55;margin:0}
+.num,table.ledger td.amt,table.ledger td.n,.figs .v,.adj .line,.adj .who,.mast .omb{
+  font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 
-/* Tool + results (dark) */
-.tool{padding:5rem 0 2rem}
-.tool h2{font-family:'Outfit',sans-serif;font-size:clamp(1.8rem,3vw,2.6rem);font-weight:700;letter-spacing:-.03em;color:var(--ink);margin:0 0 .4rem}
-.lede{color:var(--muted);font-size:.95rem;margin:0 0 1rem;max-width:60ch}
-h3.nn-h{font-family:'Outfit',sans-serif;font-size:1.1rem;font-weight:600;margin:1.2rem 0 .5rem;color:var(--ink)}
-.shell{background:rgba(255,255,255,.04);border-radius:18px;padding:5px;border:1px solid var(--line)}
-.form{background:var(--bg2);border-radius:14px;padding:1.6rem 1.8rem 1.4rem;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
-.form h2{font-family:'Outfit',sans-serif;font-size:1.5rem;font-weight:700;margin:0 0 .15rem;color:var(--ink);letter-spacing:-.02em}
-.form .sub{font-size:.9rem;color:var(--muted);margin:0 0 1rem}
-.form .stamp{float:right;border:1.5px solid var(--danger);color:var(--danger);font-weight:600;font-size:.74rem;padding:.2rem .55rem;border-radius:4px;transform:rotate(-3deg);margin-top:.2rem;font-family:'Outfit',sans-serif}
-table.ledger{width:100%;border-collapse:collapse;font-size:.96rem;border:none}
-table.ledger td{padding:.42rem .25rem;border:none;border-bottom:1px dotted #2B3446;vertical-align:baseline;color:var(--ink)}
-table.ledger td.n{width:3.4rem;font-family:'IBM Plex Mono',monospace;color:var(--muted)}
-table.ledger td.amt{width:9rem;text-align:right;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
-table.ledger td.cnt{width:6.5rem;text-align:right;font-size:.8rem;color:var(--muted)}
-table.ledger tr.part td{border-bottom:1.5px solid var(--muted);padding-top:1rem;font-weight:600}
-table.ledger tr.total td{border-bottom:none;padding-top:.55rem;font-weight:600}
-table.ledger tr.total td.amt{border-top:1px solid var(--muted);border-bottom:3px double var(--acc);color:var(--acc)}
-table.ledger tr.empty td{color:var(--muted)}
-.note{border-left:2px solid var(--acc);padding:.45rem 0 .45rem .9rem;margin:0 0 .9rem;font-size:.93rem;line-height:1.5;color:var(--ink)}
-.note.bad{border-left-color:var(--danger)}
-.note .who{color:var(--muted)}
-.note .pick{font-family:'IBM Plex Mono',monospace;color:var(--acc)}
-.skel .bar{height:14px;border-radius:4px;margin:.75rem 0;background:linear-gradient(90deg,var(--line) 0%,#243047 45%,var(--line) 90%);background-size:220% 100%;animation:shimmer 1.6s var(--ease) infinite}
+/* Masthead: the page chrome is the form's own header block. */
+.mast{display:flex;align-items:baseline;gap:1.5rem;flex-wrap:wrap;
+  padding:1.15rem 0 .95rem;border-bottom:2px solid var(--ink)}
+.mast .mark{font-weight:800;font-size:1.32rem;letter-spacing:-.022em;color:var(--ink);line-height:1}
+.mast .doc{font-weight:700;font-size:.95rem;color:var(--ink);letter-spacing:-.01em}
+.mast .sub{font-size:.86rem;color:var(--muted)}
+.mast .omb{margin-left:auto;font-size:.74rem;letter-spacing:.02em;color:var(--muted);
+  text-transform:uppercase;border:1px solid var(--rule);background:var(--paper);padding:.3rem .55rem}
+
+h2.sec{font-size:1.42rem;font-weight:700;letter-spacing:-.022em;color:var(--ink);margin:2.4rem 0 .3rem}
+h3.sub{font-size:.98rem;font-weight:700;letter-spacing:-.008em;color:var(--ink);
+  margin:2rem 0 .55rem;padding-bottom:.35rem;border-bottom:1px solid var(--rule)}
+
+/* The drafted form: a paper sheet inside a tray. */
+.shell{background:var(--paper);border:1px solid var(--rule);padding:6px;
+  box-shadow:0 1px 2px rgba(27,27,27,.05)}
+.form{background:var(--paper);border:1px solid var(--ink);padding:1.5rem 1.6rem 1.3rem}
+.form .head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;
+  border-bottom:2px solid var(--ink);padding-bottom:.7rem}
+.form h2{font-size:1.16rem;font-weight:800;color:var(--ink);margin:0;letter-spacing:-.015em}
+.form .note-sub{font-size:.82rem;color:var(--muted);margin:.2rem 0 0;max-width:52ch;line-height:1.45}
+.stamp{flex:none;border:2px solid var(--notice);color:var(--notice);font-weight:800;
+  font-size:.68rem;letter-spacing:.08em;padding:.24rem .5rem;text-transform:uppercase}
+
+table.ledger{width:100%;border-collapse:collapse;font-size:.93rem;margin-top:.2rem}
+table.ledger td{padding:.4rem .3rem;border:none;vertical-align:baseline;color:var(--ink)}
+table.ledger td.n{width:2.9rem;font-size:.82rem;color:var(--muted);text-align:right;padding-right:.7rem}
+table.ledger td.lab{position:relative;overflow:hidden}
+/* The dotted leader is the form's own device, drawn once per row. */
+table.ledger td.lab span{background:var(--paper);padding-right:.4rem;position:relative;z-index:1}
+table.ledger td.lab::after{content:"";position:absolute;left:0;right:0;bottom:.34em;
+  border-bottom:1px dotted #B7BCC0;z-index:0}
+table.ledger td.cnt{width:5.4rem;text-align:right;font-size:.76rem;color:var(--muted);white-space:nowrap}
+table.ledger td.amt{width:8rem;text-align:right;font-size:.92rem}
+table.ledger tr.part td{background:var(--band);font-weight:700;font-size:.76rem;
+  letter-spacing:.09em;text-transform:uppercase;padding:.42rem .3rem}
+table.ledger tr.part td.lab::after,table.ledger tr.total td.lab::after{display:none}
+table.ledger tr.empty td,table.ledger tr.empty td.lab span{color:var(--muted)}
+table.ledger tr.total td{font-weight:700;padding-top:.5rem}
+table.ledger tr.total td.amt{border-top:1px solid var(--ink);
+  box-shadow:inset 0 -3px 0 -1px var(--paper),inset 0 -4px 0 -1px var(--ink)}
+
+/* Adjudication record: the part no other entry has, so it gets the treatment. */
+.adj{border:1px solid var(--rule);background:var(--paper);margin:0 0 .8rem}
+.adj .row{display:flex;gap:.6rem;align-items:baseline;padding:.6rem .8rem;
+  border-bottom:1px solid var(--rule);background:var(--band)}
+.adj .row b{font-family:var(--mono);font-size:.78rem;font-weight:600;color:var(--muted);flex:none}
+.adj .row span{font-size:.88rem;color:var(--ink);font-weight:600}
+.adj .cols{display:grid;grid-template-columns:repeat(3,1fr)}
+.adj .col{padding:.7rem .8rem .8rem;border-right:1px solid var(--rule)}
+.adj .col:last-child{border-right:none}
+.adj .who{display:block;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:.28rem}
+.adj .line{font-size:1.02rem;font-weight:600;color:var(--ink)}
+.adj .rule{display:block;margin-top:.35rem;font-size:.79rem;line-height:1.45;color:var(--muted)}
+.adj .col.win{background:var(--tint);box-shadow:inset 0 2px 0 var(--accent)}
+.adj .col.win .line,.adj .col.win .who{color:var(--accent)}
+.adj .col.out .line{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.adj .verdict{padding:.5rem .8rem;border-top:1px solid var(--rule);font-size:.82rem;
+  color:var(--ink);display:flex;gap:.55rem;align-items:center}
+.adj .verdict em{font-style:normal;font-family:var(--mono);font-weight:600;color:var(--notice);
+  border:1px solid var(--notice);padding:.1rem .35rem;font-size:.68rem;letter-spacing:.06em;
+  text-transform:uppercase}
+
+/* Provenance and flag notes */
+.note{border-left:2px solid var(--accent);background:var(--paper);padding:.55rem .8rem;
+  margin:0 0 .55rem;font-size:.87rem;line-height:1.5;color:var(--ink)}
+.note.bad{border-left-color:var(--notice)}
+.note .who{color:var(--muted);font-size:.79rem}
+.note .pick{font-family:var(--mono);color:var(--accent);font-weight:600}
+.note.bad .pick{color:var(--notice)}
+
+/* Empty state: the real drafted page, annotated. Composed, never blank. */
+.intro{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:2.2rem;
+  align-items:start;margin-top:1.8rem}
+.intro .sheet{border:1px solid var(--rule);background:var(--paper);padding:6px;
+  box-shadow:0 1px 2px rgba(27,27,27,.05)}
+.intro .sheet img{width:100%;display:block;border:1px solid var(--rule)}
+.intro h1{font-size:clamp(1.75rem,2.7vw,2.6rem);font-weight:800;letter-spacing:-.032em;
+  line-height:1.07;color:var(--ink);margin:0 0 .75rem;max-width:17ch}
+.intro .steps{margin-top:1.6rem;border-top:1px solid var(--rule)}
+.intro .step{display:grid;grid-template-columns:2.1rem 1fr;gap:.9rem;padding:.85rem 0;
+  border-bottom:1px solid var(--rule)}
+.intro .step b{font-family:var(--mono);font-size:.78rem;font-weight:600;color:var(--accent)}
+.intro .step h4{margin:0 0 .2rem;font-size:.94rem;font-weight:700;color:var(--ink)}
+.intro .step p{font-size:.85rem;color:var(--muted);line-height:1.5;margin:0}
+.figs{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--rule);
+  background:var(--paper);margin-top:1.6rem}
+.figs div{padding:.85rem .9rem;border-right:1px solid var(--rule)}
+.figs div:last-child{border-right:none}
+.figs .v{font-size:1.5rem;font-weight:600;color:var(--ink);line-height:1}
+.figs .k{display:block;margin-top:.32rem;font-size:.76rem;color:var(--muted);line-height:1.35}
+
+/* The graph that ran */
+.graph{border:1px solid var(--rule);background:var(--paper);padding:.9rem;overflow-x:auto}
+.graph svg{width:100%;max-width:520px;min-width:430px;height:auto;display:block;margin:0 auto}
+.graph .node{fill:var(--paper);stroke:var(--control);stroke-width:1}
+.graph .node.hot{stroke:var(--accent);stroke-width:1.5}
+.graph .lbl{font-family:var(--sans);font-size:14px;font-weight:700;fill:var(--ink)}
+.graph .ms{font-family:var(--mono);font-size:11.5px;fill:var(--muted)}
+.graph .edge{stroke:var(--control);stroke-width:1.2;fill:none}
+.graph .edge.hot{stroke:var(--accent)}
+.graph .edge.cond{stroke-dasharray:4 4}
+
+/* Loading: a form shaped skeleton, not a spinner */
+.skel .bar{height:13px;margin:.62rem 0;
+  background:linear-gradient(90deg,var(--band) 0%,#E2E5E7 45%,var(--band) 90%);
+  background-size:220% 100%;animation:shimmer 1.5s var(--ease) infinite}
 @keyframes shimmer{to{background-position:-120% 0}}
-.graph{overflow-x:auto}
-.graph svg{width:100%;max-width:520px;min-width:420px;height:auto;display:block}
-.graph .node{fill:var(--bg2);stroke:var(--line)}
-.graph .node.hot{stroke:var(--acc)}
-.graph .lbl{font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;fill:var(--ink)}
-.graph .ms{font-family:'IBM Plex Mono',monospace;font-size:12px;fill:var(--muted)}
-.graph .edge{stroke:var(--muted);stroke-width:1.5;fill:none}
-.graph .edge.hot{stroke:var(--acc)}
-.graph .edge.cond{stroke-dasharray:5 5}
-div.stButton>button[kind="primary"]{background:var(--acc);border:none;color:var(--acc-ink);font-weight:600;padding:.7rem 1.5rem;border-radius:999px;transition:transform .5s var(--ease),background .3s var(--ease)}
-div.stButton>button[kind="primary"]:hover,div.stButton>button[kind="primary"]:focus{background:#7BE3AE;color:var(--acc-ink);transform:translateY(-2px)}
-div.stButton>button[kind="primary"]:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
 
-/* Phone: the fixed columns above leave the line label 109px */
-@media (max-width:600px){table.ledger td.cnt{display:none}table.ledger td.amt{width:6.2rem}table.ledger td.n{width:2.4rem}table.ledger{font-size:.9rem}.form{padding:1.2rem 1rem 1rem}.tool h2{font-size:2rem}}
+/* Footer */
+.foot{border-top:1px solid var(--rule);margin-top:3.5rem;padding:1.1rem 0 .4rem;
+  display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  color:var(--muted);font-size:.82rem}
+.foot a{color:var(--accent);text-decoration:none}
+.foot a:hover{text-decoration:underline}
+
+/* Streamlit controls, brought into the document language */
+div.stButton>button{border-radius:2px;font-weight:600;font-size:.9rem;padding:.55rem 1.15rem;
+  transition:background .2s var(--ease),transform .2s var(--ease),border-color .2s var(--ease)}
+div.stButton>button[kind="primary"]{background:var(--accent);border:1px solid var(--accent);color:#fff}
+div.stButton>button[kind="primary"]:hover,div.stButton>button[kind="primary"]:focus{
+  background:var(--accent-dark);border-color:var(--accent-dark);color:#fff}
+div.stButton>button[kind="secondary"]{background:var(--paper);border:1px solid var(--control);color:var(--ink)}
+div.stButton>button[kind="secondary"]:hover{border-color:var(--ink);color:var(--ink)}
+div.stButton>button:active{transform:translateY(1px)}
+div.stButton>button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+[data-testid="stTextInput"] input{border-radius:2px;border:1px solid var(--control);
+  background:var(--paper);color:var(--ink);font-family:var(--mono);font-size:.9rem}
+[data-testid="stFileUploaderDropzone"]{border-radius:2px;border:1px solid var(--control);
+  background:var(--paper)}
+[data-testid="stWidgetLabel"] p{font-size:.82rem;font-weight:600;color:var(--ink)}
+[data-testid="stExpander"] details{border:1px solid var(--rule);border-radius:2px;background:var(--paper)}
+
+@media (prefers-reduced-motion: reduce){
+  .skel .bar{animation:none}
+  div.stButton>button{transition:none}}
+@media (max-width:1100px){
+  [data-testid="stHorizontalBlock"]{flex-wrap:wrap}
+  [data-testid="stHorizontalBlock"]>[data-testid="stColumn"]{min-width:100%;flex:1 1 100%}
+  .intro{grid-template-columns:1fr}}
+@media (max-width:600px){
+  .block-container{padding:0 1rem 4rem}
+  .mast .omb{margin-left:0}
+  .adj .cols{grid-template-columns:1fr}
+  .adj .col{border-right:none;border-bottom:1px solid var(--rule)}
+  .figs,.figs div{grid-template-columns:1fr;border-right:none}
+  .figs div{border-bottom:1px solid var(--rule)}
+  table.ledger td.cnt{display:none}
+  table.ledger td.amt{width:6rem}
+  table.ledger td.n{width:2.3rem}
+  table.ledger{font-size:.88rem}
+  .form{padding:1.1rem 1rem 1rem}}
 </style>"""
 st.markdown(CSS, unsafe_allow_html=True)
 
@@ -202,70 +230,87 @@ if report_path.exists():
     report = json.loads(report_path.read_text(encoding="utf-8"))
 
 
-def story_words(text: str) -> str:
-    return " ".join(f'<span class="w k{i % 8}">{esc(w)}</span>' for i, w in enumerate(text.split()))
+def masthead() -> str:
+    """The page chrome is the form's own header block."""
+    return ('<div class="mast">'
+            '<span class="mark">NinetyNinety</span>'
+            '<span class="doc">Form 990-EZ</span>'
+            '<span class="sub">Return of Organization Exempt From Income Tax, Part I</span>'
+            '<span class="omb">OMB No. 1545-0047</span>'
+            '</div>')
 
 
-def front() -> str:
-    returns = f"{report['checked']['line9']:,}" if report else "3,632"  # returns with a checkable Part I
+STEPS = (
+    ("01", "Two agents read every row, blind to each other",
+     "Preparer and Reviewer are parallel entry nodes of one Strands graph. Each quotes the "
+     "IRS instruction it relied on, and Python checks that quote word by word against the "
+     "real text."),
+    ("02", "A referee settles only the rows they read differently",
+     "A conditional edge fires on disagreement. The Referee may pick one of the two disputed "
+     "lines and nothing else, and its reason is grounded against the IRS text too."),
+    ("03", "Python adds up, never the model",
+     "Lines 9, 17 and 18 are computed from the classified rows by the same module that "
+     "rebuilt thousands of real filed returns from their own line items."),
+)
+
+
+def empty_state() -> str:
+    """Shown until a draft exists: the real output, with what produced it."""
+    checked = f"{report['checked']['line9']:,}" if report else "3,632"
     l9 = report["rates"]["line9"] if report else "100.0"
     l18 = report["rates"]["line18"] if report else "99.94"
-    return f"""
-<div class="nn">
-<nav class="nav"><span class="mark">NinetyNinety</span><a href="#proof">Proof</a><a href="#how">How it works</a><a class="go" href="#draft-a-return">Draft a return</a></nav>
-
-<section class="hero">
-  <img class="bg" src="{asset('draft-page1.jpg')}" alt="">
-  <div class="wash"></div>
-  <div class="c">
-    <h1 class="in">Bank rows in.<br>A drafted <span class="pill" style="background-image:url({asset('draft-partI.jpg')})"></span> 990-EZ out.</h1>
-    <p class="in d1">Two Strands agents read every transaction independently. A referee settles their disputes from the IRS instructions. Every line on the form cites the rows and the rule behind it.</p>
-    <div class="ctas in d2"><a class="btn p" href="#draft-a-return">Draft a return</a><a class="btn g" href="#how">See how it works</a></div>
+    steps = "".join(f'<div class="step"><b>{n}</b><div><h4>{h}</h4><p>{p}</p></div></div>'
+                    for n, h, p in STEPS)
+    return f"""<div class="intro">
+<div class="sheet"><img src="{asset('draft-page1.jpg')}"
+  alt="Form 990-EZ Part I drafted from the demo ledger and marked DRAFT"></div>
+<div>
+  <h1>A bank export goes in. This comes back.</h1>
+  <p class="lede">Every figure on the drafted form cites the transactions behind it and the
+  sentence of the IRS instructions that put them there. It is a draft for an officer to
+  review and sign, never a filing.</p>
+  <div class="figs">
+    <div><span class="v">{l9}%</span><span class="k">Line 9 rebuilt exactly across {checked} filed returns</span></div>
+    <div><span class="v">{l18}%</span><span class="k">Line 18, excess or deficit</span></div>
+    <div><span class="v">3</span><span class="k">Agents in one Strands graph</span></div>
   </div>
-</section>
-
-<div class="marq"><div class="track">
-<span>Built with Strands Agents</span><span>Form 990-EZ, Part I</span><span>{returns} real IRS returns re-computed</span><span>Preparer, Reviewer, Referee</span><span>Every line cites its rows</span><span>Draft, never a filing</span>
-<span>Built with Strands Agents</span><span>Form 990-EZ, Part I</span><span>{returns} real IRS returns re-computed</span><span>Preparer, Reviewer, Referee</span><span>Every line cites its rows</span><span>Draft, never a filing</span>
-</div></div>
-
-<section class="sec" id="proof"><div class="wrap">
-  <h2 class="rv">The arithmetic was checked against the IRS, not against itself.</h2>
-  <p class="lead rv">The same code that fills your form rebuilt the totals of {returns} real Form 990-EZ filings from their own line items. The few misses are returns whose stated totals disagree with their own lines.</p>
-  <div class="bento">
-    <div class="cell a grow"><img src="{asset('draft-page1.jpg')}" style="object-position:50% 22%" alt="The drafted Form 990-EZ, Part I filled from the demo ledger"><div class="cap"><h3>The output is the real IRS form</h3><p>Filled field by field on the official f990ez.pdf, marked DRAFT on every page.</p></div></div>
-    <div class="cell b rv"><h3>Line 9, total revenue</h3><div class="big mono">{l9}<small>%</small></div><p>{report['matched']['line9'] if report else '3,632'} of {report['checked']['line9'] if report else '3,632'} filed returns rebuilt exactly.</p></div>
-    <div class="cell c rv"><h3>Line 18, excess or deficit</h3><div class="big mono">{l18}<small>%</small></div><p>The model never does arithmetic. Totals are computed in Python from the classified lines.</p></div>
-  </div>
-</div></section>
-
-<section class="sec" id="how"><div class="wrap chap">
-  <div class="pin">
-    <h2>Three agents. One graph. No hidden opinions.</h2>
-    <p class="story">{story_words("Preparer and Reviewer are parallel entry nodes of one Strands graph. They read the same batch and never see each other. Each is asked to quote the IRS instruction it relied on, and Python checks the quote. When their lines differ, a conditional edge sends the row to the Referee, who decides from the IRS text and shows its reasoning on the form.")}</p>
-  </div>
-  <div class="stack">
-    <div class="card"><span class="who">preparer</span><h3>Reads the ledger like a bookkeeper</h3><p>Every row gets a line, a confidence, and the deciding sentence copied from the IRS instructions through a real tool call.</p><div class="q">"Voluntary transfers where the donor receives nothing of comparable value in return: donations, grants from foundations or government."</div></div>
-    <div class="card"><span class="who">reviewer</span><h3>Audits blind</h3><p>Same batch, same tool, zero visibility into the Preparer. Two independent readings of every transaction.</p><img src="{asset('draft-totals.jpg')}" alt="Lines 17 and 18 of the drafted form, total expenses and excess or deficit"></div>
-    <div class="card"><span class="who">referee</span><h3>Runs only when they disagree</h3><p>A conditional edge in the graph. The Referee may pick only one of the two disputed lines; its quoted reason is word-checked against the IRS text like every other rule.</p><div class="q">"Line 3 includes membership dues and assessments paid to belong to the organization."</div></div>
-  </div>
-</div></section>
-
-<section class="act"><div class="wrap">
-  <h2 class="rv">Upload a year of bank rows. Get the form back.</h2>
-  <div class="ctas rv"><a class="btn p" href="#draft-a-return">Draft a return</a></div>
-</div></section>
-</div>
-"""
+  <div class="steps">{steps}</div>
+</div></div>"""
 
 
-FOOTER = ('<div class="nn"><div class="wrap"><div class="foot">'
-          '<span>Built with Strands Agents for the AWS Agents for Humans hackathon.</span>'
+FOOTER = ('<div class="foot">'
+          '<span>Built with Strands Agents for the AWS Agents for Humans hackathon. '
+          'Draft output only; an officer must review and sign.</span>'
           '<span><a href="https://github.com/ishal1410/ninetyninety">GitHub, MIT license</a></span>'
-          '</div></div></div>')
+          '</div>')
 
 
-st.markdown(front(), unsafe_allow_html=True)
+st.markdown(masthead(), unsafe_allow_html=True)
+
+
+def adjudication(item: dict) -> str:
+    """One disputed row as a three column record. The column that reached the
+    form is marked, the others are struck through."""
+    used = item["used"]
+
+    def col(who: str, line, rule) -> str:
+        if line is None:
+            return (f'<div class="col"><span class="who">{who}</span>'
+                    '<span class="line">did not rule</span>'
+                    '<span class="rule">The Preparer\u2019s line stands.</span></div>')
+        state = "win" if line == used else "out"
+        return (f'<div class="col {state}"><span class="who">{who}</span>'
+                f'<span class="line">Line {esc(line)}</span>'
+                f'<span class="rule">{esc(rule)}</span></div>')
+
+    return ('<div class="adj">'
+            f'<div class="row"><b>Row {item["source_row"]}</b>'
+            f'<span>{esc(item["description"])}</span></div><div class="cols">'
+            + col("Preparer", item["preparer"], item["preparer_rule"])
+            + col("Reviewer", item["reviewer"], item["reviewer_rule"])
+            + col("Referee", item["referee"], item["referee_reason"])
+            + '</div><div class="verdict"><em>On the form</em>'
+            f'<span>Line {esc(used)}</span></div></div>')
 
 
 def graph_svg(trace: list[dict] | None) -> str:
@@ -281,7 +326,7 @@ def graph_svg(trace: list[dict] | None) -> str:
     hot = bool(runs) and referee_runs > 0
 
     def box(name, x, y, sub, is_hot=True):
-        return (f'<rect class="node{" hot" if is_hot else ""}" x="{x}" y="{y}" width="160" height="50" rx="8"/>'
+        return (f'<rect class="node{" hot" if is_hot else ""}" x="{x}" y="{y}" width="160" height="50" rx="1"/>'
                 f'<text class="lbl" x="{x + 12}" y="{y + 21}">{name}</text>'
                 f'<text class="ms" x="{x + 12}" y="{y + 39}">{sub}</text>')
 
@@ -312,9 +357,10 @@ def graph_svg(trace: list[dict] | None) -> str:
 
 pad_l, body, pad_r = st.columns([1, 12, 1])
 with body:
-    st.markdown('<div class="tool"><h2 id="draft-a-return">Draft a return</h2><p class="lede">Upload a CSV with date, description, amount, '
-                'or use the synthetic demo ledger. The agents run live; a 54-row ledger takes a few minutes on the free tier.</p></div>',
-                unsafe_allow_html=True)
+    st.markdown('<h2 class="sec" id="draft-a-return">Draft a return</h2>'
+                '<p class="lede">Upload a CSV with date, description and amount, or use the '
+                'synthetic demo ledger. The agents run live; a 54-row ledger takes a few '
+                'minutes on the free tier.</p>', unsafe_allow_html=True)
     c1, c2 = st.columns([3, 2])
     with c1:
         uploaded = st.file_uploader("Transaction ledger as CSV with date, description, amount", type="csv")
@@ -406,6 +452,8 @@ with body:
                                      "pdf": pdf_bytes, "pdf_error": pdf_error, "recorded": recorded}
 
     draft = st.session_state.get("draft")
+    if not draft:
+        st.markdown(empty_state(), unsafe_allow_html=True)
     if draft:
         form, skipped = draft["form"], draft["skipped"]
         if draft.get("recorded"):
@@ -421,28 +469,33 @@ with body:
             for part, lines, total_key, total_label in (
                     ("Revenue", REVENUE_LINES, "line9", "Total revenue"),
                     ("Expenses", EXPENSE_LINES, "line17", "Total expenses")):
-                rows.append(f'<tr class="part"><td class="n"></td><td>{part}</td>'
+                rows.append(f'<tr class="part"><td class="n"></td><td class="lab">{part}</td>'
                             f'<td class="cnt"></td><td class="amt"></td></tr>')
                 for line in lines:
                     result = form.lines.get(line.number)
                     if result is None:
-                        rows.append(f'<tr class="empty"><td class="n">{line.number}</td><td>{esc(line.label)}</td>'
+                        rows.append(f'<tr class="empty"><td class="n">{line.number}</td>'
+                                    f'<td class="lab"><span>{esc(line.label)}</span></td>'
                                     f'<td class="cnt"></td><td class="amt"></td></tr>')
                     else:
                         n = len(result.transactions)
-                        rows.append(f'<tr><td class="n">{line.number}</td><td>{esc(line.label)}</td>'
+                        rows.append(f'<tr><td class="n">{line.number}</td>'
+                                    f'<td class="lab"><span>{esc(line.label)}</span></td>'
                                     f'<td class="cnt">{n} row{"s" if n != 1 else ""}</td>'
                                     f'<td class="amt">{money(result.amount)}</td></tr>')
-                rows.append(f'<tr class="total"><td class="n">{total_key[4:]}</td><td>{total_label}</td>'
-                            f'<td class="cnt"></td><td class="amt">{money(form.totals[total_key])}</td></tr>')
-            rows.append(f'<tr class="total"><td class="n">18</td><td>Excess or (deficit) for the year</td>'
-                        f'<td class="cnt"></td><td class="amt">{money(form.totals["line18"])}</td></tr>')
+                rows.append(f'<tr class="total"><td class="n">{total_key[4:]}</td>'
+                            f'<td class="lab">{total_label}</td><td class="cnt"></td>'
+                            f'<td class="amt">{money(form.totals[total_key])}</td></tr>')
+            rows.append(f'<tr class="total"><td class="n">18</td>'
+                        f'<td class="lab">Excess or (deficit) for the year</td><td class="cnt"></td>'
+                        f'<td class="amt">{money(form.totals["line18"])}</td></tr>')
             rows.append("</table>")
             st.markdown(
-                '<div class="shell"><div class="form"><span class="stamp">DRAFT, NOT A FILING</span>'
-                '<h2>Form 990-EZ, Part I</h2>'
-                '<p class="sub">Totals are computed in Python from the classified lines. '
-                'The model never does arithmetic.</p>'
+                '<div class="shell"><div class="form"><div class="head"><div>'
+                '<h2>Part I. Revenue, Expenses, and Changes in Net Assets</h2>'
+                '<p class="note-sub">Totals are computed in Python from the classified rows. '
+                'The model never does arithmetic.</p></div>'
+                '<span class="stamp">Draft, not a filing</span></div>'
                 + "".join(rows) + "</div></div>",
                 unsafe_allow_html=True)
 
@@ -453,7 +506,7 @@ with body:
             else:
                 st.info(f"PDF not produced: {draft['pdf_error']}")
 
-            st.markdown('<h3 class="nn-h">Where each line came from</h3>', unsafe_allow_html=True)
+            st.markdown('<h3 class="sub">Where each line came from</h3>', unsafe_allow_html=True)
             for number in sorted(form.lines, key=form_order):
                 result = form.lines[number]
                 with st.expander(f"Line {number}, {line_by_number(number).label}: "
@@ -466,56 +519,49 @@ with body:
                             unsafe_allow_html=True)
 
         with right:
-            st.markdown('<h3 class="nn-h">The graph that ran</h3>', unsafe_allow_html=True)
+            st.markdown('<h3 class="sub">The graph that ran</h3>', unsafe_allow_html=True)
             st.markdown(graph_svg(form.trace), unsafe_allow_html=True)
 
-            st.markdown(f'<h3 class="nn-h">Agent disagreements, {len(form.disagreements)}</h3>'
+            st.markdown(f'<h3 class="sub">Adjudication record, {len(form.disagreements)} rows</h3>'
                         '<p class="lede">The Reviewer never sees the Preparer, so these are two '
-                        'independent readings. The Referee runs only when they differ; its reason is '
-                        'checked against the IRS text.</p>', unsafe_allow_html=True)
+                        'independent readings of the same row. The Referee runs only where they '
+                        'differ, and its reason is checked against the IRS text like any other.'
+                        '</p>', unsafe_allow_html=True)
             for item in form.disagreements:
-                referee = (f'<span class="who">Referee</span> <span class="pick">line {esc(item["referee"])}</span>: '
-                           f'{esc(item["referee_reason"])}' if item["referee"]
-                           else '<span class="who">Referee did not rule; the Preparer&rsquo;s line is used.</span>')
-                st.markdown(
-                    f'<div class="note"><b>row {item["source_row"]}</b> {esc(item["description"])}<br>'
-                    f'<span class="who">Preparer</span> <span class="pick">line {esc(item["preparer"])}</span>: {esc(item["preparer_rule"])}<br>'
-                    f'<span class="who">Reviewer</span> <span class="pick">line {esc(item["reviewer"])}</span>: {esc(item["reviewer_rule"])}<br>'
-                    f'{referee}<br><span class="who">On the form:</span> <span class="pick">line {esc(item["used"])}</span></div>',
-                    unsafe_allow_html=True)
+                st.markdown(adjudication(item), unsafe_allow_html=True)
             if not form.disagreements:
                 st.markdown('<div class="note">Preparer and Reviewer agreed on every row.</div>',
                             unsafe_allow_html=True)
 
-            st.markdown(f'<h3 class="nn-h">Low confidence, {len(form.low_confidence)}</h3>',
+            st.markdown(f'<h3 class="sub">Low confidence, {len(form.low_confidence)}</h3>',
                         unsafe_allow_html=True)
             for item in form.low_confidence:
                 st.markdown(f'<div class="note"><b>row {item["source_row"]}</b> {esc(item["description"])} '
                             f'<span class="pick">line {item["line"]}</span><br><span class="who">{esc(item["note"])}</span></div>',
                             unsafe_allow_html=True)
             if form.ungrounded:
-                st.markdown(f'<h3 class="nn-h">Rule not found in the IRS guidance, {len(form.ungrounded)}</h3>',
+                st.markdown(f'<h3 class="sub">Rule not found in the IRS guidance, {len(form.ungrounded)}</h3>',
                             unsafe_allow_html=True)
                 for item in form.ungrounded:
                     st.markdown(f'<div class="note bad"><b>row {item["source_row"]}</b> <span class="pick">line {item["line"]}</span>'
                                 f'<br><span class="who">Quoted rule:</span> {esc(item["rule"][:160])}</div>',
                                 unsafe_allow_html=True)
             if form.unreviewed:
-                st.markdown(f'<h3 class="nn-h">Single opinion only, {len(form.unreviewed)}</h3>',
+                st.markdown(f'<h3 class="sub">Single opinion only, {len(form.unreviewed)}</h3>',
                             unsafe_allow_html=True)
                 for item in form.unreviewed:
                     st.markdown(f'<div class="note"><b>row {item["source_row"]}</b> {esc(item["description"])} '
                                 f'<span class="pick">line {item["line"]}</span><br><span class="who">{esc(item["note"])}</span></div>',
                                 unsafe_allow_html=True)
             if form.unclassified:
-                st.markdown(f'<h3 class="nn-h">Not classified, {len(form.unclassified)}</h3>',
+                st.markdown(f'<h3 class="sub">Not classified, {len(form.unclassified)}</h3>',
                             unsafe_allow_html=True)
                 for item in form.unclassified:
                     st.markdown(f'<div class="note bad"><b>row {item["source_row"]}</b> {esc(item["description"])} '
                                 f'<span class="pick">{money(item["amount"])}</span><br><span class="who">{esc(item["error"])}</span></div>',
                                 unsafe_allow_html=True)
             if skipped:
-                st.markdown(f'<h3 class="nn-h">Rows with unreadable amounts, {len(skipped)}</h3>',
+                st.markdown(f'<h3 class="sub">Rows with unreadable amounts, {len(skipped)}</h3>',
                             unsafe_allow_html=True)
                 for item in skipped:
                     st.markdown(f'<div class="note bad"><b>row {item["source_row"]}</b> {esc(item["description"])}'

@@ -134,72 +134,10 @@ def test_no_empty_heading_and_the_anchor_sits_on_the_real_heading():
     assert 'id="draft-a-return"' in markdown_text(at)
 
 
-def test_copy_counts_checkable_returns_and_spells_organization_us_style():
-    at = run_app()
-    text = markdown_text(at)
-    assert "3,687 real IRS returns re-computed" not in text
-    assert "3,632 real IRS returns re-computed" in text
-    assert at.text_input[0].label == "Organization name for the PDF"
-
-
-def test_mobile_css_rules_are_present():
-    at = run_app()
-    css = at.markdown[0].value
-    nav = css[css.index(".nav{"):css.index("}", css.index(".nav{"))]
-    assert "width:max-content" in nav and "white-space:nowrap" in nav
-    assert ".block-container{max-width:100%;padding:0 1rem 6rem}" in css
-    assert "table.ledger tr.empty td{color:var(--muted)}" in css
-
-
 def css_rule(css: str, selector: str) -> str:
     """The declaration block for one selector in the page stylesheet."""
     start = css.index(selector + "{") + len(selector) + 1
     return css[start:css.index("}", start)]
-
-
-def test_the_nav_pill_scrolls_away_instead_of_floating_over_the_results():
-    at = run_app()
-    css = at.markdown[0].value
-    assert "position:absolute" in css_rule(css, ".nav")
-    assert "position:relative" in css_rule(css, ".nn")
-
-
-def test_the_two_result_columns_stack_before_the_ledger_label_is_crushed():
-    at = run_app()
-    css = at.markdown[0].value
-    block = css[css.index("@media (max-width:1100px)"):]
-    block = block[:block.index("\n")]
-    assert 'stHorizontalBlock' in block and "flex-wrap:wrap" in block
-    assert "min-width:100%" in block
-
-
-def test_the_graph_never_renders_smaller_than_its_designed_size():
-    at = run_app()
-    css = at.markdown[0].value
-    assert "overflow-x:auto" in css_rule(css, ".graph")
-    svg = css_rule(css, ".graph svg")
-    assert "max-width:520px" in svg and "min-width:420px" in svg
-
-
-def test_the_hero_form_image_starts_below_the_buttons_on_a_phone():
-    at = run_app()
-    css = at.markdown[0].value
-    block = css[css.index("@media (max-width:900px)"):]
-    block = block[:block.index("\n")]
-    assert ".hero .bg{top:76%}" in block
-
-
-def test_the_ledger_gives_the_line_label_room_on_a_phone():
-    at = run_app()
-    css = at.markdown[0].value
-    block = css[css.index("@media (max-width:600px)"):]
-    block = block[:block.index("\n")]
-    # 3.4 + 6.5 + 9 rem of fixed columns leaves a 390px phone 109px for the label
-    assert "table.ledger td.cnt{display:none}" in block
-    assert "table.ledger td.amt{width:6.2rem}" in block
-    assert "table.ledger td.n{width:2.4rem}" in block
-    # equal specificity, so the phone block only wins if it comes last
-    assert css.index("@media (max-width:600px)") > css.index("table.ledger td.amt{width:9rem;")
 
 
 def test_the_footer_comes_after_the_tool_not_in_the_middle_of_the_page():
@@ -210,24 +148,79 @@ def test_the_footer_comes_after_the_tool_not_in_the_middle_of_the_page():
     assert foot > tool
 
 
-def test_the_bento_caption_is_readable_over_the_scanned_form():
+# --- the Federal Register interface, 2026-09-09 -----------------------------
+
+def test_the_app_opens_on_the_product_not_a_marketing_scroll():
     at = run_app()
-    cap = css_rule(at.markdown[0].value, ".cell .cap")
-    # the heading sat where a to-transparent gradient had no ink behind it
-    assert "transparent" not in cap
-    assert "rgba(7,9,15,.92)" in cap
+    page = at.markdown[0].value + markdown_text(at)
+    for gone in ('class="hero"', 'class="marq"', 'class="bento"',
+                 'class="card"', 'class="act"', "position:sticky"):
+        assert gone not in page, gone
+    assert 'class="mast"' in at.markdown[1].value
+    assert "OMB No. 1545-0047" in at.markdown[1].value
 
 
-def test_the_agent_cards_do_not_cover_each_other():
-    at = run_app()
-    css = at.markdown[0].value
-    assert "position:sticky" not in css_rule(css, ".card")
-    assert ".card:nth-child(1){top:110px}" not in css
-    assert ".spacer" not in css
-
-
-def test_the_page_has_no_screen_sized_empty_gaps():
+def test_the_page_is_set_in_the_federal_typeface():
     at = run_app()
     css = at.markdown[0].value
-    assert "padding:5rem 0 12rem" in css_rule(css, ".hero")
-    assert "padding:6rem 0 4rem" in css_rule(css, ".act")
+    assert "family=Public+Sans" in css
+    assert "--sans:'Public Sans'" in css
+    assert "Outfit" not in css
+
+
+def test_one_accent_and_a_measured_palette():
+    at = run_app()
+    root = css_rule(at.markdown[0].value, ":root")
+    for token, value in (("--paper", "#FFFFFF"), ("--ink", "#1B1B1B"),
+                         ("--muted", "#565C65"), ("--accent", "#005EA2"),
+                         ("--notice", "#B50909"), ("--control", "#8D9297")):
+        assert f"{token}:{value}" in root, token
+    assert "#62D39A" not in at.markdown[0].value
+
+
+def test_the_document_has_corners():
+    at = run_app()
+    css = at.markdown[0].value
+    assert "border-radius:2px" in css
+    for big in ("border-radius:18px", "border-radius:14px", "border-radius:999px"):
+        assert big not in css, big
+
+
+def test_the_empty_state_shows_the_real_drafted_form_and_then_makes_way():
+    at = run_app()
+    text = markdown_text(at)
+    # asset() inlines the render as a data URI, so match the element, not a filename
+    assert 'class="intro"' in text and 'class="sheet"' in text
+    assert 'src="data:image/jpeg;base64,' in text
+    at.button[1].click().run()
+    assert 'class="intro"' not in markdown_text(at)
+
+
+def test_the_adjudication_record_marks_the_column_that_reached_the_form():
+    at = run_app()
+    at.button[1].click().run()
+    text = markdown_text(at)
+    assert 'class="adj"' in text
+    assert 'class="col win"' in text and 'class="col out"' in text
+    assert "On the form" in text
+
+
+def test_the_result_columns_stack_and_the_graph_keeps_its_size():
+    at = run_app()
+    css = at.markdown[0].value
+    block = css[css.index("@media (max-width:1100px)"):]
+    block = block[:block.index("@media (max-width:600px)")]
+    assert "stHorizontalBlock" in block and "flex-wrap:wrap" in block
+    assert "min-width:100%" in block
+    svg = css_rule(css, ".graph svg")
+    assert "max-width:520px" in svg and "min-width:430px" in svg
+
+
+def test_the_phone_rules_come_last_so_they_win_the_cascade():
+    at = run_app()
+    css = at.markdown[0].value
+    phone = css.index("@media (max-width:600px)")
+    assert phone > css.index("table.ledger td.amt{width:8rem")
+    block = css[phone:]
+    assert "table.ledger td.cnt{display:none}" in block
+    assert "table.ledger td.amt{width:6rem}" in block

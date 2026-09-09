@@ -80,6 +80,9 @@ p.lede{font-size:.93rem;color:var(--ink);max-width:66ch;line-height:1.55;margin:
    against the ink band, not against paper. --muted is measured for contrast on
    white and goes grey-on-black here; --rule is a near-white hairline that glares
    on ink. So the band gets its own secondary text and its own hairline.
+   --control (#8D9297) is the one existing token that would clear AA here, at
+   5.49:1, but the band is the loudest thing on the page and #C9CDD2 reads at
+   10.85:1; that trade is worth one local shade.
    Used nowhere else; not promoted to :root. */
 .mast{display:flex;align-items:baseline;gap:1.5rem;flex-wrap:wrap;
   padding:1.05rem 1.15rem .95rem;background:var(--ink)}
@@ -188,9 +191,11 @@ table.ledger tr.total td.amt{border-top:1px solid var(--ink);
 .note .pick{font-family:var(--mono);color:var(--accent);font-weight:600}
 .note.bad .pick{color:var(--notice)}
 
-/* The explainer band: how the graph reaches each line, in three columns. */
-.steps{display:grid;grid-template-columns:repeat(3,1fr);border-top:none;margin-top:0}
-.step{padding:0 1.6rem;border-bottom:none;border-right:1px solid var(--rule)}
+/* The explainer band: how the graph reaches each line, in three columns.
+   Three columns, matched to STEPS. Below 1100px they stack: at 768px three
+   columns leave about 23 characters a line, which is a column of rubble. */
+.steps{display:grid;grid-template-columns:repeat(3,1fr)}
+.step{padding:0 1.6rem;border-right:1px solid var(--rule)}
 .step:first-child{padding-left:0}
 .step:last-child{border-right:none;padding-right:0}
 .step h4{margin:0 0 .4rem;font-size:1rem;font-weight:700;color:var(--ink);letter-spacing:-.01em}
@@ -257,7 +262,10 @@ div.stButton>button:focus-visible{outline:3px solid var(--accent);outline-offset
   div.stButton>button{transition:none}}
 @media (max-width:1100px){
   [data-testid="stHorizontalBlock"]{flex-wrap:wrap}
-  [data-testid="stHorizontalBlock"]>[data-testid="stColumn"]{min-width:100%;flex:1 1 100%}}
+  [data-testid="stHorizontalBlock"]>[data-testid="stColumn"]{min-width:100%;flex:1 1 100%}
+  .steps{grid-template-columns:1fr}
+  .step{border-right:none;border-bottom:1px solid var(--rule);padding:.9rem 0}
+  .step:last-child{border-bottom:none}}
 @media (max-width:600px){
   .block-container{padding:0 1rem 4rem}
   .mast .omb{margin-left:0}

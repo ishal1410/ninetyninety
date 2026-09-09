@@ -140,6 +140,12 @@ def css_rule(css: str, selector: str) -> str:
     return css[start:css.index("}", start)]
 
 
+def strip_of(page: str) -> str:
+    """The .lands strip only, so a match in proof() cannot satisfy a strip assertion."""
+    assert 'class="lands"' in page, "the strip is missing"
+    return page[page.index('class="lands"'):page.index('class="proof"')]
+
+
 def test_the_footer_comes_after_the_tool_not_in_the_middle_of_the_page():
     at = run_app()
     blocks = [m.value for m in at.markdown]
@@ -222,6 +228,23 @@ def test_the_result_columns_stack_and_the_graph_keeps_its_size():
     assert "max-width:520px" in svg and "min-width:430px" in svg
 
 
+def test_the_graph_runs_full_width_below_the_result_columns():
+    """min-width:430px in the 366px right column severed the Referee node. The
+    fix was rendering the graph outside `with right:`; this is what holds it there."""
+    at = run_app()
+    at.button[1].click().run()
+    # at.markdown is flat script-execution order and cannot see containers, so
+    # ask the columns. The full heading markup, because a bare "The graph that
+    # ran" also matches the stylesheet's own section comment.
+    graph_heading = '<h3 class="sub">The graph that ran</h3>'
+    holds = [c for c in at.columns
+             if any('<h3 class="sub">Low confidence,' in m.value for m in c.markdown)]
+    right = min(holds, key=lambda c: len(c.markdown))  # innermost, not the page body
+    assert not any(graph_heading in m.value for m in right.markdown), \
+        "the graph belongs below the columns, not inside the right one"
+    assert any(graph_heading in m.value for m in at.markdown), "the graph is gone entirely"
+
+
 def test_the_phone_rules_come_last_so_they_win_the_cascade():
     at = run_app()
     css = at.markdown[0].value
@@ -250,8 +273,7 @@ def test_the_strip_shows_a_real_recorded_row():
 
     at = run_app()
     page = markdown_text(at)
-    assert 'class="lands"' in page
-    strip = page[page.index('class="lands"'):page.index('class="proof"')]
+    strip = strip_of(page)
     assert transaction_description in strip
     assert rule_beginning in strip
     # Closing tag included: a loose "Line 1" also matches proof()'s "Line 17".
@@ -265,7 +287,7 @@ def test_the_hero_never_prints_a_line_total():
 
     at = run_app()
     page = markdown_text(at)
-    strip = page[page.index('class="lands"'):page.index('class="proof"')]
+    strip = strip_of(page)
     assert transaction_amount_formatted in strip
     assert line_total_formatted not in strip
     assert "this row" in strip
@@ -301,6 +323,8 @@ def test_the_controls_come_before_the_explainer_band():
 def test_the_page_boots_without_the_recorded_run():
     path = APP.parent / "results" / "demo_run.json"
     hidden = path.with_name("demo_run.json.hidden")
+    if hidden.exists():  # an interrupted earlier run left the fixture hidden
+        hidden.rename(path)
     path.rename(hidden)
     try:
         at = run_app()

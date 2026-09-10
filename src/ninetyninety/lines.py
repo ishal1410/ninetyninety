@@ -2,7 +2,10 @@
 
 Single source of truth for the parser, the validation harness, the agents and
 the PDF filler. Every `xml_element` was read from live IRS e-file XML on
-2026-09-06 -- guessing two of these names cost 12.5% reconstruction accuracy.
+2026-09-06. Guessing is expensive: swapping 5c and 7c back to the plausible
+NetGainOrLossFromSaleOfAssetsAmt and GrossProfitLossSalesOfInvntryAmt drops
+line 9 reconstruction over batch 2026_TEOS_XML_01A from 100.00% to 86.62%
+(measured 2026-09-09).
 
 `guidance` is what the Preparer and Reviewer agents see. Keep it short and
 plainly derived from the Form 990-EZ instructions (i990ez.pdf).

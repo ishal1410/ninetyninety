@@ -6,7 +6,11 @@ Built with **Strands Agents** for the AWS *Agents for Humans* hackathon (Good Ne
 
 ## The problem
 
-Small US nonprofits (gross receipts under $200,000, total assets under $500,000) file Form 990-EZ. Most have no finance staff. The IRS auto-revokes tax-exempt status after three missed filings, and its revocation list holds over a million entries. Existing filing tools start *after* the books are categorised. Categorising the books is the actual work, and it is the part nobody helps with.
+The IRS processed **203,699 Form 990-EZ returns** in calendar year 2024, filed by 185,581 different organisations ([IRS SOI extract](https://www.irs.gov/statistics/soi-tax-stats-annual-extract-of-tax-exempt-organization-financial-data), one row per processed return). Every filer is small by definition: gross receipts under $200,000 and assets under $500,000. In the IRS e-file batch this project validates against, **1,106 of 3,687 returns carry no paid-preparer block** (30.0%), so nobody was paid to prepare them. Reproduce with `PYTHONPATH=src python scripts/preparers.py`.
+
+Filing late costs $25 a day, capped at the lesser of $13,000 or 5% of gross receipts. Miss three years in a row and exemption is revoked automatically: contributions stop being deductible and the organisation must apply for exemption again ([Instructions for Form 990-EZ](https://www.irs.gov/instructions/i990ez), [auto-revocation FAQ](https://www.irs.gov/pub/irs-tege/auto_rev_faqs.pdf)). The [IRS Auto-Revocation List](https://apps.irs.gov/pub/epostcard/data-download-revocation.zip) downloaded on 2026-09-08 holds 1,247,210 revocations, 1,065,726 of them with no reinstatement date.
+
+Existing filing tools start *after* the books are categorised. Categorising the books is the actual work, and it is the part nobody helps with.
 
 ## Who it is for
 
@@ -48,7 +52,7 @@ Web UI: `streamlit run app.py`
 
 Landing page: `index.html` (GitHub Pages, repo root). It shows the recorded demo run; refresh it after a run with `PYTHONPATH=src python scripts/dump_run.py && python scripts/build_landing.py`.
 
-Tests: `python -m pytest` (87 tests; the one live end-to-end test runs only with `NN_LIVE=1` and a key)
+Tests: `python -m pytest` (139 tests; the one live end-to-end test runs only with `NN_LIVE=1` and a key)
 
 ## Model: Google Gemini
 
@@ -98,7 +102,8 @@ src/ninetyninety/
   corpus/         IRS 990 e-file XML index, parser, validation harness
 cli.py            terminal entry point
 app.py            Streamlit UI
-scripts/          validate.py (the headline number; downloads the IRS batch into data/ on first run and rewrites results/validation.json), dump_run.py, build_landing.py, diagram.py, dump_fields.py
+scripts/          validate.py (the headline number; downloads the IRS batch into data/ on first run and rewrites results/validation.json),
+                  preparers.py (how many real 990-EZ filers paid a preparer), dump_run.py, build_landing.py, diagram.py, dump_fields.py
 ```
 
 ## License

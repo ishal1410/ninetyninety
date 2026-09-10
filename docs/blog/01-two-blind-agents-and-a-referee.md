@@ -64,7 +64,7 @@ The structured output schema forces a `rule` field per row. After the run, plain
 
 ## What the agents are not allowed to do
 
-Compute totals. Line 9, 17 and 18 come from `formmath.py`, a module no model output ever touches. The next post covers how that module was checked against 121,299 real filed returns.
+Compute totals. Line 9, 17 and 18 come from `formmath.py`, a module no model output ever touches. The next post covers how that module was checked against 3,632 real filed returns, drawn from the 121,299 Form 990-EZ returns in the IRS 2026 e-file index.
 
 ## Takeaways
 

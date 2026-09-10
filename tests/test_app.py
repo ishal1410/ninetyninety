@@ -293,6 +293,66 @@ def test_the_hero_never_prints_a_line_total():
     assert "this row" in strip
 
 
+# --- the product experience around the draft, 2026-09-09 -------------------
+
+def test_no_ledger_never_silently_drafts_the_demo(monkeypatch):
+    """Unticking the demo box with nothing uploaded used to draft the demo
+    ledger anyway, so the treasurer read made-up numbers as their own."""
+    from ninetyninety import prepare
+    ran = []
+    monkeypatch.setattr(prepare, "prepare_ledger",
+                        lambda tx, **k: (ran.append(len(tx)), fake_form())[1])
+    at = run_app()
+    at.checkbox[0].uncheck().run()
+    at.button[0].click().run()
+    assert not ran, "the demo ledger was drafted without being asked for"
+    assert at.error and "Upload a CSV" in at.error[0].value
+    assert "draft" not in at.session_state
+
+
+def test_a_ledger_over_the_shared_cap_is_drafted_not_refused(monkeypatch):
+    """The cap used to raise out of the worker thread, so a real ledger got a
+    failure and a "run it locally" dead end instead of a draft."""
+    from ninetyninety import ledger, prepare
+    rows = [Transaction(date="2025-01-01", description=f"ROW {i}", amount=10, source_row=i + 2)
+            for i in range(500)]
+    monkeypatch.setattr(ledger, "load_ledger", lambda path, skipped=None: list(rows))
+    sent = []
+    monkeypatch.setattr(prepare, "prepare_ledger",
+                        lambda tx, **k: (sent.append(len(tx)), fake_form())[1])
+    at = run_app()
+    at.button[0].click().run()
+    assert not at.error, [e.value for e in at.error]
+    assert sent == [60], sent
+    assert "first 60 of 500 readable rows" in markdown_text(at)
+
+
+def test_the_draft_says_what_to_do_with_it_next():
+    at = run_app()
+    at.button[1].click().run()
+    text = markdown_text(at)
+    assert "What to do with this draft" in text
+    # the four facts the landing page sets out, at the point the PDF is taken
+    assert "Authorized IRS e-File Provider" in text
+    assert "Parts II" in text
+    assert "sign" in text
+
+
+def test_the_footer_leads_back_to_the_rest_of_the_product():
+    """The app was a one way door: the landing page linked in, nothing linked out."""
+    at = run_app()
+    foot = next(m.value for m in at.markdown if 'class="foot"' in m.value)
+    assert "ishal1410.github.io/ninetyninety" in foot
+    assert "technical.html" in foot
+
+
+def test_the_uploader_says_what_a_row_looks_like():
+    at = run_app()
+    assert at.session_state  # app ran
+    help_texts = [w.help or "" for w in at.get("file_uploader")]
+    assert any("date, description, amount" in h for h in help_texts), help_texts
+
+
 def test_the_control_lede_keeps_its_size_and_the_hero_has_its_own():
     at = run_app()
     css = at.markdown[0].value

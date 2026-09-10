@@ -398,8 +398,26 @@ ZONE = '<div class="zone"></div>'
 FOOTER = ('<div class="foot">'
           '<span>Built with Strands Agents for the AWS Agents for Humans hackathon. '
           'Draft output only; an officer must review and sign.</span>'
-          '<span><a href="https://github.com/ishal1410/ninetyninety">GitHub, MIT license</a></span>'
+          '<span><a href="https://ishal1410.github.io/ninetyninety/">Overview</a> &nbsp; '
+          '<a href="https://ishal1410.github.io/ninetyninety/technical.html">How it is built</a>'
+          ' &nbsp; <a href="https://github.com/ishal1410/ninetyninety">GitHub, MIT license</a></span>'
           '</div>')
+
+# What a drafted return is not, and what the treasurer does next. The same four
+# facts the overview page sets out, repeated at the moment the PDF is taken:
+# a judge or a treasurer who arrives straight at the app never reads that page.
+NEXT_STEPS = (
+    '<h3 class="sub">What to do with this draft</h3>'
+    '<p class="lede"><b>Check the flagged rows first.</b> Anything listed to the right is a row '
+    'the two readers were unsure about or disagreed on. Those are the figures worth your time; '
+    'the rest cite the IRS sentence they followed.</p>'
+    '<p class="lede"><b>Finish the rest of the form.</b> Only Part I is drafted here. Parts II '
+    'through VI and every Schedule are still yours to complete.</p>'
+    '<p class="lede"><b>Have an officer review and sign.</b> The Paid Preparer block is left '
+    'blank on purpose, because no paid preparer worked on this return.</p>'
+    '<p class="lede"><b>File it through an e-File Provider.</b> For tax year 2025 the IRS '
+    'requires Form 990-EZ to be filed electronically through an Authorized IRS e-File Provider. '
+    'This project is not one, so the PDF is for review and for your records, never a filing.</p>')
 
 
 def adjudication(item: dict) -> str:
@@ -480,7 +498,12 @@ with body:
                 'minutes on the free tier.</p>', unsafe_allow_html=True)
     c1, c2 = st.columns([3, 2])
     with c1:
-        uploaded = st.file_uploader("Transaction ledger as CSV with date, description, amount", type="csv")
+        uploaded = st.file_uploader(
+            "Transaction ledger as CSV with date, description, amount", type="csv",
+            help="One row per transaction, headers date, description, amount. For example: "
+                 "2025-01-08,ONLINE DONATION STRIPE PAYOUT,1250.00. A bank export works as it "
+                 "comes: capitalised headers, dollar signs, thousands commas, semicolon "
+                 "separators and parentheses for money out are all read.")
         use_demo = st.checkbox("Use the synthetic demo ledger instead", value=uploaded is None)
     with c2:
         # side by side, so the control strip's height is the uploader's, not
@@ -497,10 +520,10 @@ with body:
 
     MAX_ROWS = 60  # the hosted demo shares one free-tier Gemini project
 
-    def start_job(transactions, skipped):
+    def start_job(transactions, skipped, capped):
         """Run the graph on a worker thread so a widget rerun (Enter in a text
         box, a click) cannot kill the run; the next script run resumes it."""
-        job = {"done": (0, 1), "form": None, "error": None,
+        job = {"done": (0, 1), "form": None, "error": None, "capped": capped,
                "loaded": len(transactions), "skipped": skipped}
 
         def work():
@@ -516,9 +539,15 @@ with body:
         return job
 
     job = st.session_state.get("job")
-    form, recorded, loaded, skipped = None, False, 0, []
+    form, recorded, loaded, skipped, capped = None, False, 0, [], 0
     if (go or replay) and job is None:
         st.session_state.pop("draft", None)  # never show a stale draft under a new run
+        # Nothing uploaded and the demo box off used to fall through to the demo
+        # fixture, so the treasurer read synthetic numbers as their own books.
+        if go and not use_demo and uploaded is None:
+            st.error("No ledger to read. Upload a CSV, or tick “Use the synthetic "
+                     "demo ledger instead” to try it on sample books.")
+            st.stop()
         with tempfile.TemporaryDirectory(prefix="ninetyninety-") as tmp:
             path = BASE / "fixtures" / "demo_ledger.csv"
             if go and uploaded is not None and not use_demo:
@@ -532,10 +561,15 @@ with body:
         if not transactions:
             st.error("No readable rows in the ledger: every row needs a description and an amount.")
             st.stop()
+        # The shared host's cap is a budget, not a refusal: draft the rows it can
+        # afford and say which ones those were. prepare_ledger's own max_rows
+        # stays as the backstop for every other caller.
+        capped = max(0, len(transactions) - MAX_ROWS)
+        transactions = transactions[:MAX_ROWS]
         if replay:
             form, recorded, loaded = load_recorded_run(BASE / "results" / "demo_run.json"), True, len(transactions)
         else:
-            job = start_job(transactions, skipped)
+            job = start_job(transactions, skipped, capped)
     if job is not None:
         bar = st.progress(0.0, text="Preparer and Reviewer are reading the ledger in parallel")
         skeleton = st.empty()
@@ -553,7 +587,7 @@ with body:
         if job["error"] is not None:
             st.error(f"Could not complete the draft: {job['error']}")
             st.stop()
-        form, loaded, skipped = job["form"], job["loaded"], job["skipped"]
+        form, loaded, skipped, capped = job["form"], job["loaded"], job["skipped"], job["capped"]
         exhausted = sum(t.get("rows", 0) for t in form.trace if "exhausted" in str(t.get("error", "")))
         if exhausted:
             st.warning(f"{exhausted} rows were not classified: the free-tier quota for today is spent. "
@@ -570,7 +604,8 @@ with body:
         # Kept across reruns: the download button reruns the script and st.button
         # is False on that rerun, so without this the whole draft would vanish.
         st.session_state["draft"] = {"form": form, "skipped": skipped, "loaded": loaded,
-                                     "pdf": pdf_bytes, "pdf_error": pdf_error, "recorded": recorded}
+                                     "capped": capped, "pdf": pdf_bytes,
+                                     "pdf_error": pdf_error, "recorded": recorded}
 
     draft = st.session_state.get("draft")
     if not draft:
@@ -579,8 +614,13 @@ with body:
         form, skipped = draft["form"], draft["skipped"]
         if draft.get("recorded"):
             st.caption("Recorded on 2026-09-08 through Google Gemini; live runs use the same code.")
+        cut = draft.get("capped", 0)
+        read = (f'Drafted the first {draft["loaded"]} of {draft["loaded"] + cut} readable rows. '
+                f'The shared demo runs at most {MAX_ROWS} rows at a time; run it on your own '
+                f'computer for the whole ledger'
+                if cut else f'Read {draft["loaded"]} transactions')
         st.markdown(
-            f'<p class="lede" style="margin-top:.6rem">Read {draft["loaded"]} transactions'
+            f'<p class="lede" style="margin-top:.6rem">{read}'
             + (f", skipped {len(skipped)} with unreadable amounts." if skipped else ".") + "</p>",
             unsafe_allow_html=True)
         left, right = st.columns([3, 2], gap="large")
@@ -632,6 +672,8 @@ with body:
                                    mime="application/pdf")
             else:
                 st.info(f"PDF not produced: {draft['pdf_error']}")
+
+            st.markdown(NEXT_STEPS, unsafe_allow_html=True)
 
             st.markdown('<h3 class="sub">Where each line came from</h3>', unsafe_allow_html=True)
             for number in sorted(form.lines, key=form_order):

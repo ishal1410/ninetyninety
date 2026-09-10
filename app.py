@@ -596,8 +596,14 @@ with body:
         pdf_bytes, pdf_error = None, None
         try:
             with tempfile.TemporaryDirectory(prefix="ninetyninety-") as tmp:
+                # The screen says "first 60 of 500"; the PDF has to say it too.
+                # It is the copy that leaves the building. Rows with an
+                # unreadable amount count toward the total: load_ledger drops
+                # them before the graph runs, so they are missing from the
+                # bottom line exactly like the capped ones.
                 pdf = fill_form(form, download_form(BASE / "data" / "f990ez.pdf"),
-                                Path(tmp) / "draft.pdf", org_name, ein)
+                                Path(tmp) / "draft.pdf", org_name, ein,
+                                rows_total=loaded + capped + len(skipped))
                 pdf_bytes = pdf.read_bytes()
         except Exception as error:  # noqa: BLE001
             pdf_error = str(error)

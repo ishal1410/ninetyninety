@@ -12,9 +12,10 @@ Neither agent ever computes a total -- see formmath.py.
 """
 import re
 from dataclasses import dataclass
+from typing import Literal
 
 from pydantic import BaseModel, Field
-from strands import Agent, tool
+from strands import Agent, ModelRetryStrategy, tool
 from strands.hooks import AfterModelCallEvent, BeforeToolCallEvent, HookProvider, HookRegistry
 from strands.multiagent import GraphBuilder
 
@@ -43,7 +44,11 @@ class RowCall(BaseModel):
     line: str = Field(description="Part I line number, e.g. 1, 5c, 13")
     rule: str = Field(description="the deciding sentence copied from line_guidance")
     why: str = Field(description="one sentence tying the row's wording to the rule")
-    confidence: str = Field(description="high, medium or low")
+    # A closed enum, not free text: this schema is what Strands hands Gemini as
+    # response_schema, so the provider itself refuses "fairly low" -- which the
+    # low-confidence check in prepare.assemble would have silently dropped.
+    confidence: Literal["high", "medium", "low"] = Field(
+        description="high, medium or low")
 
 
 class BatchCalls(BaseModel):
@@ -115,22 +120,31 @@ class TraceHooks(HookProvider):
         self.model_calls[name] = self.model_calls.get(name, 0) + 1
 
 
+def _retry_strategy() -> ModelRetryStrategy:
+    """Strands' default is 6 attempts sleeping 4s, 8s, 16s, 32s, 64s, and
+    prepare.run_graph already retries the whole graph three times on top of it.
+    Gemini's free tier caps requests per DAY, so waiting out that ladder buys
+    nothing -- the useful answer to a 429 is the next model id. One quick retry
+    covers a genuine per-minute blip; rotation owns the rest."""
+    return ModelRetryStrategy(max_attempts=2, initial_delay=4)
+
+
 def build_preparer(model, hooks: TraceHooks | None = None) -> Agent:
     return Agent(model=model, system_prompt=PREPARER_PROMPT, tools=[line_guidance],
                  structured_output_model=BatchCalls, callback_handler=None, name="preparer",
-                 hooks=[hooks] if hooks else None)
+                 hooks=[hooks] if hooks else None, retry_strategy=_retry_strategy())
 
 
 def build_reviewer(model, hooks: TraceHooks | None = None) -> Agent:
     return Agent(model=model, system_prompt=REVIEWER_PROMPT, tools=[line_guidance],
                  structured_output_model=BatchCalls, callback_handler=None, name="reviewer",
-                 hooks=[hooks] if hooks else None)
+                 hooks=[hooks] if hooks else None, retry_strategy=_retry_strategy())
 
 
 def build_referee(model, hooks: TraceHooks | None = None) -> Agent:
     return Agent(model=model, system_prompt=REFEREE_PROMPT, tools=[line_guidance],
                  structured_output_model=Verdicts, callback_handler=None, name="referee",
-                 hooks=[hooks] if hooks else None)
+                 hooks=[hooks] if hooks else None, retry_strategy=_retry_strategy())
 
 
 def batch_task(rows: list[Transaction]) -> str:
@@ -191,10 +205,7 @@ class ReviewGraph:
         self.reviewer = build_reviewer(self.model, self.hooks)
         self.referee = build_referee(self.model, self.hooks)
 
-    def run(self, task: str):
-        self.hooks.reset()
-        for agent in (self.preparer, self.reviewer, self.referee):
-            agent.messages = []
+    def _build(self):
         builder = GraphBuilder()
         builder.add_node(self.preparer, "preparer")
         builder.add_node(self.reviewer, "reviewer")
@@ -204,7 +215,22 @@ class ReviewGraph:
         builder.add_edge("preparer", "referee", condition=_they_disagree)
         builder.add_edge("reviewer", "referee", condition=_they_disagree)
         builder.set_max_node_executions(3)
-        return builder.build()(task)
+        graph = builder.build()
+        # GraphBuilder keeps edges in a set hashed on node-id strings, and
+        # Strands walks that set to lay out the Referee's "Inputs from previous
+        # nodes" block. Measured: 3 of 8 PYTHONHASHSEED values put the Reviewer
+        # first, so the tie-breaker read the two opinions in a different order
+        # on a different deploy. Sorting pins the prompt. Strands only iterates
+        # this collection after build(), so a list is a safe drop-in.
+        graph.edges = sorted(graph.edges,
+                             key=lambda e: (e.from_node.node_id, e.to_node.node_id))
+        return graph
+
+    def run(self, task: str):
+        self.hooks.reset()
+        for agent in (self.preparer, self.reviewer, self.referee):
+            agent.messages = []
+        return self._build()(task)
 
     @staticmethod
     def calls(result, node_id: str) -> BatchCalls | None:

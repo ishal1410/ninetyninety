@@ -76,6 +76,54 @@ def test_rule_is_grounded_needs_the_instruction_text_not_just_the_label():
     assert rule_is_grounded("16", "insurance, software subscriptions, bank fees, supplies")
 
 
+def test_confidence_is_a_closed_enum_in_the_structured_output_schema():
+    """The schema is what Strands hands Gemini as response_schema, so a closed
+    enum is enforced by the provider, not hoped for in the prompt. Free text let
+    "very low" through the low-confidence check in prepare.assemble."""
+    import pydantic
+    import pytest
+
+    schema = BatchCalls.model_json_schema()
+    row = schema["$defs"]["RowCall"]["properties"]["confidence"]
+    assert sorted(row["enum"]) == ["high", "low", "medium"]
+    with pytest.raises(pydantic.ValidationError):
+        RowCall(row=2, line="1", rule="r", why="w", confidence="very low")
+
+
+def test_referee_always_sees_preparer_before_reviewer():
+    """GraphBuilder keeps edges in a set hashed on node-id strings, so Strands
+    built the Referee's "Inputs from previous nodes" block in a per-process
+    order (measured: reversed under 3 of 8 PYTHONHASHSEED values). The Referee
+    is the tie-breaker; it must not read the two opinions in a random order."""
+    from ninetyninety.agents import ReviewGraph
+
+    class Model:
+        config = {"model_id": "fake"}
+        stateful = False
+
+    graph = ReviewGraph(Model())._build()
+    assert [(e.from_node.node_id, e.to_node.node_id) for e in graph.edges] == [
+        ("preparer", "referee"), ("reviewer", "referee")]
+
+
+def test_agents_do_not_stack_a_second_backoff_under_our_own(monkeypatch):
+    """Strands installs ModelRetryStrategy(max_attempts=6, 4s..240s) by default,
+    and prepare.run_graph already retries the whole graph three times on top.
+    On a free tier whose cap is per DAY, sleeping through that ladder is wasted:
+    the fix is to rotate to the next model id, not to wait. Keep one quick retry
+    for a per-minute blip and let our rotation own the rest."""
+    from ninetyninety.agents import ReviewGraph
+
+    class Model:
+        config = {"model_id": "fake"}
+        stateful = False
+
+    for agent in vars(ReviewGraph(Model())).values():
+        strategy = getattr(agent, "_retry_strategy", None)
+        if strategy is not None:
+            assert strategy._max_attempts == 2, agent.name
+
+
 def test_they_disagree_is_false_not_a_crash_when_a_node_has_no_agent_results():
     from ninetyninety.agents import _they_disagree
 

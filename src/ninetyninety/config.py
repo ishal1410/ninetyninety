@@ -13,6 +13,13 @@ load_dotenv()
 
 DEFAULT_MODEL_IDS = "gemini-3.8-flash,gemini-3.5-flash,gemini-3.6-flash,gemini-3.7-flash,gemini-3.5-flash-lite"
 
+# Strands passes `params` straight into Gemini's GenerationConfig, so greedy
+# decoding and a fixed seed are all it takes to stop the sampler being a source
+# of run-to-run disagreement between the Preparer and the Reviewer.
+# ponytail: this narrows variance, it does not remove it -- Gemini batches
+# requests server-side and the free tier rotates model ids mid-ledger.
+SAMPLING = {"temperature": 0, "top_p": 1, "seed": 990}
+
 
 def gemini_configured(env: dict) -> bool:
     return bool(env.get("GOOGLE_API_KEY"))
@@ -33,7 +40,7 @@ def build_model(model_id: str | None = None):
             "See .env.example.")
     from strands.models.gemini import GeminiModel
     return GeminiModel(client_args={"api_key": os.environ["GOOGLE_API_KEY"]},
-                       model_id=model_id or model_ids()[0])
+                       model_id=model_id or model_ids()[0], params=dict(SAMPLING))
 
 
 def provider_label(model) -> str:

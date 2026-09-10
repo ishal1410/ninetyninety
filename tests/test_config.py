@@ -35,3 +35,21 @@ def test_build_model_returns_a_gemini_model_for_the_first_id_by_default(monkeypa
 def test_build_model_takes_an_explicit_model_id(monkeypatch):
     monkeypatch.setenv("GOOGLE_API_KEY", "k")
     assert build_model("gemini-3.5-flash-lite").config["model_id"] == "gemini-3.5-flash-lite"
+
+
+def test_build_model_pins_greedy_decoding_and_a_fixed_seed(monkeypatch):
+    """Two runs of the same ledger must not disagree because the sampler rolled
+    differently. Strands passes `params` straight into Gemini's
+    GenerationConfig, so temperature 0 and a fixed seed are the whole fix."""
+    monkeypatch.setenv("GOOGLE_API_KEY", "k")
+    params = build_model().config["params"]
+    assert params["temperature"] == 0
+    assert params["top_p"] == 1
+    assert isinstance(params["seed"], int)
+
+
+def test_every_model_gets_its_own_params_dict(monkeypatch):
+    """A shared dict would let one model's update_config change the others."""
+    monkeypatch.setenv("GOOGLE_API_KEY", "k")
+    first, second = build_model("a"), build_model("b")
+    assert first.config["params"] is not second.config["params"]

@@ -315,6 +315,9 @@ def _prepare(transactions: list[Transaction], model, progress, batch_size: int) 
                 "tool_calls_by_node": dict(graph.hooks.tool_calls),
                 "model_calls": dict(graph.hooks.model_calls),
                 "node_ms": {n: getattr(result.results[n], "execution_time", None) for n in order},
+                # Strands' own NodeResult.accumulated_usage, not our hook counters.
+                "node_tokens": {n: (getattr(result.results[n], "accumulated_usage", None)
+                                    or {}).get("totalTokens") for n in order},
                 "seconds": round(time.time() - started, 1),
             })
         if progress:

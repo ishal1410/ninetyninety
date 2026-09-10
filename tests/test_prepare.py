@@ -131,6 +131,7 @@ class _Node:
 
 class _NodeResult:
     execution_time = 5
+    accumulated_usage = {"inputTokens": 3, "outputTokens": 4, "totalTokens": 7}
 
 
 class _Result:
@@ -188,6 +189,8 @@ def test_prepare_ledger_batches_through_one_graph(monkeypatch):
     assert [t["provider"] for t in form.trace] == ["gemini:fake-model"] * 2
     assert form.trace[1]["referee_ran"] is True
     assert form.trace[0]["model_calls"] == {} and form.trace[0]["tool_calls_by_node"] == {}
+    # Strands' own per-node metrics, not our hook counters.
+    assert form.trace[0]["node_tokens"] == {"preparer": 7, "reviewer": 7}
 
 
 def test_an_exhausted_model_marks_that_batch_and_later_ones_unclassified(monkeypatch):
@@ -385,10 +388,11 @@ def test_trace_rows_only_suffix_ms_on_node_ms():
     [row] = trace_rows([{"batch": 1, "rows": 12, "provider": "gemini:x", "nodes": ["preparer", "reviewer"],
                          "referee_ran": False, "tool_calls": 18, "tool_calls_by_node": {"preparer": 9},
                          "model_calls": {"preparer": 4}, "node_ms": {"preparer": 28173.4, "referee": None},
-                         "seconds": 212.4}])
+                         "node_tokens": {"preparer": 812, "referee": None}, "seconds": 212.4}])
     assert row["tool calls by node"] == "preparer 9"
     assert row["model calls"] == "preparer 4"
     assert row["node ms"] == "preparer 28173ms"
+    assert row["node tokens"] == "preparer 812"
     assert row["nodes"] == "preparer, reviewer"
     assert row["seconds"] == 212.4
     assert "tool_calls_by_node" not in row

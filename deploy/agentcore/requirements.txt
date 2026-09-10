@@ -1,0 +1,5 @@
+# Runtime image only. No streamlit, no pytest, no pypdf -- the AgentCore
+# entrypoint touches ledger.py, prepare.py, agents.py, lines.py, config.py.
+# Pins match the repo's requirements.txt.
+strands-agents[gemini]==1.54.0
+python-dotenv==1.2.2

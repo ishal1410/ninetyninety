@@ -14,3 +14,6 @@ venv/
 
 # Strix pentest artifacts
 strix_runs/
+
+# GSD debug/planning sessions (local only)
+.planning/

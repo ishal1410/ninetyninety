@@ -312,6 +312,28 @@ def test_a_non_transient_failure_costs_one_batch_not_the_model(monkeypatch):
     assert form.unclassified == [] and form.totals["line9"] == 20
 
 
+def test_all_models_pre_retired_reports_a_truthful_exhausted_error(monkeypatch):
+    """If a prior visitor's run already burned every model's daily cap (they
+    live in the shared _EXHAUSTED cache), a new run must still tell the user why
+    its rows are unclassified -- never leave the reason None, which would make
+    the app skip its 'quota spent' warning and crash the CLI on error[:60]."""
+    import ninetyninety.prepare as prepare
+    from ninetyninety.prepare import _today
+    monkeypatch.setattr(prepare, "model_ids", lambda: ["m1", "m2"])
+    # No graph should ever be built, because every model is already retired.
+    monkeypatch.setattr(prepare, "ReviewGraph",
+                        _fake_graph_factory([RuntimeError("should never run")], []))
+    for m in ("m1", "m2"):
+        prepare._EXHAUSTED[m] = _today()
+    form = prepare_ledger([tx(2, "A", 10), tx(3, "B", 10)], batch_size=2)
+    assert form.totals == {"line9": 0, "line17": 0, "line18": 0}
+    assert [u["source_row"] for u in form.unclassified] == [2, 3]
+    for item in form.unclassified:
+        assert item["error"] is not None
+        assert "exhausted" in item["error"].lower()
+    assert form.trace[0]["error"] and "exhausted" in form.trace[0]["error"].lower()
+
+
 def test_referee_reason_is_grounding_checked_too():
     form = assemble([(tx(4, "VENMO INSTRUCTOR", -600), call(4, "12"), call(4, "13"))],
                     {4: Verdict(row=4, line="13", reason="Because I said so")})

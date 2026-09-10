@@ -293,6 +293,13 @@ def _prepare(transactions: list[Transaction], model, progress, batch_size: int) 
                 if _is_not_found(failure):
                     retired.add(i)
         if result is None:
+            if not error:
+                # Every model was already retired at batch start (a prior run on
+                # this shared host burned the daily caps, cached in _EXHAUSTED),
+                # so no attempt ran and `error` was never set. Say so: a None
+                # here shows the treasurer a $0 line with no "quota spent"
+                # warning (app.py keys on "exhausted") and crashes the CLI.
+                error = "all free-tier models are exhausted for today (daily cap on this shared host)"
             for tx in batch:
                 rows.append((tx, None, None))
                 failed_rows[tx.source_row] = error

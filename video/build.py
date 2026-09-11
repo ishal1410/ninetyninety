@@ -3,11 +3,13 @@
 Each shot is cut to its narration length (plus PAD), so picture and voice
 concatenate with no offset arithmetic. Short clips hold their last frame.
 """
-import json, pathlib, subprocess, sys
+import json, os, pathlib, subprocess, sys
 
 HERE = pathlib.Path(__file__).parent
-FF = "C:/Users/vp141/tools/ffmpeg/bin/ffmpeg.exe"
-PROBE = "C:/Users/vp141/tools/ffmpeg/bin/ffprobe.exe"
+# ponytail: PATH by default, FFMPEG/FFPROBE to point at a portable build that
+# is not on it. These were absolute paths that existed on one laptop only.
+FF = os.environ.get("FFMPEG", "ffmpeg")
+PROBE = os.environ.get("FFPROBE", "ffprobe")
 BUILD = HERE / "build"
 OUT = HERE / "ninetyninety-demo.mp4"
 PAD = 0.6

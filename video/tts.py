@@ -1,11 +1,11 @@
 """narration/sNN.txt -> audio/sNN.mp3, and write durations.json (seconds per shot)."""
-import asyncio, json, pathlib, subprocess, sys
+import asyncio, json, os, pathlib, subprocess, sys
 import edge_tts
 
 HERE = pathlib.Path(__file__).parent
 VOICE = sys.argv[1] if len(sys.argv) > 1 else "en-US-AndrewNeural"
 RATE = "-4%"          # slightly under default: this is a compliance product, not an ad
-FFPROBE = "C:/Users/vp141/tools/ffmpeg/bin/ffprobe.exe"
+FFPROBE = os.environ.get("FFPROBE", "ffprobe")
 
 async def main():
     (HERE / "audio").mkdir(exist_ok=True)

@@ -19,7 +19,10 @@ strix_runs/
 .planning/
 
 # Demo video: the sources are tracked, the renders and screen captures are not.
-# Rebuild with: python video/tts.py && python video/subs.py && python video/build.py
+# Rebuild: python video/capture.py && python video/tts.py &&
+#          python video/subs.py && python video/build.py
+# capture.py films the hosted app, so it needs https://ninetyninety.streamlit.app
+# awake. Without it there are no clips/ and build.py has nothing to render.
 video/build/
 video/clips/
 video/audio/

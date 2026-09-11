@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8"><title>architecture</title>
+<style>
+  html,body{margin:0;height:100%;background:#F7F8FA;overflow:hidden}
+  #stage{position:absolute;inset:0;display:grid;place-items:center}
+  img{max-width:94%;max-height:94%;transform-origin:center;
+    transform:scale(var(--s,1)) translate(var(--x,0px),var(--y,0px))}
+</style>
+<div id="stage"><img id="pg" src="../../docs/architecture.png"></div>
+<script>
+  window.setView = (s, x, y, ms) => new Promise(res => {
+    const el = document.getElementById('pg'), cs = getComputedStyle(el);
+    const s0 = parseFloat(cs.getPropertyValue('--s')) || 1;
+    const x0 = parseFloat(cs.getPropertyValue('--x')) || 0;
+    const y0 = parseFloat(cs.getPropertyValue('--y')) || 0;
+    const t0 = performance.now();
+    (function step(t){
+      const k = Math.min(1, (t - t0) / ms);
+      const e = k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2;
+      el.style.setProperty('--s', s0 + (s - s0) * e);
+      el.style.setProperty('--x', (x0 + (x - x0) * e) + 'px');
+      el.style.setProperty('--y', (y0 + (y - y0) * e) + 'px');
+      k < 1 ? requestAnimationFrame(step) : res();
+    })(t0);
+  });
+</script>

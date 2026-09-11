@@ -1,0 +1,1 @@
+This is the hosted app. A year of bank transactions goes in: date, description, amount. Fifty four rows with no categories. I add the organisation name and EIN, then draft a return.

@@ -1,0 +1,19 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Cap,Segoe UI Semibold,46,&H00FFFFFF,&H00000000,&HB4000000,0,3,12,0,2,200,200,64,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:02.10,Cap,,0,0,0,,Does the arithmetic hold up?
+Dialogue: 0,0:00:02.10,0:00:09.96,Cap,,0,0,0,,I ran the same module over three thousand six\Nhundred thirty two real 990-EZ returns from the IRS corpus.
+Dialogue: 0,0:00:09.96,0:00:12.28,Cap,,0,0,0,,Line nine rebuilt on every one.
+Dialogue: 0,0:00:12.28,0:00:16.24,Cap,,0,0,0,,Line seventeen, ninety nine point nine seven percent.
+Dialogue: 0,0:00:16.24,0:00:19.46,Cap,,0,0,0,,Line eighteen, ninety nine point nine four.
+Dialogue: 0,0:00:19.46,0:00:21.41,Cap,,0,0,0,,One command reproduces it.

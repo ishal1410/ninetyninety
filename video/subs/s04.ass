@@ -1,0 +1,18 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Cap,Segoe UI Semibold,46,&H00FFFFFF,&H00000000,&HB4000000,0,3,12,0,2,200,200,64,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:04.04,Cap,,0,0,0,,Twelve rows at a time go through one Strands Agents graph.
+Dialogue: 0,0:00:04.04,0:00:08.99,Cap,,0,0,0,,The Preparer and the Reviewer are\Ntwo entry nodes, running in parallel.
+Dialogue: 0,0:00:08.99,0:00:14.99,Cap,,0,0,0,,Strands hands each only the rows, so the\NReviewer never sees the Preparer's reasoning.
+Dialogue: 0,0:00:14.99,0:00:20.49,Cap,,0,0,0,,Both call a real Strands tool that\Nreturns the IRS instruction text for a line.
+Dialogue: 0,0:00:20.49,0:00:27.67,Cap,,0,0,0,,Here is the finished trace: five graph runs, ninety\Ntwo tool calls, counted by a Strands hook provider.

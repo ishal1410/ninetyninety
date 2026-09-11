@@ -1,0 +1,16 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Cap,Segoe UI Semibold,46,&H00FFFFFF,&H00000000,&HB4000000,0,3,12,0,2,200,200,64,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:02.90,Cap,,0,0,0,,NinetyNinety is for volunteer treasurers.
+Dialogue: 0,0:00:02.90,0:00:06.79,Cap,,0,0,0,,The little league, the food pantry, the community band.
+Dialogue: 0,0:00:06.79,0:00:09.55,Cap,,0,0,0,,A bank export in, a drafted return out.

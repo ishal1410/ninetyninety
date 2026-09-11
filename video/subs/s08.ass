@@ -1,0 +1,16 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Cap,Segoe UI Semibold,46,&H00FFFFFF,&H00000000,&HB4000000,0,3,12,0,2,200,200,64,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:09.37,Cap,,0,0,0,,The architecture is a Strands GraphBuilder graph with two blind\Nentry nodes, a conditional edge to the Referee, and one guidance tool.
+Dialogue: 0,0:00:09.37,0:00:14.41,Cap,,0,0,0,,Under it, Python that sums, checks\Nevery quoted rule, and fills the PDF.
+Dialogue: 0,0:00:14.41,0:00:16.30,Cap,,0,0,0,,Bedrock is a one line swap.

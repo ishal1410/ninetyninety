@@ -1,0 +1,1 @@
+The architecture is a Strands GraphBuilder graph with two blind entry nodes, a conditional edge to the Referee, and one guidance tool. Under it, Python that sums, checks every quoted rule, and fills the PDF. Bedrock is a one line swap.

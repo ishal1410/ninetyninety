@@ -1,0 +1,1 @@
+NinetyNinety. Built with Strands Agents for the Agents for Humans hackathon, Good Neighbor Agents track. A shoebox of bank transactions becomes a drafted 990-EZ, every line citing the transactions behind it and the rule that put them there.

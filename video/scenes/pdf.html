@@ -1,0 +1,33 @@
+<!doctype html><meta charset="utf-8"><title>draft pdf</title>
+<style>
+  html,body{margin:0;height:100%;background:#EDEFF2;overflow:hidden;
+    font:14px/1.4 "IBM Plex Sans",system-ui,sans-serif}
+  #stage{position:absolute;inset:0;display:grid;place-items:center}
+  #wrap{width:1920px;height:1080px;position:relative;overflow:hidden}
+  img{position:absolute;left:50%;top:0;transform-origin:50% 0;
+    transform:translateX(-50%) scale(var(--s,.49)) translateY(var(--y,0px));
+    box-shadow:0 24px 60px rgba(15,23,42,.22);background:#fff}
+</style>
+<div id="stage"><div id="wrap"><img id="pg" src="../assets/live-page1.png"></div></div>
+<script>
+  window.setView = (s, y, ms) => new Promise(res => {
+    const el = document.getElementById('pg');
+    const cs = getComputedStyle(el);
+    const s0 = parseFloat(cs.getPropertyValue('--s')) || .49;
+    const y0 = parseFloat(cs.getPropertyValue('--y')) || 0;
+    const t0 = performance.now();
+    (function step(t){
+      const k = Math.min(1, (t - t0) / ms);
+      const e = k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2;
+      el.style.setProperty('--s', s0 + (s - s0) * e);
+      el.style.setProperty('--y', (y0 + (y - y0) * e) + 'px');
+      k < 1 ? requestAnimationFrame(step) : res();
+    })(t0);
+  });
+  // map a fraction of the page image to viewport coordinates, whatever the zoom
+  window.ptAt = (fx, fy) => {
+    const r = document.getElementById('pg').getBoundingClientRect();
+    return {x: Math.round(r.left + r.width * fx), y: Math.round(r.top + r.height * fy)};
+  };
+  window.showPage = n => { document.getElementById('pg').src = '../assets/live-page' + n + '.png'; };
+</script>

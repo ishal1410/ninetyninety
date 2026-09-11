@@ -17,3 +17,14 @@ strix_runs/
 
 # GSD debug/planning sessions (local only)
 .planning/
+
+# Demo video: the sources are tracked, the renders and screen captures are not.
+# Rebuild with: python video/tts.py && python video/subs.py && python video/build.py
+video/build/
+video/clips/
+video/audio/
+video/audio.v1/
+video/*.mp4
+video/*.v1.py
+video/*.v1.json
+video/narration.v1/

@@ -1,0 +1,19 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Cap,Segoe UI Semibold,46,&H00FFFFFF,&H00000000,&HB4000000,0,3,12,0,2,200,200,64,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:03.59,Cap,,0,0,0,,Small US nonprofits file Form 990-EZ every year.
+Dialogue: 0,0:00:03.59,0:00:05.60,Cap,,0,0,0,,Most have no finance staff.
+Dialogue: 0,0:00:05.60,0:00:10.69,Cap,,0,0,0,,Miss three years running and the\NIRS revokes your tax exempt status.
+Dialogue: 0,0:00:10.69,0:00:13.60,Cap,,0,0,0,,That list holds over a million entries.
+Dialogue: 0,0:00:13.60,0:00:17.41,Cap,,0,0,0,,Filing tools start after the books are categorised.
+Dialogue: 0,0:00:17.41,0:00:21.00,Cap,,0,0,0,,Categorising them is the work nobody helps with.

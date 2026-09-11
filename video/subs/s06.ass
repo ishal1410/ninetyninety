@@ -1,0 +1,19 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Cap,Segoe UI Semibold,46,&H00FFFFFF,&H00000000,&HB4000000,0,3,12,0,2,200,200,64,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:03.92,Cap,,0,0,0,,The amounts land in the fields of the real IRS form.
+Dialogue: 0,0:00:03.92,0:00:10.85,Cap,,0,0,0,,Line nine, total revenue: forty thousand three\Nhundred sixty nine. Line seventeen, expenses.
+Dialogue: 0,0:00:10.85,0:00:12.81,Cap,,0,0,0,,Line eighteen, the excess.
+Dialogue: 0,0:00:12.81,0:00:14.77,Cap,,0,0,0,,Python computes all three.
+Dialogue: 0,0:00:14.77,0:00:16.35,Cap,,0,0,0,,The model never adds.
+Dialogue: 0,0:00:16.35,0:00:19.06,Cap,,0,0,0,,Every page carries the DRAFT notice.

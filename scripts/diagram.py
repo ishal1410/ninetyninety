@@ -14,7 +14,7 @@ W, H = 1600, 760
 BOXES = [
     ("User input / interface",
      ["A volunteer treasurer uploads the bank ledger as CSV",
-      "Streamlit app (app.py) or CLI (cli.py)",
+      "Streamlit app (app.py), CLI (cli.py), or AgentCore Runtime (agentcore.py)",
       "date, description, amount; whole dollars, money in +, money out -"]),
     ("Strands Agents graph, per batch of 12 rows",
      ["GraphBuilder: preparer and reviewer are blind parallel entry nodes",
@@ -29,7 +29,7 @@ BOXES = [
      ["Google Gemini through Strands' native GeminiModel (one provider, free tier)",
       "Per-model daily cap: rotates gemini-3.8-flash -> 3.5 -> 3.6 -> 3.7 -> 3.5-lite",
       "429 or 5xx: advertised-delay backoff, 3 attempts, next model, then surfaced",
-      "Amazon Bedrock is the one-line swap once the account's quota is seeded"]),
+      "Bedrock was cut: a new account's applied quota was 0 tokens for every model"]),
     ("Output",
      ["Form 990-EZ Part I, every line citing its rows and the IRS rule",
       "Lines 9, 17, 18 computed in formmath.py, never by a model",

@@ -18,7 +18,7 @@ Volunteer treasurers of small US nonprofits: the little league, the food pantry,
 
 ## Does the engine actually work?
 
-Before drafting anything for a user, the same arithmetic that fills the form was run against **3,632 real Form 990-EZ returns** filed with the IRS (e-file XML batch `2026_TEOS_XML_01A`, 3,687 files, of which 3,632 carried a checkable Part I), rebuilding each return's stated totals from its own line items:
+Before drafting anything for a user, the same arithmetic that fills the form was run against **3,632 real Form 990-EZ returns** filed with the IRS (e-file XML batch `2026_TEOS_XML_01A`, 3,687 Form 990-EZ returns, of which 3,632 carried a Part I checkable for line 9), rebuilding each return's stated totals from its own line items:
 
 | Part I identity | Reconstructed | Rate |
 |---|---|---|
@@ -33,9 +33,9 @@ The three line mismatches sit in two real filed returns whose own stated totals 
 ![Architecture](docs/architecture.png)
 
 1. **Ledger in.** A CSV of `date, description, amount`. Raw bank text, no categories. Rows go through the graph in batches of twelve.
-2. **One Strands Agents graph per batch.** The **Preparer** and the **Reviewer** are two entry nodes of a `GraphBuilder` graph. Strands hands each entry node only the rows, so the Reviewer never sees the Preparer's reasoning, and the two run in parallel. Both are instructed to call a real Strands tool, `line_guidance`, which returns the IRS instruction text for a Part I line, and both answer with structured output (pydantic). A **Referee** node hangs off a conditional edge and runs only when the two disagree on a row; it must call `line_guidance` on both candidate lines and returns a verdict with its reason. Every disagreement is shown with all three opinions and which line went on the form. Nothing is resolved silently.
+2. **One Strands Agents graph per batch.** The **Preparer** and the **Reviewer** are two entry nodes of a `GraphBuilder` graph. Strands hands each entry node only the rows, so the Reviewer never sees the Preparer's reasoning, and the two run in parallel. Both are instructed to call a real Strands tool, `line_guidance`, which returns the IRS instruction text for a Part I line, and both answer with structured output (pydantic). A **Referee** node hangs off a conditional edge and runs only when the two disagree on a row; it is instructed to call `line_guidance` on both candidate lines and returns a verdict with its reason. Every disagreement is shown with all three opinions and which line went on the form. Nothing is resolved silently.
 3. **Python checks the model.** Every rule the Preparer, Reviewer or Referee quotes is checked against the IRS instruction sentence the tool returned: at least 60% of its words must appear in that sentence (the line's label does not count); a rule that fails is flagged as ungrounded. A Referee verdict is accepted only for one of the two disputed lines. Money flowing against a line (a refund) is netted, not added, and flagged. Lines 9, 17 and 18 are computed in `formmath.py`, the same module the validation harness runs over real filings. The model never adds.
-4. **The real IRS PDF.** Amounts land in the actual `f990ez.pdf` AcroForm fields, and every page carries a red **DRAFT, NOT A FILING** notice.
+4. **The real IRS PDF.** Amounts land in the actual `f990ez.pdf` AcroForm fields, and every page carries a red **DRAFT - NOT A FILING** notice.
 5. **The trace is on screen.** Per batch: which nodes ran, in what order, how many model calls and tool calls each agent made (a Strands `HookProvider` on `BeforeToolCallEvent` and `AfterModelCallEvent`, shared by the three agents), whether the Referee was needed, and which provider answered.
 
 ## Run it
@@ -52,7 +52,7 @@ Web UI: `streamlit run app.py`
 
 Landing page: `index.html` (GitHub Pages, repo root). It shows the recorded demo run; refresh it after a run with `PYTHONPATH=src python scripts/dump_run.py && python scripts/build_landing.py`.
 
-Tests: `python -m pytest` (139 tests; the one live end-to-end test runs only with `NN_LIVE=1` and a key)
+Tests: `python -m pytest` (158 tests; the one live end-to-end test runs only with `NN_LIVE=1` and a key)
 
 ## Model: Google Gemini
 

@@ -31,7 +31,10 @@ def main() -> int:
     from ninetyninety.lines import REVENUE_LINES, EXPENSE_LINES
     run = json.loads((ROOT / "results/demo_run.json").read_text())
     run["validation"] = json.loads((ROOT / "results/validation.json").read_text())
-    run["validation"].pop("mismatches", None)
+    _v = run["validation"]
+    # The page says how many returns, not which: the count survives, the EINs do not.
+    _v["mismatch_returns"] = len({m["ein"] for m in _v.get("mismatches", [])})
+    _v.pop("mismatches", None)
     lines = [{"number": l.number, "label": l.label, "kind": l.kind} for l in REVENUE_LINES + EXPENSE_LINES]
     for name in PAGES:
         page = ROOT / name

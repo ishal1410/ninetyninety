@@ -1,26 +1,12 @@
-# Devpost submission text
-
-Copy each field into the Devpost form. Placeholders in angle brackets are filled by a human before submitting.
-
-## Project name
-
-NinetyNinety
-
-## Tagline
-
-Bank CSV in, drafted IRS Form 990-EZ out, every line cited.
-
-## Track
-
-Good Neighbor Agents. The user is a volunteer treasurer acting for a small nonprofit, and the track text names nonprofits and the volunteers who run them.
-
-## Description
+## Inspiration
 
 The IRS received 203,699 Form 990-EZ returns filed in calendar year 2024, filed by 185,581 different organisations. Each one is small by definition: a 990-EZ filer has gross receipts under $200,000 and assets under $500,000. In the public IRS e-file batch this project was validated against, 1,106 of the 3,687 Form 990-EZ returns carry no paid-preparer block, so roughly three in ten were put together by someone inside the organisation, usually a volunteer treasurer doing it once a year out of a shoebox.
 
 Getting it wrong is expensive at that size. A late Form 990-EZ costs $25 a day, up to the lesser of $13,000 or 5 percent of gross receipts. Miss three years in a row and exemption is revoked automatically: contributions stop being deductible, and the organisation has to apply for exemption again from the beginning. The IRS Auto-Revocation List downloaded on 8 September 2026 holds 1,247,210 revocations, and 1,065,726 of those rows carry no reinstatement date.
 
 The form is not the hard part. Filing software exists, it is cheap, and it starts once the books are categorised. Categorising the books is the work nobody helps with. A year of a food pantry's bank account is a few hundred rows reading "SQUARE INC DEPOSIT", "ZELLE FROM R PATEL", "CHECK 1192 DELIA FIGUEROA CPA", and every one of them has to land on one of the fifteen Part I lines in a way the treasurer can defend to a board.
+
+## What it does
 
 That is the step NinetyNinety does. It takes a bank export of date, description and amount and returns Form 990-EZ Part I drafted on the real IRS PDF, with every line showing the transactions behind it and the IRS instruction sentence that put them there.
 
@@ -29,15 +15,6 @@ Two agents do the sorting and neither can see the other. The Preparer and the Re
 The agents classify. They never add. Lines 9, 17 and 18 are computed in Python by the same module that was checked against 3,632 real filed Form 990-EZ returns from the IRS e-file corpus, rebuilding each return's own stated totals from its own line items. Line 9 came back in 3,632 of 3,632 (100.00 percent), line 17 in 3,617 of 3,618 (99.97 percent), line 18 in 3,619 of 3,621 (99.94 percent). The three misses sit in two filed returns whose stated totals disagree with their own components, one of them by a dollar, and both are listed by EIN in `results/validation.json`.
 
 What comes out is a draft. Every page carries a red DRAFT, NOT A FILING notice, an officer of the organisation has to review and sign it, and e-filing a 990-EZ for tax year 2025 needs an Authorized IRS e-File Provider, which this is not.
-
-Where the numbers come from:
-
-- 203,699 returns and 185,581 EINs: IRS SOI annual extract of Form 990-EZ filings processed in 2024, https://www.irs.gov/statistics/soi-tax-stats-annual-extract-of-tax-exempt-organization-financial-data (file `24eoextract990EZ.zip`, one row per processed return).
-- $200,000 and $500,000 thresholds, the $25-a-day penalty and its cap, automatic revocation after three years, and the tax year 2025 electronic filing requirement: IRS Instructions for Form 990-EZ (2025), https://www.irs.gov/instructions/i990ez
-- Consequences of revocation: IRS Automatic Revocation of Exemption FAQ, https://www.irs.gov/pub/irs-tege/auto_rev_faqs.pdf
-- 1,247,210 revocations and 1,065,726 without a reinstatement date: IRS Auto-Revocation List bulk file, https://apps.irs.gov/pub/epostcard/data-download-revocation.zip, downloaded 2026-09-08 and counted row by row.
-- 1,106 of 3,687 with no paid preparer: counted in the same IRS batch the accuracy harness uses. Reproduce with `PYTHONPATH=src python scripts/preparers.py`.
-- The Part I accuracy rates: `PYTHONPATH=src python scripts/validate.py`, output in `results/validation.json`.
 
 ## How we built it
 
@@ -65,7 +42,7 @@ That left the Gemini free tier, measured at 20 requests a day per model id. A gr
 
 Grounding was the other hard part. The first check counted the line's label, and agents passed it by quoting the menu. Only the instruction sentence counts now.
 
-## Accomplishments
+## Accomplishments that we're proud of
 
 The arithmetic that fills the form was run against real filed returns before it was ever run for a user. IRS e-file batch 2026_TEOS_XML_01A holds 3,687 Form 990-EZ returns, 3,632 of them with a checkable Part I, and `formmath.py` rebuilt each return's stated totals from its own line items: line 9 in 3,632 of 3,632 (100.00 percent), line 17 in 3,617 of 3,618 (99.97 percent), line 18 in 3,619 of 3,621 (99.94 percent). Three line mismatches across two returns, and in both cases the filed return's own totals disagree with its own components. Both EINs are printed in `results/validation.json`. This is the same module that fills a user's PDF, not a validation-only reimplementation, and `PYTHONPATH=src python scripts/validate.py` regenerates the whole table from the public IRS batch.
 
@@ -77,11 +54,11 @@ The output is the real IRS PDF, filled, not a mockup.
 
 Two blind agents plus a referee surface uncertainty better than one confident agent, but only if the disagreement is shown rather than resolved quietly. A judgement a treasurer has to sign is worth less as a clean answer than as a disputed one with both arguments attached. Structured output is what turns "the agents disagree" into a boolean a graph edge can test, and a conditional edge is what keeps the third opinion from costing anything on the batches that do not need it. A word-overlap check against the source text is cheap and catches invented rules that read well. And the model should never do arithmetic that Python can do and be checked against thousands of real filings.
 
-## What's next
+## What's next for NinetyNinety
 
 Parts II through VI and the Schedules, which today are out of scope and are not pretended to be filled. Bedrock as the provider once the account quota is seeded. A path to e-filing through an Authorized IRS e-File Provider, since the IRS requires electronic filing of Form 990-EZ for tax year 2025.
 
-## Testing instructions
+## Try it yourself
 
 ```
 git clone https://github.com/ishal1410/ninetyninety && cd ninetyninety && pip install -r requirements.txt && cp .env.example .env
@@ -95,18 +72,15 @@ Hosted app: https://ninetyninety.streamlit.app. Use "Replay the recorded run" if
 Product page: https://ishal1410.github.io/ninetyninety/
 Technical page with the recorded trace: https://ishal1410.github.io/ninetyninety/technical.html
 
+## Where the numbers come from
+
+- 203,699 returns and 185,581 EINs: IRS SOI annual extract of Form 990-EZ filings processed in 2024, https://www.irs.gov/statistics/soi-tax-stats-annual-extract-of-tax-exempt-organization-financial-data (file `24eoextract990EZ.zip`, one row per processed return).
+- $200,000 and $500,000 thresholds, the $25-a-day penalty and its cap, automatic revocation after three years, and the tax year 2025 electronic filing requirement: IRS Instructions for Form 990-EZ (2025), https://www.irs.gov/instructions/i990ez
+- Consequences of revocation: IRS Automatic Revocation of Exemption FAQ, https://www.irs.gov/pub/irs-tege/auto_rev_faqs.pdf
+- 1,247,210 revocations and 1,065,726 without a reinstatement date: IRS Auto-Revocation List bulk file, https://apps.irs.gov/pub/epostcard/data-download-revocation.zip, downloaded 2026-09-08 and counted row by row.
+- 1,106 of 3,687 with no paid preparer: counted in the same IRS batch the accuracy harness uses. Reproduce with `PYTHONPATH=src python scripts/preparers.py`.
+- The Part I accuracy rates: `PYTHONPATH=src python scripts/validate.py`, output in `results/validation.json`.
+
 ## Pre-existing work
 
 The blank IRS form `f990ez.pdf` and the IRS Form 990 e-file XML corpus are public IRS assets used as inputs, not project code. The Strands Agents SDK is a third-party dependency. All project code was written during the submission period. `fixtures/demo_ledger.csv` is synthetic; the accuracy figures come from the real IRS filings, never from that file.
-
-## Video
-
-https://vimeo.com/1225857139
-
-## Repository
-
-https://github.com/ishal1410/ninetyninety
-
-## Architecture diagram
-
-`docs/architecture.png` (source: `scripts/diagram.py`)

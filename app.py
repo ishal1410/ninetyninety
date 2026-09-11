@@ -504,6 +504,12 @@ with body:
                  "2025-01-08,ONLINE DONATION STRIPE PAYOUT,1250.00. A bank export works as it "
                  "comes: capitalised headers, dollar signs, thousands commas, semicolon "
                  "separators and parentheses for money out are all read.")
+        # A bank export names third parties - "ZELLE FROM R PATEL" is a real
+        # person's name and a real amount - and those rows leave the building
+        # for Google. Say so where the file is chosen, not in a policy page.
+        st.caption("Rows are sent to Google Gemini to be classified. The file is read "
+                   "from a temporary directory that is deleted when the run ends, and "
+                   "nothing is written to a database.")
         use_demo = st.checkbox("Use the synthetic demo ledger instead", value=uploaded is None)
     with c2:
         # side by side, so the control strip's height is the uploader's, not

@@ -38,7 +38,7 @@ So the check is: parse the fifteen component elements, feed them through the sam
 
 ## The mistake this caught
 
-Two element names in the IRS schema are not what you would guess. Line 5c is `GainOrLossFromSaleOfAssetsAmt`, not `NetGainOrLoss…`. Line 7c is `GrossProfitLossSlsOfInvntryAmt`, not `…SalesOfInvntry…`. My first taxonomy guessed both, and the harness reported 87.5% reconstruction accuracy. It was two strings. After reading the live XML and fixing them: 100.00%.
+Two element names in the IRS schema are not what you would guess. Line 5c is `GainOrLossFromSaleOfAssetsAmt`, not `NetGainOrLoss…`. Line 7c is `GrossProfitLossSlsOfInvntryAmt`, not `…SalesOfInvntry…`. My first taxonomy guessed both, and the harness reported 86.62% reconstruction accuracy. It was two strings. After reading the live XML and fixing them: 100.00%.
 
 Without the harness that bug ships silently. Every return with a 5c or 7c amount gets a wrong line 9, and the app would still print a confident total.
 

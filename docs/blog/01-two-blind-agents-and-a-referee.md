@@ -1,16 +1,16 @@
 # Agents for Humans: two blind agents and a referee draft a nonprofit's Form 990-EZ
 
-Here is row 45 of a synthetic church ledger going through NinetyNinety:
+Here is row 51 of the synthetic demo ledger going through NinetyNinety:
 
 ```
-row 45 | MONEY IN | 2025-05-02 | SPRING GALA TABLE SPONSORSHIP ACME LLC | 2500
+row 51 | MONEY IN | 2025-05-16 | ACME HARDWARE GALA TABLE SPONSOR | 1500
 
-preparer -> line 1   "Voluntary transfers where the donor receives nothing of comparable value in return"
-reviewer -> line 6d  "Gross receipts from events such as galas, raffles and bingo"
-referee  -> line 1   quoting the contributions instruction
+preparer -> line 6d  "Gross receipts from events such as galas, raffles and bingo"
+reviewer -> line 1   "Voluntary transfers where the donor receives nothing of comparable value in return"
+referee  -> line 6d  quoting the fundraising-event instruction
 ```
 
-Two agents read the same row, never saw each other, and disagreed. A third agent was reached only because they disagreed, looked up both IRS instructions with a tool, and ruled. The row landed on line 1, and the disagreement is printed on the draft with all three opinions. That is the whole product.
+Two agents read the same row, never saw each other, and disagreed. A third agent was reached only because they disagreed, looked up both IRS instructions with a tool, and ruled. The row landed on line 6d, and the disagreement is printed on the draft with all three opinions. That is the whole product.
 
 ## Who it is for
 
@@ -46,7 +46,7 @@ def _they_disagree(state) -> bool:
     return picks["preparer"] != picks["reviewer"]
 ```
 
-When they agree, the Referee never runs and the batch costs two model calls. In the first live run the ledger was too clean: 48 rows, zero disagreements, Referee never fired. So six borderline rows went into the demo ledger (a gala sponsorship, a Zelle reimbursement, a member dinner). Second run: 54 rows, five batches, Referee ran in four of them, four disputes, all four resolved with a cited verdict.
+When they agree, the Referee never runs and the batch costs two model calls. In the first live run the ledger was too clean: 48 rows, zero disagreements, Referee never fired. So six borderline rows went into the demo ledger (a gala sponsorship, a Zelle reimbursement, a member dinner). Second run: 54 rows, five batches, Referee ran in one of them, two disputed rows, both resolved with a cited verdict.
 
 ## One tool, and it is not optional
 
@@ -60,7 +60,7 @@ def line_guidance(line_number: str) -> str:
     copy the deciding sentence into your `rule`."""
 ```
 
-The structured output schema forces a `rule` field per row. After the run, plain Python checks whether at least 60% of the words in that `rule` actually appear in the IRS guidance for the chosen line. An invented justification cannot pass. In the 54-row run, 113 tool calls, zero ungrounded rules.
+The structured output schema forces a `rule` field per row. After the run, plain Python checks whether at least 60% of the words in that `rule` actually appear in the IRS guidance for the chosen line. An invented justification cannot pass. In the 54-row run, 92 tool calls, zero ungrounded rules.
 
 ## What the agents are not allowed to do
 

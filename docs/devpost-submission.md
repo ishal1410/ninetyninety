@@ -101,7 +101,7 @@ The blank IRS form `f990ez.pdf` and the IRS Form 990 e-file XML corpus are publi
 
 ## Video
 
-<YOUTUBE_URL>
+https://vimeo.com/1225857139
 
 ## Repository
 
